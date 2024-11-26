@@ -1,0 +1,23 @@
+1.Client Thread Creation:
+When a client connects, a new std::thread is created to handle the client’s
+ communication using the handleCommunication method. This thread allows the server
+ to process the client’s messages without blocking the main server loop.
+
+2.Client Commands:
+The client sends commands (e.g., /join <channel_name>). The server parses the command,
+ and if the client is requesting to join a channel, the joinChannel method in the Client
+ class is called.
+
+3.Channel Management:
+The Server manages all channels. If a channel doesn’t exist, the Server creates a new
+one using getOrCreateChannel(). Channels are stored in a std::map to easily retrieve
+them by name.
+Each channel has a list of members (std::vector<Client*>), and it broadcasts messages to
+all members using the broadcast method. When a message is broadcast, the server sends it
+to all the clients in the channel (except the sender).
+
+4.Concurrency:
+Each client operates in its own thread, so multiple clients can join different channels
+and communicate with each other concurrently.
+Access to the channel list (channels) and the list of members in each channel (members)
+is synchronized using std::mutex to avoid data races.
