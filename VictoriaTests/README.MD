@@ -8,7 +8,7 @@ together to form a network.
 ## Collaborators
 
 <!--| ---------------   | ------------------------------------------- | -->
-<!-- Should I include more info?-->
+<!-- Should I include more info? -->
 |Name                         | GitHub Profile                          |
 |:---------------------------:|:-----------------------------:|
 | Vitoria Lizarraga [<a href="https://profile.intra.42.fr/users/lilizarr">@lilizarr</a>]  | <a href="https://github.com/VictoriaLizCor/">@VictoriaLizCor</a> |
