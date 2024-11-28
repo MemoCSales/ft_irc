@@ -80,7 +80,7 @@ fi
 echo -e "$SUBMODULE_COMMIT_MESSAGE test"
 # 
 
-# --------------------------------------------------------------------
+# -------------------------------------------------------------------- 
 # This script is a Git hook for preparing commit messages.
 # It performs the following actions:
 # 1. Retrieves the remote URL of the current repository.
