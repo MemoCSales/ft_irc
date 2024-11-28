@@ -11,4 +11,5 @@ together to form a network.
 |Name                         | GitHub Profile                          |
 |:---------------------------:|:-----------------------------:|
 | Vitoria Lizarraga [<a href="https://profile.intra.42.fr/users/lilizarr">@lilizarr</a>]  | <a href="https://github.com/VictoriaLizCor/">@VictoriaLizCor</a> |
-| Memo [<a href="https://profile.intra.42.fr/users/mcruz-sa">@mcruz-sa</a>]  | <a href="https://profile.intra.42.fr/users/mcruz-sa">@git</a> |
+| Manuel Guillermo Cruz  [<a href="https://profile.intra.42.fr/users/mcruz-sa">@mcruz-sa</a>]  | <a href="https://github.com/MemoCSales/">@git</a> |
+| Marian Sacaliuc [<a href="https://profile.intra.42.fr/users/msacaliu">@msacaliu</a>]  | <a href="https://github.com/Gaspar24/">@git</a> |

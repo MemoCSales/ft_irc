@@ -56,6 +56,7 @@ show-commit-msg:
 
 commit-template:
 	@git config --local commit.template $(HOOKS).gitmessage
+	@echo $(HOOKS)
 	@echo "commit-msg hook installed."
 # Hook installation
 pre-commit:
