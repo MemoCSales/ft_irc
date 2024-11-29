@@ -22,7 +22,8 @@ class Client {
 		bool		_capNegotiation;
 		//todo: add attribute of participating channels
 		std::string _correctPassword;
-		bool		_isOperator;
+		// bool		_isOperator;
+		bool		_shouldDisconnect;
 
 	public:
 		Client(int fd, const std::string& correctPassword);
@@ -42,12 +43,14 @@ class Client {
 		void setUser(const std::string& user);
 		void setUserRealName(const std::string& realName);
 		void setAuthenticated(bool);
+		void setCapNegotiation(bool flag);
+		void setShouldDisconnect(bool);
 
 		// Methods
 		bool isAuthenticated() const;
 		void handleRead();
-		void setCapNegotiation(bool flag);
 		bool isCapNegotiation() const;
+		bool shouldDiconnect() const;
 		// todo:: add methods to handle disconnections and notify other clients
 	
 	private:

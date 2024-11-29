@@ -1,10 +1,25 @@
 # include "Server.hpp"
 # include "Client.hpp"
 
+int serverFd;
+// Creating a list of sockets for poll()
+std::vector<struct pollfd> pollFds;
+bool running = true;
+
+void signalHandler(int signum) {
+	std::cout << "\nInterrupt signal (" << signum << ") received.\n";
+	running = false;
+	close(serverFd);
+	for (std::vector<struct pollfd>::iterator it = pollFds.begin(); it != pollFds.end(); it++) {
+		close(it->fd);
+	}
+}
+
 int main() {
+	signal(SIGINT, signalHandler);
 
 	// Create socket
-	int serverFd = socket(AF_INET, SOCK_STREAM, 0);
+	serverFd = socket(AF_INET, SOCK_STREAM, 0);
 	if (serverFd < 0) {
 		std::cerr << "Error creating server socket." << std::endl;
 		return 1;
@@ -46,18 +61,19 @@ int main() {
 	std::cout << "Server listening from port " << IRCPORT << "..." << std::endl;
 
 
-	// Creating a list of sockets for poll()
-	std::vector<struct pollfd> pollFds;
 
 	//Add server socket to vector
 	struct pollfd serverPollFd = {serverFd, POLLIN, 0};
 	pollFds.push_back(serverPollFd);
 
 	//main while loop
-	while (true) {
+	while (running) {
 		// Call poll to detect events
 		int pollCount = poll(pollFds.data(), pollFds.size(), -1);	// Waits undefinedtly haha
 		if (pollCount < 0) {
+			if (errno == EINTR) {
+				break;
+			}
 			std::cerr << "Error in poll()" << std::endl;
 			break;
 		}
@@ -104,7 +120,8 @@ int main() {
 		}
 	}
 
-	close(serverFd);
+	// close(serverFd);
+	std::cout << "Server shutting down..." << std::endl;
 
 	return 0;
 }

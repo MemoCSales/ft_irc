@@ -7,6 +7,7 @@
 # include <cerrno>
 # include <cstdio>
 # include <sstream>
+# include <csignal>
 // Sockets
 # include <sys/socket.h>
 # include <netinet/in.h>
@@ -16,6 +17,8 @@
 // Container libraries
 # include <vector>
 # include <map>
+# include <set>
+# include <algorithm>
 
 # define IRCPORT 6667
 # define PASSWORD "42"

@@ -124,12 +124,12 @@ void Command::execute(Client& client, const std::string& args) {
 				std::cout << response << std::endl;
 			}
 			// todo: notify other clients that share the same channel indicating that the client has exited the network
-			
+			client.setShouldDisconnect(true);
 			sendReplyOrError(client.getFd(), ERROR(response));
-			close(client.getFd());
+			// close(client.getFd());
 
-			connections.erase(client.getFd());
-			delete &client;
+			// connections.erase(client.getFd());
+			// delete &client;
 
 			std::cout << "QUIT command received. Client disconnected with the reason: " << response << std::endl;
 		}

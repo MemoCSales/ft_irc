@@ -75,6 +75,10 @@ void Client::setAuthenticated(bool flag) {
 	_authenticated = flag;
 }
 
+void Client::setShouldDisconnect(bool flag) {
+	_shouldDisconnect = flag;
+}
+
 // Methods
 bool Client::isAuthenticated() const {
 	return _authenticated;
@@ -107,6 +111,12 @@ void Client::handleRead() {
 		// Send answer to client
 		std::string response = "Message received\n";
 		send(_clientFd, response.c_str(), response.size(), 0);
+
+		if (shouldDiconnect()) {
+			std::cout << "Client disconnected" << std::endl;
+			close(_clientFd);
+			throw std::runtime_error("Client disconnected");
+		}
 	}
 }
 
@@ -128,6 +138,10 @@ bool Client::checkPassCommand(const std::string& message) {
 		return true;
 	}
 	return false;
+}
+
+bool Client::shouldDiconnect() const {
+	return _shouldDisconnect;
 }
 
 std::map<int, Client*> connections;
