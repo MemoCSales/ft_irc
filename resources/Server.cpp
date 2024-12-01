@@ -5,23 +5,24 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
-#include <stdexcept>
+//#include <stdexcept>
 #include <algorithm>
 
 Server::Server(const std::string& ip, uint16_t port) {
+	//socket creation
 	listeningSocket = socket(AF_INET, SOCK_STREAM, 0);
 	if (listeningSocket <= 0) {
 		throw std::runtime_error("Can't create socket");
 	}
-
+	//server address setup
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_port = htons(port);
 	inet_pton(AF_INET, ip.c_str(), &serverAddr.sin_addr);
-
+	//binds the socket to the specified ip adress and port
 	if (bind(listeningSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) == -1) {
 		throw std::runtime_error("Can't bind to IP/port");
 	}
-
+	//listening for conenction
 	if (listen(listeningSocket, SOMAXCONN) == -1) {
 		throw std::runtime_error("Can't listen");
 	}
