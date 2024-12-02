@@ -15,8 +15,11 @@
 #include <csignal>
 #include <fstream>
 
+Server* Server::instance = NULL;
+
 Server::Server(int& port, const std::string& password) : password(password)
 {
+	instance = this;
 	try
 	{
 		serverFD = socket(AF_INET, SOCK_STREAM, 0);
@@ -36,6 +39,8 @@ Server::Server(int& port, const std::string& password) : password(password)
 		 * 
 		 */
 		int opt = 1;
+		// | SO_REUSEPORT
+		//if (bind(listeningSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) == -1) {
 		if (setsockopt(serverFD, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 		{
 			throw std::runtime_error("setsockopt(SO_REUSEADDR) failed");
@@ -49,13 +54,15 @@ Server::Server(int& port, const std::string& password) : password(password)
 			throw std::runtime_error("Can't bind to IP/port");
 		}
 
-		if (listen(serverFD, SOMAXCONN) == -1)
-		{
-			throw std::runtime_error("Can't listen");
-		}
-		
 		char ip[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &serverAddress.sin_addr, ip, INET_ADDRSTRLEN);
+		if (listen(serverFD, SOMAXCONN) == -1)
+		{
+			std::stringstream ss;
+
+			ss << "Server " << ip << ":" << port << " can't listen" << std::endl;
+			throw std::runtime_error(ss.str());
+		}
 		std::cout << "Server listening on " << ip << ":" << port << "\n";
 
 		setNonBlocking(serverFD);
@@ -139,70 +146,31 @@ void Server::handleNewConnection()
 
 void Server::handleClient(int clientFD)
 {
-	char buffer[MAX_BUFFER];
-	while (true)
+	try
 	{
-		try
+		while (true)
 		{
-			int nbytes = recv(clientFD, buffer, sizeof(buffer) - 1, 0);
-			if (nbytes < 0)
-			{
-				if (errno == EAGAIN || errno == EWOULDBLOCK)
-				{
-					continue; // No data available, continue the loop
-				}
-				else
-				{
-					perror("recv");
-					close(clientFD);
-
-					pthread_mutex_lock(&clientsMutex);
-					delete clients[clientFD];
-					clients.erase(clientFD);
-					pthread_mutex_unlock(&clientsMutex);
-
-					break;
-				}
-			}
-			else if (nbytes == 0)
-			{
-				close(clientFD);
-
-				pthread_mutex_lock(&clientsMutex);
-				delete clients[clientFD];
-				clients.erase(clientFD);
-				pthread_mutex_unlock(&clientsMutex);
-
-				break;
-			}
-			buffer[nbytes] = '\0';
-
 			pthread_mutex_lock(&clientsMutex);
-			ClientsIte it = clients.find(clientFD);
+			std::map<int, Client*>::iterator it = clients.find(clientFD);
 			if (it != clients.end())
 			{
-				it->second->buffer += buffer;
-
-				// Process commands
-				size_t pos;
-				while ((pos = it->second->buffer.find("\r\n")) != std::string::npos)
+				try {
+					it->second->handleRead();
+				} catch (const std::runtime_error& e)
 				{
-					std::string command = it->second->buffer.substr(0, pos);
-					it->second->buffer.erase(0, pos + 2);
-					std::cout << "Received command from " << clientFD << ": " << command << std::endl;
-
-					pthread_mutex_lock(&channelsMutex);
-					Command::handleCommand(command, it->second, channels);
-					pthread_mutex_unlock(&channelsMutex);
+					std::cerr << "Client " << clientFD << " error: " << e.what() << std::endl;
+					pthread_mutex_unlock(&clientsMutex);
+					throw; // Re-throw to handle cleanup outside the loop
 				}
 			}
 			pthread_mutex_unlock(&clientsMutex);
 		}
-		catch (const std::exception& e)
-		{
-			std::cerr << "Error handling client: " << e.what() << std::endl;
-			break;
-		}
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << "Error handling client: " << e.what() << std::endl;
+		close(clientFD);
+		removeClient(clientFD);
 	}
 }
 
@@ -212,8 +180,8 @@ void Server::run()
 	{
 		try
 		{
-			int poll_count = poll(&pollFDs[0], pollFDs.size(), -1);
-			if (poll_count < 0)
+			int pollCount = poll(pollFDs.data(), pollFDs.size(), -1);
+			if (pollCount < 0)
 			{
 				throw std::runtime_error("Poll failed: " + std::string(strerror(errno)));
 			}
@@ -243,7 +211,28 @@ void Server::setupSignalHandlers()
 void Server::signalHandler(int signum)
 {
 	std::cout << "Interrupt signal (" << signum << ") received. Closing server socket." << std::endl;
+
+	// Access the server instance
+	Server* server = Server::getInstance();
+
+	// Send a message to each client
+	pthread_mutex_lock(&server->clientsMutex);
+	for (ClientsIte it = server->clients.begin(); it != server->clients.end(); ++it)
+	{
+		it->second->sendMessage("Server is shutting down.\n");
+	}
+	pthread_mutex_unlock(&server->clientsMutex);
+
+	// Close the server socket
+	close(server->serverFD);
+
+	// Exit the program
 	exit(signum);
+}
+
+Server* Server::getInstance()
+{
+	return instance;
 }
 
 void Server::createLockFile()
@@ -259,4 +248,16 @@ void Server::createLockFile()
 void Server::removeLockFile()
 {
 	std::remove(lockFilePath.c_str());
+}
+
+void Server::removeClient(int clientFD)
+{
+	pthread_mutex_lock(&clientsMutex);
+	ClientsIte it = clients.find(clientFD);
+	if (it != clients.end())
+	{
+		delete it->second;
+		clients.erase(it);
+	}
+	pthread_mutex_unlock(&clientsMutex);
 }
