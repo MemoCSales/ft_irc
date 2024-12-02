@@ -1,11 +1,10 @@
 ifneq ($(shell test -d .settings && echo yes),)
 include .settings/Makefile
 endif
-#git submodule foreach 'cd $(git rev-parse --show-toplevel) && echo $(pwd)/$sm_path/.git/hooks' | tail -n 1
 #------ TARGET ------#
 NAME		:= ircserv
 #------ WFLAGS ------#
-D_FLAGS		= -Wall -Wextra -std=c++98 -Werror -Wshadow #-pg #-Wno-unused-function -Wunused
+D_FLAGS		= -Wall -Wextra -std=c++98 -Werror #-Wshadow #-pg #-Wno-unused-function -Wunused
 INCLUDE_DIRS := $(shell find include -type d 2>/dev/null)
 INC := $(addprefix -I,$(INCLUDE_DIRS))
 #------ SRC FILES & DIRECTORIES ------#
@@ -35,10 +34,8 @@ CXX			= g++
 DEBUG_DIR	:= $(NAME).dSYM
 OBJS := $(addprefix $(BUILD_DIR), $(notdir $(SRC:%.cpp=%.o)))
 #------ CODE FOR OBJECT FILES ------#
-# The `vpath` directive in a Makefile is used to specify a list of
-# directories that `make` should search when it's looking for
-# prerequisites. 
-vpath %.cpp $(sort $(dir $(SRC)))
+
+vpath %.cpp $(sort $(dir $(SRC))) #  list of directories that `make` should search when it's looking for prerequisites. 
 DEPS		:= $(OBJS:.o=.d)
 -include $(DEPS) # to include in compilation
 D_FLAGS		+= -O0 -g3 #-Og optimization + good debuggin experience
@@ -54,7 +51,6 @@ D_FLAGS		+= -fno-omit-frame-pointer
 
 else
 OBJS		:= $(SRC)
-# D_FLAGS		+= -Werror 
 endif
 # MAKEFLAGS	+= -j4 #--debug #// -j for multinodes
 ifeq ($(S), 1)
@@ -123,6 +119,7 @@ re: fclean all
 
 # Memmory leaks
 # ATTENTION !!!!!!!!!!!!!!  USE WITH S=0 !
+## do not use yet as it does not handle 
 val: $(NAME)
 	@echo $(RED) $(VALGRIND) ./$(NAME) $(shell echo $(num)) $(E_NC) "\n"
 	@$(VALGRIND) ./$(NAME) $(shell echo "$(num)"); echo
@@ -140,47 +137,35 @@ check:
 		echo  $(f) [$(GREEN) OK $(E_NC)]; \
 	fi
 
-t1: $(NAME)
-	@echo $(BOLD) $(CYAN) ./$(NAME) 6667 1234 "$(i)" $(E_NC) "\n"; \
+server: $(NAME)
+	@port="6667"; \
+	pass="42";\
+	echo $(BOLD) $(CYAN) ./$(NAME) $$port $$pass $(E_NC) "\n"; \
 	if [ "$(S)" = "0" ]; then \
 		echo $(E_NC); $(MAKE) -C . val; \
 	else \
 		if [ -z "$(i)" ]; then \
-			echo $(E_NC); ./$(NAME) 6667 1234 ; \
+			echo $(E_NC); ./$(NAME) $$port $$pass; \
 		else \
 			echo $(E_NC); ./$(NAME) $(i); \
 		fi; \
 	fi
-test: $(NAME)
-	@echo $(BOLD) $(CYAN) ./$(NAME) "$(i)" $(E_NC) "\n"; \
-	if [ "$(S)" = "0" ]; then \
-		echo $(E_NC); $(MAKE) -C . val; \
-	else \
-		if [ -z "$(i)" ]; then \
-			echo $(E_NC); ./$(NAME) ; \
-		else \
-			echo $(E_NC); ./$(NAME) $(i); \
-		fi; \
-	fi
-run:$(NAME)
-	@range=0; \
-	if [ -z "$(i)" ]; then \
-		range=20; \
-	else \
-		range=$(i); \
-	fi; \
-	max=$$(shuf -i 1-$$range -n 1); \
-	echo "elements: $$max"; \
-	num=$$(shuf -i 0-10000 -n $$max); \
-	echo $(BOLD) $(CYAN) ./$(NAME) $$num $(E_NC) "\n"; \
-	if [ "$(S)" = "0" ]; then \
-		echo $(E_NC); $(MAKE) -C . val num="'$$num'"; \
-	else \
-		echo $(E_NC); ./$(NAME) $$num; \
-	fi; \
-	echo "------------------------------------\n";
 
-# #-------------------- GIT UTILS ----------------------------#
+client: $(NAME)
+	@address="localhost"; \
+	port="6667";\
+	echo $(BOLD) $(CYAN) nc -C $$address $$port $(E_NC) "\n"; \
+	if [ "$(S)" = "0" ]; then \
+		echo $(E_NC); $(MAKE) -C . val; \
+	else \
+		if [ -z "$(i)" ]; then \
+			echo $(E_NC); nc -C $$address $$port ; \
+		else \
+			echo $(E_NC); ./$(NAME) $(i); \
+		fi; \
+	fi
+
+# #-------------------- UTILS ----------------------------#
 info:
 	@echo GIT_REPO:  $(CYAN) $(GIT_REPO) $(E_NC)
 	@echo PROJECT_ROOT: $(CYAN) $(PROJECT_ROOT) $(E_NC)
@@ -193,56 +178,8 @@ info:
 	@echo $(BLUE)"S = $(S)" $(E_NC)
 	@echo $(BLUE)"V = $(V)" $(E_NC)
 	@echo $(BLUE)"DEPENDENCIES =" $(DEPENDENCIES) $(E_NC)
-# change to work with branch or folder 
-testAll:
-	@for dir in $(DIRS); do \
-		$(MAKE) -C $$dir D=$(D) test; \
-	done
-cleanAll:
-	@for dir in $(DIRS); do \
-		$(MAKE) -C $$dir fclean; \
-	done
-# gAdd:
-# 	@echo $(CYAN) && git add $(PROJECT_ROOT)
-# gCommit:
-# 	@echo $(GREEN) && git commit -e ; \
-# 	ret=$$?; \
-# 	if [ $$ret -ne 0 ]; then \
-# 		echo $(RED) "Error in commit message"; \
-# 		exit 1; \
-# 	fi
-# gPush:
-# 	@echo $(YELLOW) && git push ; \
-# 	ret=$$? ; \
-# 	if [ $$ret -ne 0 ]; then \
-# 		echo $(RED) "git push failed, setting upstream branch" $(YELLOW) && \
-# 		git push --set-upstream origin $(shell git branch --show-current) || \
-# 		if [ $$? -ne 0 ]; then \
-# 			echo $(RED) "git push --set-upstream failed with error" $(E_NC); \
-# 			exit 1; \
-# 		fi \
-# 	fi
-# git: fclean
-# 	@if [ -f "$(GIT_REPO)/Makefile" ] && [ -d "$(GIT_REPO)/.git" ]; then \
-# 		$(MAKE) -C "$(GIT_REPO)" git; \
-# 	else \
-# 		$(MAKE) -C "$(PROJECT_ROOT)" cleanAll gAdd gCommit gPush; \
-# 	fi
-quick: cleanAll
-	@echo $(GREEN) && git commit -am "* Update in files: "; \
-	ret=$$? ; \
-	if [ $$ret -ne 0 ]; then \
-		exit 1; \
-	else \
-		$(MAKE) -C . gPush; \
-	fi
-soft:
-	@if [ -f "$(GIT_REPO)/Makefile" ]; then	\
-		$(MAKE) -C $(GIT_REPO) soft || \
-		if [ $$? -ne 0 ]; then \
-			echo $(RED) GIT_REPO not found $(E_NC); \
-		fi \
-	fi
+
+
 cpp: # Usage: make cpp h=filename
 	@if [ ! -d "include" ]; then \
 		mkdir include; \
@@ -347,14 +284,13 @@ FLAGS:
 	S -> sanatizer information (default: -1)
 
 Example:
-$(D_WHITE)[test]
-$(D_PURPLE)$> make D=0 test
+$(D_WHITE)[run server]
+$(D_PURPLE)$> make server
+$(D_WHITE)[run client]
+$(D_PURPLE)$> make client
 $(D_WHITE)[test + DEBUG]
-$(D_PURPLE)$> make D=1 test
-$(D_WHITE)[DEBUG + Valgrind]
-$(D_PURPLE)$> make D=1 S=0 re val
-$(D_WHITE)[DEBUG + Sanitizer]
-$(D_PURPLE)$> make D=1 S=1 re test
+$(D_PURPLE)$> make D=1 server || client
+
 
 endef
 export MANUAL

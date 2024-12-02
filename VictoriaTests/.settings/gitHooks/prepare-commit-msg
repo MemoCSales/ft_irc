@@ -80,7 +80,7 @@ fi
 echo -e "$SUBMODULE_COMMIT_MESSAGE test"
 # 
 
-# -------------------------------------------------------------------- 
+# --------------------------------------------------------------------
 # This script is a Git hook for preparing commit messages.
 # It performs the following actions:
 # 1. Retrieves the remote URL of the current repository.
@@ -101,31 +101,29 @@ REPO_NAME=$(echo "$REMOTE_URL" | sed -n 's#.*/\([^/]*\)/\([^/]*\)\.git#\2#p')
 # Get the current user's GitHub username
 USER_NAME=$(git config --get user.name)
 
-# Check if the repository is a fork
-IS_FORK=$(curl -s "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME" | jq '.fork')
-
-# if [ "$IS_FORK" = "true" ]; then
-# 	echo "This is a forked repository."
-# 	# Handle forked repository logic here
-# else
-# 	echo "This is not a forked repository."
-# 	# Handle non-forked repository logic here
-# fi
 
 # Check if the current user is the owner of the repository
-if [ "$USER_NAME" = "$REPO_OWNER" ] || [ "$USER_NAME" = "lilizarr" ]; then
-	regex_pattern="~ Autor: Victoria Lizarraga (@VictoriaLizCor / @lilizarr) ~"
+if [ "$USER_NAME" = "VictoriaLizCor" ] || [ "$USER_NAME" = "lilizarr" ]; then
+	regex_pattern="~ Autor: Victoria Lizarraga (@VictoriaLizCor / @$USER_NAME) ~"
 	if [[ ! $message =~ $regex_pattern ]]; then
 		echo $regex_pattern >> "$COMMIT_MSG_FILE"
 fi
-else
-	regex_pattern="~ Autor: @$USER_NAME ~" >> "$COMMIT_MSG_FILE"
+
+if [ "$USER_NAME" = "@mcruz-sa" ]; then
+	regex_pattern="~ Autor: Manuel Guillermo Cruz(@$USER_NAME) ~"
+	if [[ ! $message =~ $regex_pattern ]]; then
+		echo $regex_pattern >> "$COMMIT_MSG_FILE"
 fi
-echo -e "~ Autor: @$USER_NAME ~"
-echo $IS_FORK
-echo $REMOTE_URL
-echo $REPO_NAME
-echo $USER_NAME
-echo $REPO_OWNER
+
+if [ "$USER_NAME" = "@msacaliu" ]; then
+	regex_pattern="~ Autor: Marian Sacaliuc(@$USER_NAME) ~"
+	if [[ ! $message =~ $regex_pattern ]]; then
+		echo $regex_pattern >> "$COMMIT_MSG_FILE"
+fi
+
+#echo $REMOTE_URL
+#echo $REPO_NAME
+#echo $USER_NAME
+#echo $REPO_OWNER
 
 

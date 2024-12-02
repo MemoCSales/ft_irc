@@ -11,6 +11,8 @@
 
 * change nonblocking connection to check flags 0 and use return value from fcntl
 * change from read() to recv()
+* Check if ip and port are restricted values or allowed, set up warnings?
+
 
 
 # NOTES

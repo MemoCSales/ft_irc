@@ -56,7 +56,6 @@ show-commit-msg:
 
 commit-template:
 	@git config --local commit.template $(HOOKS).gitmessage
-	@echo $(HOOKS)
 	@echo "commit-msg hook installed."
 # Hook installation
 pre-commit:
@@ -73,44 +72,6 @@ show-pwd:
 
 set-hooks: show-pwd pre-commit commit-msg post-merge
 
-# commit-msg:
-# 	@file="commit-msg"; \
-# 	hooks=$(GIT-HOOKS); \
-# 	toSet=$$(echo $$hooks/$$file | awk -F'/' '{print $$(NF-3)"/"$$(NF-2)"/"$$(NF-1)"/"$$NF}'); \
-# 	if [ "$(CURRENT_PATH)" = "$(SETTINGS)" ]; then \
-# 		hooks=$(SETTINGS-HOOKS); \
-# 		toSet=$$(echo $$hooks/$$file | awk -F'/' '{print $$(NF-4)"/"$$(NF-3)"/"$$(NF-2)"/"$$(NF-1)"/"$$NF}'); \
-# 	fi; \
-# 	echo Setting:$(PURPLE) $$toSet $(E_NC); \
-# 	cp $(HOOKS)$$file $$hooks; \
-# 	chmod +x $$hooks/$$file; \
-# 	if [ $$? -ne 0 ]; then \
-# 		echo $(RED)"Error: $$file hook not installed"$(E_NC); \
-# 		exit 1; \
-# 	fi; \
-# 	echo $(GREEN)"$$file hook installed."$(E_NC)
-
-# post-merge:
-# 	@file="post-merge"; \
-# 	hooks=$(GIT-HOOKS); \
-# 	toSet=$$(echo $$hooks/$$file | awk -F'/' '{print $$(NF-3)"/"$$(NF-2)"/"$$(NF-1)"/"$$NF}'); \
-# 	if [ "$(CURRENT_PATH)" = "$(SETTINGS)" ]; then \
-# 		hooks=$(SETTINGS-HOOKS); \
-# 		toSet=$$(echo $$hooks/$$file | awk -F'/' '{print $$(NF-4)"/"$$(NF-3)"/"$$(NF-2)"/"$$(NF-1)"/"$$NF}'); \
-# 	fi; \
-# 	echo Setting:$(PURPLE) $$toSet $(E_NC); \
-# 	cp $(HOOKS)$$file $$hooks; \
-# 	chmod +x $$hooks/$$file; \
-# 	if [ $$? -ne 0 ]; then \
-# 		echo $(RED)"Error: $$file hook not installed"$(E_NC); \
-# 		exit 1; \
-# 	fi; \
-# 	echo $(GREEN)"$$file hook installed."$(E_NC)
-
-# show-pwd:
-# 	@echo PWD:$(YELLOW) $(CURRENT_PATH) $(E_NC)
-
-# set-hooks: show-pwd pre-commit commit-msg post-merge
 #------------------------- submodules
 fetch-settings:
 	@git submodule update --remote
@@ -168,35 +129,35 @@ git: show-pwd
 		$(MAKE) -C . gPush; \
 	fi
 
-# quick: cleanAll
-# 	@echo $(GREEN) && git commit -am "* Update in files: "; \
-# 	ret=$$? ; \
-# 	if [ $$ret -ne 0 ]; then \
-# 		exit 1; \
-# 	else \
-# 		$(MAKE) -C . gPush; \
-# 	fi
+quick: cleanAll
+	@echo $(GREEN) && git commit -am "* Update in files: "; \
+	ret=$$? ; \
+	if [ $$ret -ne 0 ]; then \
+		exit 1; \
+	else \
+		$(MAKE) -C . gPush; \
+	fi
 
-# # Avoid last commit message
-# soft:
-# 	@echo $(GREEN) "\nLast 10 commits:" $(E_NC)
-# 	@$(MAKE) plog && echo 
-# 	@read -p "Do you want to reset the last commit? (y/n) " yn; \
-# 	case $$yn in \
-# 		[Yy]* ) git reset --soft HEAD~1;\
-# 		git push origin --force-with-lease $(shell git branch --show-current) ;\
-# 		echo $(RED) "Last commit reset" $(E_NC) ;; \
-# 		* ) echo $(MAG) "No changes made" $(E_NC) ;; \
-# 	esac
-# amend:
-# 	@echo $(CYAN) && git commit --amend; \
-# 	result=$$?; \
-# 	if [ $$result -ne 0 ]; then \
-# 		echo $(RED) "The amend commit message was not modified."; \
-# 		exit 1; \
-# 	else \
-# 		echo $(YELLOW) && git push origin --force-with-lease $(shell git branch --show-current); \
-# 		exit 0; \
-# 	fi
+# Avoid last commit message
+soft:
+	@echo $(GREEN) "\nLast 10 commits:" $(E_NC)
+	@$(MAKE) plog && echo 
+	@read -p "Do you want to reset the last commit? (y/n) " yn; \
+	case $$yn in \
+		[Yy]* ) git reset --soft HEAD~1;\
+		git push origin --force-with-lease $(shell git branch --show-current) ;\
+		echo $(RED) "Last commit reset" $(E_NC) ;; \
+		* ) echo $(MAG) "No changes made" $(E_NC) ;; \
+	esac
+amend:
+	@echo $(CYAN) && git commit --amend; \
+	result=$$?; \
+	if [ $$result -ne 0 ]; then \
+		echo $(RED) "The amend commit message was not modified."; \
+		exit 1; \
+	else \
+		echo $(YELLOW) && git push origin --force-with-lease $(shell git branch --show-current); \
+		exit 0; \
+	fi
 
 .PHONY: all .gitconfig show-commit-msg commit-template pre-commit commit-msg post-merge show-pwd set-hooks fetch-settings update-settings .vscode gAdd gCommit gPush git-sub git dirs settings
