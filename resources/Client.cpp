@@ -106,6 +106,12 @@ void	Client::chanelCommands(std::string message)
 	else if (message.rfind("/exit", 0) == 0) {
 		this->exitChanel();
 	}
+	else if (message.rfind("/invite", 0) == 0) {
+		server->sendChannelInvitation(currentChannel->getName());
+	}
+	else if (message.rfind("/mode", 0) == 0) {
+		std::cout << "mode active" << std::endl;
+	}
 	else {
 		currentChannel->broadcast(message, this);
 	}
@@ -147,15 +153,31 @@ void	Client::setPass(std::string message) {
 }
 
 
-void	Client::exitChanel() {
+void	Client::exitChanel() { //still need to check if the last member exited the chanel
 	if (currentChannel) {
 		currentChannel->removeMember(this);
+//		if(this->_isOperator) // might not need this, i don t know yet
+//			currentChannel->removeOperator(this);
 	}
 	currentChannel = nullptr;
 	_isOperator = false;
 	std::string response = "Exited channel.\n";
 	send(clientSocket, response.c_str(), response.size() + 1, 0);
 }
+
+
+void	Client::sendInvitation(std::string channelName) { // just a prototype
+	std::string response = "You have been invited to join channel: " + channelName + "\n";
+	send(clientSocket, response.c_str(), response.size() + 1, 0);
+
+}
+
+void	Client::modeCommands(std::string message) {
+	(void)message;
+	std::cout <<"entered mode operator something" << std::endl;
+}
+
+
 
 void Client::setCurrentChannel(Chanel* channel) {
 	this->currentChannel = channel;

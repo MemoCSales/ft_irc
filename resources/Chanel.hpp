@@ -27,6 +27,7 @@ public:
 	void	removeMember(Client* client);
 	void	broadcast(const std::string& message, Client* sender);
 	void	addOperator(Client *client);
+	void	removeOperator(Client *client);
 
 			//getters
 
@@ -34,9 +35,11 @@ public:
 	bool 		getStatus() {return _created;}
 	std::string getPassword(){return _passWord;}
 	bool 		getPassFlag(){return _passFlag;}
+	const 		std::vector<Client*>& getMembers() const { return members; } // New function to get members
 
 
-			// setters
+
+	// setters
 	void	setName(std::string chanelName){_name = chanelName ;}
 	void	setStatus(bool status){_created = status;}
 	void	setPassword(std::string passWord){_passWord = passWord;}

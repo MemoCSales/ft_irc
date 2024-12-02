@@ -24,6 +24,13 @@ void Chanel::removeMember(Client* client) {
 	}
 }
 
+void Chanel::removeOperator(Client *client) {
+	std::lock_guard<std::mutex> lock(channelMutex);
+	auto it = std::remove(operators.begin(), operators.end(), client);
+	if(it != operators.end())
+		operators.erase(it,operators.end());
+}
+
 //The `Chanel::broadcast` function sends a message to all members of the channel
 //except the sender. It uses a mutex to ensure thread safety while accessing the
 //list of members. For each member, it checks if the member is not the sender and

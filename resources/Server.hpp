@@ -37,6 +37,9 @@ public:
 	// Channel management
 	Chanel* getOrCreateChannel(const std::string& name);
 	void removeChannel(const std::string& name);
+
+
+	void sendChannelInvitation(const std::string& channelName);
 };
 
 #endif

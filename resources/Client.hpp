@@ -31,6 +31,8 @@ public:
 	void	chanelCommands(std::string message);
 	void	kickCommand(std::string message);
 	void 	setPass(std::string message);
+	void	modeCommands(std::string message);
+	void	sendInvitation(std::string channelName);
 
 
 };
