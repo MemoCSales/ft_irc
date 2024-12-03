@@ -36,6 +36,7 @@ public:
 	void removeClient(Client* client);
 	// Channel management
 	Chanel* getOrCreateChannel(const std::string& name);
+	Chanel* getChannel(const std::string& name);
 	void removeChannel(const std::string& name);
 
 

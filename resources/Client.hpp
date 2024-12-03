@@ -28,8 +28,9 @@ public:
 	////just for  testing/debuging ///
 	void	setCurrentChannel(Chanel *chanel);
 	// commands
-	void	chanelCommands(std::string message);
-	void	kickCommand(std::string message);
+
+	void 	chanelCommands(std::istringstream& stream);
+	void 	kickCommand(const std::string& channelName, const std::string& targetName);
 	void 	setPass(std::string message);
 	void	modeCommands(std::string message);
 	void	sendInvitation(std::string channelName);

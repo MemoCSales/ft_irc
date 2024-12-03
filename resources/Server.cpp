@@ -99,6 +99,15 @@ Chanel* Server::getOrCreateChannel(const std::string& name) {
 	return channels[name].get();
 }
 
+Chanel* Server::getChannel(const std::string& name) {
+	std::lock_guard<std::mutex> lock(channelMutex);
+	auto it = channels.find(name);
+	if (it != channels.end()) {
+		return it->second.get();
+	}
+	return nullptr;
+}
+
 void Server::removeChannel(const std::string& name) {
 	std::lock_guard<std::mutex> lock(channelMutex);
 	channels.erase(name);

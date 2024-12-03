@@ -36,16 +36,17 @@ void Chanel::removeOperator(Client *client) {
 //list of members. For each member, it checks if the member is not the sender and
 //then sends the message to that member's socket.
 
+
+
 void Chanel::broadcast(const std::string& message, Client* sender) {
 	std::lock_guard<std::mutex> lock(channelMutex);
-	std::string messageWithSender = "[" + std::to_string(reinterpret_cast<uintptr_t>(sender)) + "]--> " + message;
+	std::string messageWithSender = "[" + _name + "][" + std::to_string(reinterpret_cast<uintptr_t>(sender)) + "] " + message + "\n";
 	for (Client* member : members) {
-		if (member != sender) { // Don't send the message back to the sender
+		if (member != sender) {
 			send(member->getSocket(), messageWithSender.c_str(), messageWithSender.size() + 1, 0);
 		}
 	}
 }
-
 
 
 /// ------------------testing---------------/////
