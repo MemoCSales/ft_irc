@@ -95,25 +95,25 @@ if [ "$USER_NAME" = "VictoriaLizCor" ] || [ "$USER_NAME" = "lilizarr" ]; then
 	if [[ ! $message =~ $regex_pattern ]]; then
 		echo $regex_pattern >> "$COMMIT_MSG_FILE"
 	fi
-	regex_pattern="Collaborators: @msacaliu, @mcruz-sa"
+	regex_pattern="Collaborators: @msacaliu, @MemoCSales"
 	echo $regex_pattern >> "$COMMIT_MSG_FILE"
 fi
 
-if [ "$USER_NAME" = "@mcruz-sa" ]; then
-	regex_pattern="~ Autor: Manuel Guillermo Cruz(@$USER_NAME) ~"
+if [ "$USER_NAME" = "MemoCSales" ] || [ "$USER_NAME" = "@mcruz-sa" ]; then
+	regex_pattern="~ Autor: Manuel Guillermo Cruz(@MemoCSales) ~"
 	if [[ ! $message =~ $regex_pattern ]]; then
 		echo $regex_pattern >> "$COMMIT_MSG_FILE"
 	fi
-	regex_pattern="Collaborators: @msacaliu, @lilizarr"
+	regex_pattern="Collaborators: @Gaspar24, @VictoriaLizCor"
 	echo $regex_pattern >> "$COMMIT_MSG_FILE"
 fi
 
-if [ "$USER_NAME" = "@msacaliu" ]; then
-	regex_pattern="~ Autor: Marian Sacaliuc(@$USER_NAME) ~"
+if [ "$USER_NAME" = "Gaspar24" ] || [ "$USER_NAME" = "@msacaliu" ]; then
+	regex_pattern="~ Autor: Marian Sacaliuc(@Gaspar24) ~"
 	if [[ ! $message =~ $regex_pattern ]]; then
 		echo $regex_pattern >> "$COMMIT_MSG_FILE"
 	fi
-	regex_pattern="Collaborators: @mcruz-sa, @lilizarr"
+	regex_pattern="Collaborators: @MemoCSales, @VictoriaLizCor"
 	echo $regex_pattern >> "$COMMIT_MSG_FILE"
 fi
 
