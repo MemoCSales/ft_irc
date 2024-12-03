@@ -59,6 +59,6 @@ obj*/
 
 *.DS_Store
 
-
+ircserv
 #ignore .settings .vscode
 .settings/.vscode
