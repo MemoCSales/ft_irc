@@ -20,6 +20,7 @@ if git show-ref --verify --quiet "refs/remotes/origin/$current_branch"; then
 else
 	echo -e "\033[0;32mBranch does not exist on remote. Proceeding with commit. \n\033[m"
 fi
+
 #echo -e "\033[0;34m----\n$commit_msg\n---------\n\033[m"
 LINES=()
 while IFS= read -r line; do
@@ -32,32 +33,39 @@ second_line=${LINES[1]}
 # regex_pattern="^\* (Fix|Update in files|Docs|Feat|Style|Test|Refactor): (.*)"
 regex_pattern="^\*\s*(.*?)\s*:"
 
-
 # Check if the second line matches the regex pattern
 if [[ $second_line =~ $regex_pattern ]]; then
+	# Extract the matched pattern
+	matched_pattern="${BASH_REMATCH[0]}"
 	# Extract the string after the pattern
-	string_after_prefix="${BASH_REMATCH[1]}"
-	#echo -e "BASH_REMATCH[0]: ${BASH_REMATCH[0]}\n\n"
-	#echo -e "PREFIX: $string_after_prefix \n\n"
-
+	string_after_prefix="${second_line#"$matched_pattern"}"
+		
+	#echo -e "Matched pattern: ${matched_pattern}\n"
+	#echo -e "Remaining string: ${string_after_prefix}\n"
+	#echo -e "second_line: $second_line \n"
+	#echo -e "string_after_prefix:$string_after_prefix"
 	# Check if the string after the prefix is empty
-	if [ -z "$string_after_prefix" ]; then
+	if [[ -z "$string_after_prefix" || "$string_after_prefix" =~ ^[[:space:]]*$ ]]; then
 		# Check if there is a third line with a message
 		if [ ${#LINES[@]} -gt 2 ]; then
 			third_line=${LINES[2]}
-			if [ -z "$third_line" ]; then
-				echo -e "\033[0;35mNo message after '${BASH_REMATCH[0]}'.\n \033[m"
+			#echo -e "third_line: $third_line"
+			if [[ -z "$third_line" || "$third_line" =~ ^[[:space:]]*$ || "$third_line" =~ ^# ]]; then
+				echo -e "\033[0;35mNo message after '$matched_pattern'.\n \033[m"
 				exit 1
 			fi
 		else
-			echo -e "\033[0;35mNo message after '${BASH_REMATCH[0]}'.\n \033[m"
+			echo -e "\033[0;35mNo message after '$matched_pattern'.\n \033[m"
 			exit 1
 		fi
 	fi
 	echo -e "\033[0;32mCommit message accepted.\n \033[m"
 	exit 0
 else
+	echo -e "\033[0;35m"
 	echo -e "---\n$second_line\n-----\n"
-	echo -e "\033[0;35mThe second line does not match the specified pattern. \n\n \033[m"
+	echo -e "The second line does not match the specified pattern. \n\n"
+	echo -e " (Fix|Update in files|Docs|Feat|Style|Test|Refactor)"
+	echo -e "\033[m"
 	exit 1
 fi
