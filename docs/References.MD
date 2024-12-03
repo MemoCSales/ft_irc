@@ -160,15 +160,4 @@ Using threads can be a good approach for handling multiple client connections, e
 
 ### Hybrid Approach:
 A hybrid approach can combine the benefits of both threading and non-blocking I/O. For example, you can use a thread pool to handle client connections while using non-blocking I/O to manage the connections within each thread.
-* Feat:         
-        - gitHooks hopefully finally working
-          for installing: use command:
-                >$ make set-hooks    
-          for commiting:
-                >$ make git
-        - server takes clients new connection as threads
-        - broadcasting message when server stops
-         - functors implemented
- * Docs: 
-         gitFixes uploaded
-         .gitignore added
+
