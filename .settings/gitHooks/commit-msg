@@ -7,14 +7,14 @@ commit_msg=$(cat "$COMMIT_MSG_FILE")
 current_branch=$(git symbolic-ref --short HEAD)
 last_commit_msg=$(git log origin/"$current_branch" -1 --pretty=%B)
 
-echo -e "\033[0;33m$last_commit_msg \n\033[m"
+#echo -e "\033[0;33m$last_commit_msg \n\033[m"
 
 # Check if the commit message is the same as the last commit
 if [[ "$commit_msg" =~ "$last_commit_msg" ]]; then
 	echo -e "\033[0;35mNo changes \n \033[m"
 	exit 1
 fi
-echo -e "\033[0;34m----\n$commit_msg\n---------\n\033[m"
+#echo -e "\033[0;34m----\n$commit_msg\n---------\n\033[m"
 LINES=()
 while IFS= read -r line; do
 	LINES+=("$line")
