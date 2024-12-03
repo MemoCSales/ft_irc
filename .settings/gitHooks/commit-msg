@@ -3,16 +3,22 @@ COMMIT_MSG_FILE="$1"
 # Read the commit message from the file
 commit_msg=$(cat "$COMMIT_MSG_FILE")
 
-# Get the last commit message
+# Get the current branch name
 current_branch=$(git symbolic-ref --short HEAD)
-last_commit_msg=$(git log origin/"$current_branch" -1 --pretty=%B)
 
-#echo -e "\033[0;33m$last_commit_msg \n\033[m"
+# Check if the branch exists on the remote
+if git show-ref --verify --quiet "refs/remotes/origin/$current_branch"; then
+	# Get the last commit message from the remote branch
+	last_commit_msg=$(git log origin/"$current_branch" -1 --pretty=%B)
+	#echo -e "\033[0;33m$last_commit_msg \n\033[m"
 
-# Check if the commit message is the same as the last commit
-if [[ "$commit_msg" =~ "$last_commit_msg" ]]; then
-	echo -e "\033[0;35mNo changes \n \033[m"
-	exit 1
+	# Check if the commit message is the same as the last commit
+	if [[ "$commit_msg" =~ "$last_commit_msg" ]]; then
+		echo -e "\033[0;35mNo changes \n \033[m"
+		exit 1
+	fi
+else
+	echo -e "\033[0;32mBranch does not exist on remote. Proceeding with commit. \n\033[m"
 fi
 #echo -e "\033[0;34m----\n$commit_msg\n---------\n\033[m"
 LINES=()
