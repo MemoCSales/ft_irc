@@ -20,6 +20,7 @@ if git show-ref --verify --quiet "refs/remotes/origin/$current_branch"; then
 else
 	echo -e "\033[0;32mBranch does not exist on remote. Proceeding with commit. \n\033[m"
 fi
+
 #echo -e "\033[0;34m----\n$commit_msg\n---------\n\033[m"
 LINES=()
 while IFS= read -r line; do
