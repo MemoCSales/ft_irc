@@ -54,23 +54,8 @@ show-pwd:
 
 set-hooks: show-pwd commit-template pre-commit commit-msg post-merge
 
-#------------------------- submodules
-fetch-settings:
-	@git submodule update --remote
-	@echo "Submodule updated to the latest commit."
-
-update-settings: show-pwd
-	@if [ "$(CURRENT_PATH)" != "$(SETTINGS)" ]; then \
-		cd $(SETTINGS); \
-	fi && \
-	$(MAKE) -C . git
-
-#@git add $(SETTINGS)
 
 #-------------------------VS Code
-.vscode:
-	@cp -r $(SETTINGS).vscode .
-
 gAdd:
 	@echo $(CYAN) && git add .
 
@@ -92,18 +77,8 @@ gPush:
 		fi \
 	fi
 
-check-settings:
-	@if [ "$(CURRENT_PATH)" != "$(SETTINGS)" ]; then \
-		echo "Checking if submodule was modified..."; \
-		if [ -n "$$(git diff --submodule)" ]; then \
-			$(MAKE) -C . update-settings; \
-			SUBMODULE_COMMIT_MESSAGE=$$(git log -1 --pretty=%B); \
-			echo "$$SUBMODULE_COMMIT_MESSAGE" && cd .. > /dev/null; \
-		fi \
-	fi
-
 git: show-pwd
-	@$(MAKE) -C . check-settings gAdd gCommit; \
+	@$(MAKE) -C . gAdd gCommit; \
 	ret=$$?; \
 	if [ $$ret -ne 0 ]; then \
 		exit 1; \
@@ -131,6 +106,7 @@ soft:
 		echo $(RED) "Last commit reset" $(E_NC) ;; \
 		* ) echo $(MAG) "No changes made" $(E_NC) ;; \
 	esac
+
 amend:
 	@echo $(CYAN) && git commit --amend; \
 	result=$$?; \

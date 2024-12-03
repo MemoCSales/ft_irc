@@ -4,16 +4,17 @@ COMMIT_MSG_FILE="$1"
 commit_msg=$(cat "$COMMIT_MSG_FILE")
 
 # Get the last commit message
-last_commit_msg=$(git log -1 --pretty=%B)
+current_branch=$(git symbolic-ref --short HEAD)
+last_commit_msg=$(git log origin/"$current_branch" -1 --pretty=%B)
 
-# echo -e "$last_commit_msg \n"
+echo -e "\033[0;33m$last_commit_msg \n\033[m"
+
 # Check if the commit message is the same as the last commit
 if [[ "$commit_msg" =~ "$last_commit_msg" ]]; then
 	echo -e "\033[0;35mNo changes \n \033[m"
 	exit 1
 fi
-echo -e "----\n$commit_msg \n---------\n"
-
+echo -e "\033[0;34m----\n$commit_msg\n---------\n\033[m"
 LINES=()
 while IFS= read -r line; do
 	LINES+=("$line")
@@ -25,22 +26,29 @@ second_line=${LINES[1]}
 # regex_pattern="^\* (Fix|Update in files|Docs|Feat|Style|Test|Refactor): (.*)"
 regex_pattern="^\*\s*(.*?)\s*:"
 
+
 # Check if the second line matches the regex pattern
 if [[ $second_line =~ $regex_pattern ]]; then
 	# Extract the string after the pattern
-	prefix="${BASH_REMATCH[1]}"
+	string_after_prefix="${BASH_REMATCH[1]}"
 	#echo -e "BASH_REMATCH[0]: ${BASH_REMATCH[0]}\n\n"
-	#echo -e "PREFIX: $prefix \n\n"
-	regex_after_prefix="^\*\s*$prefix\s*:\s*(.*)"
-	if [[ $second_line =~ $regex_after_prefix ]]; then
-		# Extract the string after the prefix
-		string_after_prefix="${BASH_REMATCH[1]}"
-		# echo -e "MSG: $string_after_prefix \n\n"
-		if [ -z "$string_after_prefix" ]; then
-			echo -e "\033[0;35mNo changes after '${BASH_REMATCH[0]}' \n \033[m"
+	#echo -e "PREFIX: $string_after_prefix \n\n"
+
+	# Check if the string after the prefix is empty
+	if [ -z "$string_after_prefix" ]; then
+		# Check if there is a third line with a message
+		if [ ${#LINES[@]} -gt 2 ]; then
+			third_line=${LINES[2]}
+			if [ -z "$third_line" ]; then
+				echo -e "\033[0;35mNo message after '${BASH_REMATCH[0]}'.\n \033[m"
+				exit 1
+			fi
+		else
+			echo -e "\033[0;35mNo message after '${BASH_REMATCH[0]}'.\n \033[m"
 			exit 1
 		fi
 	fi
+	echo -e "\033[0;32mCommit message accepted.\n \033[m"
 	exit 0
 else
 	echo -e "---\n$second_line\n-----\n"

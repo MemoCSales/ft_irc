@@ -95,7 +95,8 @@ if [ "$USER_NAME" = "VictoriaLizCor" ] || [ "$USER_NAME" = "lilizarr" ]; then
 	if [[ ! $message =~ $regex_pattern ]]; then
 		echo $regex_pattern >> "$COMMIT_MSG_FILE"
 	fi
-	regex_pattern="Collaborators:"
+	regex_pattern="Collaborators: @msacaliu, @mcruz-sa"
+	echo $regex_pattern >> "$COMMIT_MSG_FILE"
 fi
 
 if [ "$USER_NAME" = "@mcruz-sa" ]; then
@@ -103,6 +104,8 @@ if [ "$USER_NAME" = "@mcruz-sa" ]; then
 	if [[ ! $message =~ $regex_pattern ]]; then
 		echo $regex_pattern >> "$COMMIT_MSG_FILE"
 	fi
+	regex_pattern="Collaborators: @msacaliu, @lilizarr"
+	echo $regex_pattern >> "$COMMIT_MSG_FILE"
 fi
 
 if [ "$USER_NAME" = "@msacaliu" ]; then
@@ -110,6 +113,8 @@ if [ "$USER_NAME" = "@msacaliu" ]; then
 	if [[ ! $message =~ $regex_pattern ]]; then
 		echo $regex_pattern >> "$COMMIT_MSG_FILE"
 	fi
+	regex_pattern="Collaborators: @mcruz-sa, @lilizarr"
+	echo $regex_pattern >> "$COMMIT_MSG_FILE"
 fi
 
 #echo $REMOTE_URL
