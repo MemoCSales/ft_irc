@@ -10,7 +10,7 @@ current_branch=$(git symbolic-ref --short HEAD)
 if git show-ref --verify --quiet "refs/remotes/origin/$current_branch"; then
 	# Get the last commit message from the remote branch
 	last_commit_msg=$(git log origin/"$current_branch" -1 --pretty=%B)
-	echo -e "\033[0;33m$last_commit_msg \n\033[m"
+	#echo -e "\033[0;33m$last_commit_msg \n\033[m"
 
 	# Check if the commit message is the same as the last commit
 	if [[ "$commit_msg" =~ "$last_commit_msg" ]]; then
