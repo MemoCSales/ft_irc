@@ -166,14 +166,27 @@ client: $(NAME)
 	fi
 test:$(NAME)
 	./testScripts/runClients.sh
-hexChat:$(NAME)
+delUsers:
+	@pgrep -x "hexchat" > /dev/null; \
+	ret=$$?; \
+	if [ $$ret -eq 0 ]; then \
+		echo $(GREEN)"HexChat is running"; \
+	else \
+		echo "$(RED)Deleting usersFile"; \
+		rm -f testScripts/users_created.txt; \
+	fi; \
+	echo $(E_NC)
+hexChat:$(NAME) delUsers
+	python3 testScripts/openHexchat.py 
+msg:$(NAME)
+	python3 testScripts/sendMsg.py
+context:$(NAME) delUsers
+	python3 testScripts/changeConfig.py
 	chmod +r $(PWD)/testScripts/testHexChat.py
 	mkdir -p $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons/
-	cp $(PWD)/testScripts/testHexChat.py $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons/
-#	flatpak run io.github.Hexchat -c "localhost" -p "6667" -n "testUser" -e "join #testChannel" -e "msg #testChannel this is a test"
-	flatpak run io.github.Hexchat --existing --command="py load $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons/testHexChat.py"
-hex:$(NAME)
-	flatpak run io.github.Hexchat --url=irc://localhost:6667 --existing 
+	cp $(PWD)/testScripts/testHexChat.py $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons
+	flatpak run io.github.Hexchat --command="py load ~/.var/app/io.github.Hexchat/config/hexchat/addons/testHexChat.py"
+
 
 # #-------------------- UTILS ----------------------------#
 info:
