@@ -261,3 +261,15 @@ void Server::removeClient(int clientFD)
 	}
 	pthread_mutex_unlock(&clientsMutex);
 }
+
+std::string const Server::getPassword() const {
+	return password;
+}
+
+std::map<std::string, Channel*>& Server::getChannels() {
+	return channels;
+}
+
+std::map<int, Client*>& Server::getClients() {
+	return clients;
+}

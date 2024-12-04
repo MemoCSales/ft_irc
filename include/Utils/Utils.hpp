@@ -88,6 +88,8 @@ size_t		countNewlines(const std::string& str);
 void		printTitle(std::string title, int n, char c);
 void		initSeed();
 void		osPrint(std::ostream& os, int const& val);
+void		printAsciiDecimal(const std::string& str);
+std::string trim(const std::string& str);
 
 #include <Utils.tpp>
 #endif

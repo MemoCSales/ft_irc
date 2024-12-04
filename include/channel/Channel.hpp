@@ -10,6 +10,8 @@
 #  define DEBUG 0
 # endif
 
+// class Client;
+
 class Channel
 {
 	public:
