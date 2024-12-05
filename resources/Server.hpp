@@ -41,6 +41,7 @@ public:
 
 
 	void sendChannelInvitation(const std::string& channelName);
+
 };
 
 #endif

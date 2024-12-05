@@ -113,6 +113,7 @@ void Server::removeChannel(const std::string& name) {
 	channels.erase(name);
 }
 
+
 void Server::sendChannelInvitation(const std::string& channelName) {
 	std::lock_guard<std::mutex> lock(clientMutex);
 	for (const auto& client : clients) {

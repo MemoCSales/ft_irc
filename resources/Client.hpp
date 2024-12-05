@@ -14,6 +14,8 @@ private:
 	Server* server;
 	Chanel* currentChannel; // Pointer to the current channel
 	bool _isOperator;
+	std::vector<Chanel *> channels;
+
 
 
 public:
@@ -22,7 +24,7 @@ public:
 
 	void handleCommunication(); // Handles communication with this client
 	void joinChannel(const std::string& channelName);
-	void exitChanel();
+	void exitChanel(std::string& channelName);
 	int getSocket() const { return clientSocket; }
 
 	////just for  testing/debuging ///
@@ -34,6 +36,9 @@ public:
 	void 	setPass(std::string message);
 	void	modeCommands(std::string message);
 	void	sendInvitation(std::string channelName);
+
+	void	channelTopic(std::string &channelName, std::string &channelTopic);
+
 
 
 };

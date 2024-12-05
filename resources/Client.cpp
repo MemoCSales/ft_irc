@@ -24,7 +24,19 @@ void Client::chanelCommands(std::istringstream& stream) {
 			send(clientSocket, error.c_str(), error.size() + 1, 0);
 		}
 	}
+	else if(subCommand == "EXIT"){
+		std::string channelName;
+		stream >> channelName;
+		this->exitChanel(channelName);
+	}
+	else if(subCommand == "TOPIC"){
+		std::string channelName;
+		stream >> channelName;
+		std::string topic;
+		stream >> topic;
+		this->channelTopic(channelName,topic);
 
+	}
 	else if (subCommand ==  currentChannel->getName()) {
 		std::string message;
 		std::getline(stream, message);
@@ -34,6 +46,27 @@ void Client::chanelCommands(std::istringstream& stream) {
 		std::string error = "Unknown command.\n";
 		send(clientSocket, error.c_str(), error.size() + 1, 0);
 	}
+}
+
+void	Client::channelTopic(std::string &channelName, std::string &channelTopic)
+{// need to check if operator
+	if(this->_isOperator)
+	{
+		for(unsigned long int i = 0; i < channels.size(); i++)
+		{
+			if(channels[i]->getName() == channelName)
+			{
+				std::cout << "topic set\n";
+				channels[i]->setTopic(channelTopic);
+				// currentChannel->setTopic(channelTopic);
+			}
+				
+		}
+	}
+	else{
+		std::cout << "not an operator\n";
+	}
+	
 }
 
 void Client::handleCommunication() {
@@ -64,7 +97,6 @@ void Client::handleCommunication() {
 			std::istringstream stream(message);
 			this->chanelCommands(stream);
 		}
-
 		else {
 			std::string error = "You are not in a channel. Use JOIN #channel to join one.\n";
 			send(clientSocket, error.c_str(), error.size() + 1, 0);
@@ -87,13 +119,16 @@ void Client::joinChannel(const std::string& channelName) {
 
 	if (!currentChannel || currentChannel->getName() != channelName) {
 		currentChannel = server->getOrCreateChannel(channelName);
+		
 		if (!currentChannel->getStatus()) {
 			currentChannel->setName(channelName);
 			currentChannel->setStatus(true);
+			currentChannel->setTopic("null");
 			std::cout << currentChannel->getName() + " was created.\n";
 			this->_isOperator = true;
 			currentChannel->addMember(this);
 			currentChannel->addOperator(this);
+			channels.push_back(currentChannel);
 		}
 		else if(currentChannel && currentChannel->getPassFlag() == true)
 		{
@@ -112,6 +147,9 @@ void Client::joinChannel(const std::string& channelName) {
 					this->_isOperator = false;
 					currentChannel->addMember(this);
 					std::cout <<this << " Joined existing channel: " << currentChannel->getName() << "\n";
+					if(currentChannel->getTopic() != "null")
+						currentChannel->broadcastTopic(this);
+					channels.push_back(currentChannel);
 
 				} else {
 					std::string error = "Incorrect password.\n";
@@ -124,6 +162,10 @@ void Client::joinChannel(const std::string& channelName) {
 			std::cout << this << " Joined existing channel: " << currentChannel->getName() << "\n";
 			this->_isOperator = false;
 			currentChannel->addMember(this);
+			if(currentChannel->getTopic() != "null")
+				currentChannel->broadcastTopic(this);
+			channels.push_back(currentChannel);
+
 		}
 	} else {
 		std::cout << "Already in channel: " << channelName << "\n";
@@ -155,6 +197,18 @@ void Client::joinChannel(const std::string& channelName) {
 		std::string error = "Channel does not exist.\n";
 		send(clientSocket, error.c_str(), error.size() + 1, 0);
 		return;
+	}
+	//check if the operator who kick s is in that channel
+	bool isInChannel = false;
+	for(unsigned long int i = 0; i < channels.size(); i++){
+		if (channelName == currentChannel->getName())
+			isInChannel = true;	
+	}
+	if(!isInChannel)
+	{
+		std::string response = "You don t belong to that channel\n";
+		send(clientSocket, response.c_str(), response.size() + 1, 0);
+		return ;
 	}
 
 	void* targetAddress = reinterpret_cast<void*>(std::stoull(targetAddressStr, nullptr, 16));
@@ -192,17 +246,33 @@ void	Client::setPass(std::string passWord) {
 	}
 }
 
+void Client::exitChanel(std::string &channelName) {
+    bool found = false;
+    for (long unsigned int i = 0; i < channels.size(); i++) {
+        if (channels[i]->getName() == channelName) {
+            channels[i]->removeMember(this);
+            found = true;
 
-void	Client::exitChanel() { //still need to check if the last member exited the chanel
-	if (currentChannel) {
-		currentChannel->removeMember(this);
-//		if(this->_isOperator) // might not need this, i don t know yet
-//			currentChannel->removeOperator(this);
-	}
-	currentChannel = nullptr;
-	_isOperator = false;
-	std::string response = "Exited channel.\n";
-	send(clientSocket, response.c_str(), response.size() + 1, 0);
+            if (channels[i]->isEmpty()) {
+				// std::cout << "is empty\n";
+				channels[i]->setStatus("null");
+                channels.erase(channels.begin() + i);
+				server->removeChannel(channelName); 
+                this->_isOperator = false;
+            }
+            // if (currentChannel && currentChannel->getName() == channelName) {
+            //     currentChannel = nullptr;
+            //     this->_isOperator = false;
+            // }
+            std::string response = "Exited channel.\n";
+            send(clientSocket, response.c_str(), response.size() + 1, 0);
+            return;
+        }
+    }
+    if (!found) {
+        std::string response = "Channel not found.\n";
+        send(clientSocket, response.c_str(), response.size() + 1, 0);
+    }
 }
 
 
