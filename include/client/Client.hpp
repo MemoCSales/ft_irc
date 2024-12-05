@@ -8,8 +8,6 @@
 # include <cstring> // strerror
 # include <sys/socket.h>
 
-
-
 # ifndef DEBUG
 #  define DEBUG 0
 # endif
