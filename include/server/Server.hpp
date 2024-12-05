@@ -11,7 +11,8 @@
 # include <iostream>
 # include <cerrno>
 # include <cstring> // strerror
-
+#define LIGHT_GREY "\00315"
+#define ENDC "\003"
 
 # ifndef DEBUG
 #  define DEBUG 0
@@ -109,7 +110,6 @@ class ClientHandler
 
 		void operator()() const
 		{
-			
 			server->handleClient(clientFD);
 		}
 };

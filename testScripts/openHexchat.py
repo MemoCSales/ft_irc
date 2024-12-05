@@ -1,17 +1,32 @@
-import subprocess
+"""
+This script modifies the HexChat configuration files to set up a new user with a randomly generated nickname, username, and real name.
+It then opens HexChat with the modified configuration.
+Functions:
+	modify_hexchat_config():
+		Modifies the HexChat configuration files with a randomly generated user.
+		Returns:
+			tuple: A tuple containing the generated nickname, username, and real name.
+Execution:
+	- Calls modify_hexchat_config() to modify the configuration files.
+	- Constructs a command to open HexChat with the new configuration.
+	- Executes the command and prints the output, error, and return code.
+"""
 import random
 import os
 import time
+import subprocess
 
 BLUE = '\033[94m'
 CYAN = '\033[96m'
 MAG = '\033[95m'
 GREEN = '\033[92m'
-WARNING = '\033[93m'
-FAIL = '\033[91m'
+YELLOW = '\033[93m'
+RED = '\033[91m'
 ENDC = '\033[0m'
 BOLD = '\033[1m'
 UNDERLINE = '\033[4m'
+
+
 
 def modify_hexchat_config():
 	# Generate random user data with the same unique number
@@ -36,8 +51,7 @@ def modify_hexchat_config():
 
 	servlist_path = os.path.expanduser("~/.var/app/io.github.Hexchat/config/hexchat/servlist.conf")
 
-
-	print(f"Writing to servlist.conf: {servlist_path}")
+	#print(f"Writing to servlist.conf: {servlist_path}")
 	with open(servlist_path, "r") as servlist_file:
 		lines = servlist_file.readlines()
 	network_exists = any(line.startswith(f"N=irc\n") for line in lines)
@@ -54,7 +68,7 @@ def modify_hexchat_config():
 
 	#-------------------------------------------------------------------
 	hexchat_config_path = os.path.expanduser("~/.var/app/io.github.Hexchat/config/hexchat/hexchat.conf")
-	print(f"Modifying hexchat.conf: {hexchat_config_path}")
+	#print(f"Modifying hexchat.conf: {hexchat_config_path}")
 	with open(hexchat_config_path, "r") as hexchat_config_file:
 		lines = hexchat_config_file.readlines()
 		
@@ -68,6 +82,8 @@ def modify_hexchat_config():
 				hexchat_config_file.write(f"irc_nick3 = {NICK}__\n")
 			elif line.startswith(f"irc_user_name ="):
 				hexchat_config_file.write(f"irc_user_name = {USERNAME}\n")
+			elif line.startswith(f"irc_real_name ="):
+				hexchat_config_file.write(f"irc_real_name = Real{USERNAME}\n")
 			else:
 				hexchat_config_file.write(line)
 		
@@ -77,18 +93,27 @@ def modify_hexchat_config():
 
 #-------------------------------------------------------------------
 nick, username, realname = modify_hexchat_config()
+
 # Define the command to open a new HexChat window and run a script
 # command = f'flatpak run io.github.Hexchat --existing--command="server {network}"'
-command = f'flatpak run io.github.Hexchat  --command="server irc"'
-print(MAG,f"command = {command}", ENDC)
+command = (
+	'flatpak run io.github.Hexchat '
+	'--command="py load ~/.var/app/io.github.Hexchat/config/hexchat/addons/testHexChat.py"'
+)
+#	'--command="server irc"'
+print("\n", MAG, f"command = {command}", ENDC)
 
 # Execute the command in Bash
 result = subprocess.run(command, shell=True, capture_output=True, text=True)
 
 # Print the output of the command
-print("Output:", result.stdout)
-print(FAIL,"Error:", result.stderr, ENDC)
+
 print("Return Code:", result.returncode)
+if result.returncode:
+	print(RED, "Error:", ENDC)
+	print(result.stderr)
+else:
+	print(result.stdout)
 
 #-------------------------------------------------------------------
 

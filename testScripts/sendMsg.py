@@ -1,7 +1,26 @@
-import subprocess
+"""
+This script sends messages to an IRC channel using HexChat.
+
+Functions:
+	send_message(nick, message):
+		Sends a message to the specified nick using HexChat.
+		Args:
+			nick (str): The nickname to send the message to.
+			message (str): The message to send.
+	
+	read_users_from_file():
+		Reads a list of users from a file.
+		Returns:
+			list: A list of user nicknames read from the file.
+
+Usage:
+	The script reads user nicknames from 'testScripts/users_created.txt' and sends a specified number of messages to each user.
+	The messages are sent using HexChat with a delay of 1 second between each message.
+"""
 import random
 import os
 import time
+import subprocess
 
 #---------------------------------------------------------------
 

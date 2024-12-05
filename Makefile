@@ -170,22 +170,25 @@ delUsers:
 	@pgrep -x "hexchat" > /dev/null; \
 	ret=$$?; \
 	if [ $$ret -eq 0 ]; then \
-		echo $(GREEN)"HexChat is running"; \
+		echo $(GREEN)"HexChat is running"  $(E_NC); \
 	else \
-		echo "$(RED)Deleting usersFile"; \
+		echo $(RED)"...Deleting usersFile"  $(E_NC); \
 		rm -f testScripts/users_created.txt; \
-	fi; \
-	echo $(E_NC)
-hexChat:$(NAME) delUsers
-	python3 testScripts/openHexchat.py 
+	fi;
+hexChat: $(NAME) delUsers addon
+	@trap 'clear; echo ;echo $(RED)"...Process interrupted" $(E_NC); exit 1' INT; \
+	python3 testScripts/openHexchat.py; echo $(GREEN)"Process Ended" $(E_NC);
 msg:$(NAME)
 	python3 testScripts/sendMsg.py
-context:$(NAME) delUsers
-	python3 testScripts/changeConfig.py
-	chmod +r $(PWD)/testScripts/testHexChat.py
-	mkdir -p $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons/
-	cp $(PWD)/testScripts/testHexChat.py $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons
-	flatpak run io.github.Hexchat --command="py load ~/.var/app/io.github.Hexchat/config/hexchat/addons/testHexChat.py"
+addon:
+# python3 testScripts/changeConfig.py
+	@chmod +r $(PWD)/testScripts/testHexChat.py
+	@mkdir -p $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons/
+	@cp $(PWD)/testScripts/testHexChat.py $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons
+	@chmod +r $(PWD)/testScripts/handshake.py
+	@cp $(PWD)/testScripts/handshake.py $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons
+	@echo $(GREEN)...Addon added to  HexChat path $(E_NC)
+#	flatpak run io.github.Hexchat --command="py load ~/.var/app/io.github.Hexchat/config/hexchat/addons/testHexChat.py"
 
 
 # #-------------------- UTILS ----------------------------#
@@ -281,7 +284,7 @@ define CPP
 		⣿⣿⣿⣿⣿⡗⢀⣀⣀⣀⣤⣾⣿⣿⣿⣿⣷⣾⣿⣿⣿⣿
 		⠙⢿⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋
 		⠀⠀⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋
-			
+
 endef
 export CPP
 define TRASH

@@ -1,6 +1,33 @@
-import random
+"""
+This script modifies the HexChat IRC client configuration files to set up a new user with a randomly generated unique number.
+Modules:
+	random: Generates random numbers.
+	os: Provides a way of using operating system dependent functionality.
+	time: Provides various time-related functions.
+Variables:
+	UNIQUE_NUMBER: A randomly generated unique number between 1000 and 9999.
+	NICK: The nickname for the user, based on UNIQUE_NUMBER.
+	USERNAME: The username for the user, based on UNIQUE_NUMBER.
+	REALNAME: The real name for the user, based on UNIQUE_NUMBER.
+	SERVER: The IRC server address.
+	PORT: The port number for the IRC server.
+	USERS: The path to the file where created users are stored.
+	servlist_path: The path to the HexChat server list configuration file.
+	hexchat_config_path: The path to the HexChat main configuration file.
+Functions:
+	None
+Script Functionality:
+	1. Generates a random unique number and creates user data based on it.
+	2. Prints the server, nickname, and username to the console.
+	3. Appends the generated nickname to a file storing created users.
+	4. Reads the HexChat server list configuration file and checks if the network configuration already exists.
+	5. Writes the existing lines back to the server list configuration file and appends the new network configuration if it doesn't exist.
+	6. Reads the HexChat main configuration file and modifies it to set the generated nickname and username.
+	7. Prints a success message to the console.
+"""
 import os
 import time
+import random
 
 BLUE = '\033[94m'
 CYAN = '\033[96m'
@@ -11,6 +38,7 @@ FAIL = '\033[91m'
 ENDC = '\033[0m'
 BOLD = '\033[1m'
 UNDERLINE = '\033[4m'
+
 
 # Generate random user data with the same unique number
 UNIQUE_NUMBER = random.randint(1000, 9999)
@@ -69,6 +97,6 @@ with open(hexchat_config_path, "w") as hexchat_config_file:
 		else:
 			hexchat_config_file.write(line)
 	
-print(GREEN,BOLD, UNDERLINE, "Configuration modified successfully.", ENDC)
+print(GREEN,BOLD, UNDERLINE, "Configuration modified successfully.\n", ENDC)
 time.sleep(1)
 

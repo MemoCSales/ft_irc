@@ -54,16 +54,16 @@ Server::Server(int& port, const std::string& password) : password(password)
 			throw std::runtime_error("Can't bind to IP/port");
 		}
 
-		char ip[INET_ADDRSTRLEN];
-		inet_ntop(AF_INET, &serverAddress.sin_addr, ip, INET_ADDRSTRLEN);
+		char ServerIP[INET_ADDRSTRLEN];
+		inet_ntop(AF_INET, &serverAddress.sin_addr, ServerIP, INET_ADDRSTRLEN);
 		if (listen(serverFD, SOMAXCONN) == -1)
 		{
 			std::stringstream ss;
 
-			ss << "Server " << ip << ":" << port << " can't listen" << std::endl;
+			ss << "Server " << ServerIP << ":" << port << " can't listen" << std::endl;
 			throw std::runtime_error(ss.str());
 		}
-		std::cout << "Server listening on " << ip << ":" << port << "\n";
+		std::cout << "Server listening on " << ServerIP << ":" << port << "\n";
 
 		setNonBlocking(serverFD);
 
@@ -112,34 +112,62 @@ void Server::setNonBlocking(int fd)
 	}
 }
 
+static std::string welcomeMsg()
+{
+	
+	std::stringstream msg;
+	
+
+	msg << "\n	⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄" ;
+	msg << "\n	⣠⣾⣿⡟⠛⢻⠛⠛⠛⠛⠛⢿⣿⣿⠟⠛⠛⠛⣿⣿⣿⣄" ;
+	msg << "\n	⣿⣿⣿⡇⠀⢸⠀⠀⣿⣿⡇⠀⣿⠁⠀⣠⣤⣤⣿⣿⣿⣿" ;
+	msg << "\n	⣿⣿⣿⡇⠀⢸⠀⠀⠿⠿⠃⣠⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿" ;
+	msg << "\n	⣿⣿⣿⡇⠀⢸⠀⠀⣀⣀⠀⠙⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿" ;
+	msg << "\n	⣿⣿⣿⣇⣀⣸⣀⣀⣿⣿⣀⣀⣿⣦⡀⣀⣀⣀⣿⣿⣿⣿" ;
+	msg << "\n	⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠿⢿⣿⣿⣿⣿⣿⣿" ;
+	msg << "\n	⣿⣿⣿⣿⣿⣿⡿⠿⠛⠿⡿⠉⠀⠀⠀⠀⠈⠹⣿⣿⣿⣿" ;
+	msg << "\n	⣿⣿⣿⣿⡿⠁⠀⠀⠀⠀⢇⠀⠛⠘⠃⠛⠀⢠⣿⣿⣿⣿" ;
+	msg << "\n	⣿⣿⣿⣿⣧⡀⠛⠘⠃⠛⠀⢑⣤⣄⣀⣤⡀⣿⣿⣿⣿⣿" ;
+	msg << "\n	⣿⣿⣿⣿⣿⡗⢀⣀⣀⣀⣤⣾⣿⣿⣿⣿⣷⣾⣿⣿⣿⣿" ;
+	msg << "\n	⠙⢿⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋" ;
+	msg << "\n	⠀⠀⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋" ;
+	msg << "\nWelcome to the FT_IRC server!" << std::endl << std::endl;
+	return msg.str();
+}
 void Server::handleNewConnection()
 {
 	try
 	{
 		struct sockaddr_in clientAddress;
 		socklen_t clientLength = sizeof(clientAddress);
-		int clientFD = accept(serverFD, (struct sockaddr*)&clientAddress, &clientLength);
-		if (clientFD < 0)
+		int clientSocket = accept(serverFD, (struct sockaddr *)&clientAddress, (socklen_t*)&clientLength);
+		if (clientSocket < 0)
 		{
 			throw std::runtime_error("Failed to accept new connection: " + std::string(strerror(errno)));
 		}
-		setNonBlocking(clientFD);
-		struct pollfd pfd = {clientFD, POLLIN, 0};
+		setNonBlocking(clientSocket);
+		struct pollfd pfd = {clientSocket, POLLIN, 0};
 		pollFDs.push_back(pfd);
 
 		pthread_mutex_lock(&clientsMutex);
-		Client* newClient = new Client(clientFD);
-		clients.insert(std::make_pair(clientFD, newClient));
+		Client* newClient = new Client(clientSocket);
+		clients.insert(std::make_pair(clientSocket, newClient));
+
+		// Get client's IP address and port
+		char clientIP[INET_ADDRSTRLEN];
+		inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
+		int clientPort = ntohs(clientAddress.sin_port);
+		
+		
+		std::cout << getColorStr(FGREEN, "New client connected: ") << clientIP << ":" << clientPort
+		<< "[" << clientSocket << "]"<< std::endl;
+
 		// Send welcome message
-		std::stringstream welcomeMessage;
-		welcomeMessage << "Welcome to the IRC server!" << std::endl << std::endl;
-		newClient->sendMessage(welcomeMessage.str());
+		newClient->sendMessage(welcomeMsg());
 
 		pthread_mutex_unlock(&clientsMutex);
 
-		std::cout << "New client connected: " << clientFD << std::endl;
-
-		ClientHandler* handler = new ClientHandler(this, clientFD);
+		ClientHandler* handler = new ClientHandler(this, clientSocket);
 		pthread_t thread;
 		pthread_create(&thread, NULL, ClientHandler::start, handler);
 		pthread_detach(thread);

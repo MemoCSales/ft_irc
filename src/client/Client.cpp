@@ -6,7 +6,8 @@ Client::Client(int fd) : _clientFD(fd), nickname(""), username(""), buffer("") {
 
 void Client::sendMessage(const std::string &message)
 {
-	write(_clientFD, message.c_str(), message.length());
+	// send(_clientFD, msg.c_str(), strlen(msg.c_str()), 0);
+	send(_clientFD, message.c_str(), message.length(), 0);
 }
 
 Client::~Client() {}
