@@ -81,7 +81,7 @@ def on_server_message(word, word_eol, userdata):
 			hexchat.prnt(f"{LIGHT_GREY}****************{ENDC}")
 		hexChatMsg()
 
-	return hexchat.EAT_ALL
+	return hexchat.EAT_NONE
 #--------------------------------------------------------------------------------
 # Hook into server messages
 hexchat.hook_server("RAW LINE", on_server_message)
