@@ -7,6 +7,8 @@
 # include <cstdlib>
 # include <iomanip>
 # include <cxxabi.h>
+# include <cstring>
+# include <cstdio>
 # ifndef DEBUG
 #  define DEBUG 0
 # endif

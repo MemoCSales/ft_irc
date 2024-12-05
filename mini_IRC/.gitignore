@@ -1,9 +1,0 @@
-# Ignore all .o files in any directory
-**/*.o
-
-# Ignore specific directories
-.obj/
-.vscode/
-
-# binary
-/IRC
