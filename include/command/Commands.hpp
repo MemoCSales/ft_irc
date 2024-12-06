@@ -10,7 +10,9 @@ enum CommandType {
 	PASS,
 	NICK,
 	USER,
-	QUIT
+	QUIT,
+	PING,
+	PONG
 };
 
 class Command : public ICommand {
@@ -23,6 +25,8 @@ class Command : public ICommand {
 		void handleNick(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
 		void handleUser(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
 		void handleQuit(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
+		void handlePing(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
+		void handlePong(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
 
 		// ReturnType (ClassName::*PointerName)(ParameterTypes)
 		typedef void(Command::*CommandHandler) (Client& client, const std::string& args, std::map<std::string, Channel*>& channels);

@@ -58,6 +58,8 @@ class Server
 		std::string const getPassword() const;
 		std::map<std::string, Channel*>& getChannels();
 		std::map<int, Client*>& getClients();
+		void sendPingToClients();
+		void startPingTask();
 
 		friend class ClientHandler;
 };

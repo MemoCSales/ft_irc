@@ -8,6 +8,8 @@ CommandFactory::CommandFactory(Server& server) {
 	commands["NICK"] = new CommandCreatorImpl<Command>(NICK, server);
 	commands["USER"] = new CommandCreatorImpl<Command>(USER, server);
 	commands["QUIT"] = new CommandCreatorImpl<Command>(QUIT, server);
+	commands["PING"] = new CommandCreatorImpl<Command>(PING, server);
+	commands["PONG"] = new CommandCreatorImpl<Command>(PONG, server);
 }
 
 CommandFactory::~CommandFactory() {

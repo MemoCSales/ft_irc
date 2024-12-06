@@ -7,6 +7,8 @@ Command::Command(CommandType type, Server& server) : _type(type), _server(server
 	commands[NICK] = &Command::handleNick;
 	commands[USER] = &Command::handleUser;
 	commands[QUIT] = &Command::handleQuit;
+	commands[PING] = &Command::handlePing;
+	commands[PONG] = &Command::handlePong;
 }
 
 void Command::execute(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
@@ -94,7 +96,8 @@ void Command::handleUser(Client& client, const std::string& args, std::map<std::
 	}
 
 	if (userName.empty() || userName.length() > USERLEN) {
-		std::string response = ERR_NEEDMOREPARAMS;
+		std::string command = "USER";
+		std::string response = ERR_NEEDMOREPARAMS(command);
 		client.sendMessage(response);
 		return ;
 	}
@@ -140,4 +143,45 @@ void Command::handleQuit(Client& client, const std::string& args, std::map<std::
 	client.sendMessage(ERROR(response));
 	throw std::runtime_error("Client disconnected");
 	std::cout << "QUIT command received. Client disconnected with the reason: " << response << std::endl;
+}
+
+/* PING command is sent by either clients or servers to check the other
+ side of the connection is still connected. */
+void Command::handlePing(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
+	(void)channels;
+
+	std::istringstream stream(args);
+	std::string reason;
+
+	getline(stream, reason);
+	reason = trim(reason);
+	std::cout << "Reason: " << reason << std::endl;
+	// printAsciiDecimal(reason);
+	if (reason.empty()) {
+		std::string command = "PING";
+		std::string response = ERR_NEEDMOREPARAMS(command);
+		client.sendMessage(response);
+		return;
+	}
+	client.sendMessage("PONG " + reason + "\r\n");
+}
+
+
+void Command::handlePong(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
+	(void)channels;
+
+	std::istringstream stream(args);
+	std::string reason;
+
+	getline(stream, reason);
+	reason = trim(reason);
+	std::cout << "Reason: " << reason << std::endl;
+	printAsciiDecimal(reason);
+	if (reason.empty()) {
+		std::string command = "PING";
+		std::string response = ERR_NEEDMOREPARAMS(command);
+		client.sendMessage(response);
+		return;
+	}
+	std::cout << "PONG command received with the token: " << reason  << std::endl;
 }

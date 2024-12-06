@@ -73,6 +73,9 @@ Server::Server(int& port, const std::string& password) : password(password)
 		pthread_mutex_init(&clientsMutex, NULL);
 		pthread_mutex_init(&channelsMutex, NULL);
 		setupSignalHandlers();
+
+		// Start the periodic PING task
+		// startPingTask();
 	}
 	catch (const std::exception& e)
 	{
@@ -225,8 +228,11 @@ void Server::run()
 			{
 				if (pollFDs[i].revents & POLLIN)
 				{
-					if (pollFDs[i].fd == serverFD)
+					if (pollFDs[i].fd == serverFD) {
 						handleNewConnection();
+					} else {
+						handleClient(pollFDs[i].fd);
+					}
 				}
 			}
 		}
@@ -307,4 +313,28 @@ std::map<std::string, Channel*>& Server::getChannels() {
 
 std::map<int, Client*>& Server::getClients() {
 	return clients;
+}
+
+void Server::sendPingToClients() {
+	pthread_mutex_lock(&clientsMutex);
+	for (ClientsIte it = clients.begin(); it != clients.end(); it++) {
+		std::cout << "Sending PING to client: " << it->first << std::endl;
+		it->second->sendMessage("PING ping\r\n");
+	}
+	pthread_mutex_unlock(&clientsMutex);
+}
+
+void* pingTask(void* arg) {
+	Server* server = static_cast<Server*>(arg);
+	while (true) {
+		sleep(5);
+		server->sendPingToClients();
+	}
+	return NULL;
+}
+
+void Server::startPingTask() {
+	pthread_t thread;
+	pthread_create(&thread, NULL, pingTask, this);
+	pthread_detach(thread);
 }

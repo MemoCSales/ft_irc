@@ -27,7 +27,7 @@ void Client::handleRead() {
 	}
 	buffer[nbytes] = '\0';
 	this->_buffer += buffer;
-	// std::cout << "Message: " << buffer << std::endl;
+	std::cout << "Message: " << buffer << std::endl;
 	// printAsciiDecimal(buffer);
 	// std::cout << "Message_: " << _buffer << std::endl;
 	// printAsciiDecimal(buffer);
@@ -43,11 +43,8 @@ void Client::handleRead() {
 		if (!this->_buffer.empty() && this->_buffer[0] == '\n') {
 			this->_buffer.erase(0, 1);
 		}
-		// std::cout << "Received command from " << _clientFD << ": " << command << std::endl;
-		// printAsciiDecimal(command);
-		// std::cout << "Updated _buffer: " << this->_buffer << std::endl;
-		// printAsciiDecimal(this->_buffer);
-		// Handle command
+
+		std::cout << "Processing command: " << command << std::endl;
 		commandParser.parseAndExecute(*this, command, server->getChannels());
 	}
 }
