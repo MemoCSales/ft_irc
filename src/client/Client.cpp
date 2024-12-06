@@ -6,7 +6,8 @@ Client::Client(int fd) : _clientFD(fd), _authenticated(false), nickname(""), use
 
 void Client::sendMessage(const std::string &message)
 {
-	write(_clientFD, message.c_str(), message.length());
+	// send(_clientFD, msg.c_str(), strlen(msg.c_str()), 0);
+	send(_clientFD, message.c_str(), message.length(), 0);
 }
 
 Client::~Client() {}
@@ -19,8 +20,10 @@ void Client::handleRead() {
 			return; // No data available
 		else
 			throw std::runtime_error("Error on recv: " + std::string(strerror(errno)));
-	} else if (nbytes == 0) {
-		throw std::runtime_error("Client disconnected");
+	}
+	else if (nbytes == 0)
+	{
+		throw std::runtime_error("Client disconnected: " + toStr(_clientFD));
 	}
 	buffer[nbytes] = '\0';
 	this->_buffer += buffer;
