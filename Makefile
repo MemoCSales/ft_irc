@@ -181,7 +181,6 @@ hexChat: $(NAME) delUsers addon
 msg:$(NAME)
 	python3 testScripts/sendMsg.py
 addon:
-# python3 testScripts/changeConfig.py
 	@chmod +r $(PWD)/testScripts/testHexChat.py
 	@mkdir -p $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons/
 	@cp $(PWD)/testScripts/testHexChat.py $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons
@@ -190,7 +189,49 @@ addon:
 	@echo $(GREEN)...Addon added to  HexChat path $(E_NC)
 #	flatpak run io.github.Hexchat --command="py load ~/.var/app/io.github.Hexchat/config/hexchat/addons/testHexChat.py"
 
+# #-------------------- PROCESS UTILS ----------------------------#
+killPD:
+	@echo "Closing all processes related to $(NAME)..."
+	@pkill -f $(NAME)
+	@echo "All related processes have been closed."
 
+closeFD:
+	@echo "Finding process ID(s) for process name: $(NAME)"
+	@pids=$$(pgrep $(NAME)); \
+	if [ -z "$$pids" ]; then \
+		echo "No process found with name: $(NAME)"; \
+	else \
+		for pid in $$pids; do \
+			echo "Closing file descriptors for process ID: $$pid"; \
+			for fd in /proc/$$pid/fd/*; do \
+				if [ -e $$fd ]; then \
+					exec 3>&-; \
+				fi; \
+			done; \
+		done; \
+	fi
+checkOpen:
+	@echo $(WHITE)"Checking open files for process name: $(NAME)"$(E_NC)
+	@pids=$$(pgrep $(NAME)); \
+	if [ -z "$$pids" ]; then \
+		echo $(RED)"No process found with name: $(NAME)"$(E_NC); \
+	else \
+		for pid in $$pids; do \
+			echo "Open files for process ID: $$pid"; \
+			lsof -p $$pid; \
+		done; \
+	fi
+freePort: checkOpen;
+	@port="6667";\
+	pids=$$(lsof -t -i :$$port); \
+	if [ -z "$$pids" ]; then \
+		echo $(WHITE)"Port $$port is already free."$(E_NC); \
+	else \
+		echo $(YELLOW)"Freeing port $$port..."$(E_NC); \
+		echo $(YELLOW)"Terminating processes using port $$port: $$pids" $(E_NC); \
+		kill -9 $$pids; \
+		echo $(GREEN)"Port $$port has been freed." $(E_NC); \
+	fi
 # #-------------------- UTILS ----------------------------#
 info:
 	@echo GIT_REPO:  $(CYAN) $(GIT_REPO) $(E_NC)
@@ -272,7 +313,7 @@ PURPLE = "\033[1;38;2;189;147;249m"
 define CPP
 
 		⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄
-		⣠⣾⣿⡟⠛⢻⠛⠛⠛⠛⠛⢿⣿⣿⠟⠛⠛⠛⣿⣿⣿⣄
+		⣠⣾⣿⡟⠛⢻⠛⠛⠛⠛⠛⢿⣿⣿⠟⠛⠛⠛⣿⣿⣷⣄
 		⣿⣿⣿⡇⠀⢸⠀⠀⣿⣿⡇⠀⣿⠁⠀⣠⣤⣤⣿⣿⣿⣿
 		⣿⣿⣿⡇⠀⢸⠀⠀⠿⠿⠃⣠⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿
 		⣿⣿⣿⡇⠀⢸⠀⠀⣀⣀⠀⠙⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿

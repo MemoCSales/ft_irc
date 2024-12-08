@@ -22,6 +22,8 @@ ENDC = "\003"
 __module_name__ = "On Handshake"
 __module_version__ = "1.0"
 __module_description__ = "Prints a message when the handshake is established"
+connection_established = False
+message = ""
 #--------------------------------------------------------------------------------
 def send_message(nick):
 	hexchat.command(f"msg {nick} {nick}test")
@@ -65,30 +67,47 @@ def on_handshake(word, word_eol, userdata):
 
 
 def on_server_message(word, word_eol, userdata):
-	print("wordLen:", len(word))
-	print("word:", word)
-	print("word_eol:", word_eol)
-	# if "001" and len(word) > 1:
-	# 	hexchat.prnt(f"{LIGHT_GREY}------------- HANDSHAKE WITH SERVER ------------- {ENDC}")
-	if len(word) > 1:
+	global connection_established
+	global message
+	if word_eol:
+		message += ''.join(word_eol[0]) + "\n"
 		if "NOTICE" in word_eol[0]:
 			hexchat.prnt(f"{YELLOW}NOTICE{ENDC}")
 		elif "ERROR" in word_eol[0]:
 			hexchat.prnt(f"{RED}ERROR{ENDC}")
-		elif word[0]:
-			# hexchat.prnt(f"{LIGHT_GREY}------------- HANDSHAKE WITH SERVER ------------- {ENDC}")
-			# hexchat.prnt(f"{LIGHT_GREY}{fullMessage}{ENDC}")
-			hexchat.prnt(f"{LIGHT_GREY}****************{ENDC}")
-		hexChatMsg()
+		elif "Welcome" in word:
+			if not connection_established:
+				hexchat.prnt(f"{LIGHT_GREY}------------- HANDSHAKE WITH SERVER -------------{ENDC}")
+				connection_established = True
+			# message = word_eol[0]
+			char_count = len(message)
+			try:
+				message = message.encode('ascii', 'ignore').decode('ascii')
+			except UnicodeEncodeError:
+				message = message  # Fallback to original message if encoding fails
+			
+			char_count = len(message)
+			hexchat.emit_print("Server Text", "\t {}".format(message))
+			# print("{} (len:{})".format(message, char_count))
+			# hexchat.prnt(f"{message} ({char_count} |eol: {len(word_eol)} | word: {len(word)} )")
 
-	return hexchat.EAT_NONE
+	# print("wordLen:", len(word))
+	# print("word:", word)
+	# print("word_eol:", word_eol)
+	# if len(word) > 1:
+	# 	if "NOTICE" in word_eol[0]:
+	# 		hexchat.prnt(f"{YELLOW}NOTICE{ENDC}")
+	# 	elif "ERROR" in word_eol[0]:
+	# 		hexchat.prnt(f"{RED}ERROR{ENDC}")
+	# 	hexChatMsg()
+
+	return hexchat.EAT_ALL
 #--------------------------------------------------------------------------------
 # Hook into server messages
 hexchat.hook_server("RAW LINE", on_server_message)
-# hexchat.hook_print("Server Text", on_server_message0)
+# hexchat.hook_print("Server Text", on_server_message)
 #--------------------------------------------------------------------------------
-hexchat.hook_server("001", on_handshake)
-hexchat.prnt(f"{LIGHT_GREY}------------- HANDSHAKE WITH SERVER ------------- {ENDC}")
+# hexchat.hook_server("001", on_handshake)
 # print(__module_name__, "version", __module_version__, "loaded.")
 # hexChatMsg()
 
