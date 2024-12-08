@@ -1,5 +1,5 @@
 #include "Server.hpp"
-#include "Command.hpp"
+#include "Commands.hpp"
 #include "Client.hpp"
 #include "Channel.hpp"
 #include <iostream>
@@ -73,6 +73,9 @@ Server::Server(int& port, const std::string& password) : password(password)
 		pthread_mutex_init(&clientsMutex, NULL);
 		pthread_mutex_init(&channelsMutex, NULL);
 		setupSignalHandlers();
+
+		// Start the periodic PING task
+		// startPingTask();
 	}
 	catch (const std::exception& e)
 	{
@@ -131,7 +134,8 @@ static std::string welcomeMsg()
 	msg << "\n	⣿⣿⣿⣿⣿⡗⢀⣀⣀⣀⣤⣾⣿⣿⣿⣿⣷⣾⣿⣿⣿⣿" ;
 	msg << "\n	⠙⢿⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋" ;
 	msg << "\n	⠀⠀⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋" ;
-	msg << "\nWelcome to the FT_IRC server!" << std::endl << std::endl;
+	msg << std::endl;
+	msg << "\n	Welcome to the FT_IRC server!" << std::endl << std::endl;
 	return msg.str();
 }
 void Server::handleNewConnection()
@@ -225,8 +229,11 @@ void Server::run()
 			{
 				if (pollFDs[i].revents & POLLIN)
 				{
-					if (pollFDs[i].fd == serverFD)
+					if (pollFDs[i].fd == serverFD) {
 						handleNewConnection();
+					} else {
+						handleClient(pollFDs[i].fd);
+					}
 				}
 			}
 		}
@@ -295,4 +302,40 @@ void Server::removeClient(int clientFD)
 		clients.erase(it);
 	}
 	pthread_mutex_unlock(&clientsMutex);
+}
+
+std::string const Server::getPassword() const {
+	return password;
+}
+
+std::map<std::string, Channel*>& Server::getChannels() {
+	return channels;
+}
+
+std::map<int, Client*>& Server::getClients() {
+	return clients;
+}
+
+void Server::sendPingToClients() {
+	pthread_mutex_lock(&clientsMutex);
+	for (ClientsIte it = clients.begin(); it != clients.end(); it++) {
+		std::cout << "Sending PING to client: " << it->first << std::endl;
+		it->second->sendMessage("PING ping\r\n");
+	}
+	pthread_mutex_unlock(&clientsMutex);
+}
+
+void* pingTask(void* arg) {
+	Server* server = static_cast<Server*>(arg);
+	while (true) {
+		sleep(5);
+		server->sendPingToClients();
+	}
+	return NULL;
+}
+
+void Server::startPingTask() {
+	pthread_t thread;
+	pthread_create(&thread, NULL, pingTask, this);
+	pthread_detach(thread);
 }

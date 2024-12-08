@@ -235,13 +235,13 @@ struct PrintFunctor
 template <typename K, typename V>
 struct PrintFunctor<std::map<K, V> >
 {
-	std::ostream& os;
-	const std::map<K, V>& container;
+	std::ostream& _os;
+	const std::map<K, V>& _container;
 
-	PrintFunctor(std::ostream& os, const std::map<K, V>& container) : os(os), container(container) {}
+	PrintFunctor(std::ostream& os, const std::map<K, V>& container) : _os(os), _container(container) {}
 
 	void operator()(const std::pair<const K, V>& entry) const {
-		os << entry.first << ": " << entry.second << std::endl;
+		_os << entry.first << ": " << entry.second << std::endl;
 	}
 };
 #endif // TUTILS_HPP

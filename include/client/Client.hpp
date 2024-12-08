@@ -8,6 +8,8 @@
 # include <cstring> // strerror
 # include <sys/socket.h>
 
+# include "CommandParser.hpp"
+
 # ifndef DEBUG
 #  define DEBUG 0
 # endif
@@ -20,10 +22,12 @@ class Client
 {
 	private:
 		int _clientFD;
+		bool _authenticated;
 	public:
 		std::string nickname;
 		std::string username;
-		std::string buffer;
+		std::string realname;
+		std::string _buffer;
 		pthread_t thread;
 
 		Client(int fd);
@@ -31,6 +35,11 @@ class Client
 		int getFd() const;
 		void sendMessage(const std::string &message);
 		void handleRead();
+		bool isAuthenticated() const;
+
+		// Setter
+		void setAuthenticated(bool);
+
 };
 
 // std::ostream& operator << (std::ostream& os, Client& rhs);

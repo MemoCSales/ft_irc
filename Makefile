@@ -190,7 +190,49 @@ addon:
 	@echo $(GREEN)...Addon added to  HexChat path $(E_NC)
 #	flatpak run io.github.Hexchat --command="py load ~/.var/app/io.github.Hexchat/config/hexchat/addons/testHexChat.py"
 
+killPD:
+	@echo "Closing all processes related to $(NAME)..."
+	@pkill -f $(NAME)
+	@pkill -f hexchat
+	@echo "All related processes have been closed."
 
+closeFD:
+	@echo "Finding process ID(s) for process name: $(NAME)"
+	@pids=$$(pgrep $(NAME)); \
+	if [ -z "$$pids" ]; then \
+		echo "No process found with name: $(NAME)"; \
+	else \
+		for pid in $$pids; do \
+			echo "Closing file descriptors for process ID: $$pid"; \
+			for fd in /proc/$$pid/fd/*; do \
+				if [ -e $$fd ]; then \
+					exec 3>&-; \
+				fi; \
+			done; \
+		done; \
+	fi
+checkOpen:
+	@echo "Checking open files for process name: $(NAME)"
+	@pids=$$(pgrep $(NAME)); \
+	if [ -z "$$pids" ]; then \
+		echo "No process found with name: $(NAME)"; \
+	else \
+		for pid in $$pids; do \
+			echo "Open files for process ID: $$pid"; \
+			lsof -p $$pid; \
+		done; \
+	fi
+freePort: #checkOpen
+	@port="6667";\
+	echo "Freeing port $$port..."; \
+	pids=$$(lsof -t -i :$$port); \
+	if [ -z "$$pids" ]; then \
+		echo "Port $$port is already free."; \
+	else \
+		echo "Terminating processes using port $$port: $$pids"; \
+		kill -9 $$pids; \
+		echo "Port $$port has been freed."; \
+	fi
 # #-------------------- UTILS ----------------------------#
 info:
 	@echo GIT_REPO:  $(CYAN) $(GIT_REPO) $(E_NC)
