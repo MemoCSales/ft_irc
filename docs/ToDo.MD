@@ -18,6 +18,10 @@
 - [ ] If connection is lost with all clients, clean screen
 - [ ] when debug=true, keep log with connections
 - [ ] check with helgrind for threads and file descriptors
+- [ ] Find problem with hexChat, it keeps port open when closing from terminal
+- [ ] 
+- [ ] 
+- [ ] 
 
 ## Client
 - [ ] Check python testHexChaty on server message

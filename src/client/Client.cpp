@@ -36,7 +36,7 @@ void Client::handleRead() {
 	Server* server = Server::getInstance();
 	CommandParser commandParser(*server);
 	size_t pos;
-	while ((pos = this->_buffer.find_first_of("\r\n\0")) != std::string::npos)
+	while ((pos = this->_buffer.find("\r\n")) != std::string::npos)
 	{
 		std::string command = this->_buffer.substr(0, pos);
 		this->_buffer.erase(0, pos + 1); // check if 2 or 1

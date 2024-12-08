@@ -10,6 +10,8 @@ https://copyconstruct.medium.com/the-method-to-epolls-madness-d9d2d6378642
 
 https://modern.ircdocs.horse/
 https://modern.ircdocs.horse/#pass-message
+<!-- working with hexchat-->
+https://github.com/cryzed/HexChat-Mock/blob/master/hexchat.py#L80
 # Allowed functions
 
 * socket

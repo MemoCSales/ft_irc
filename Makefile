@@ -181,7 +181,6 @@ hexChat: $(NAME) delUsers addon
 msg:$(NAME)
 	python3 testScripts/sendMsg.py
 addon:
-# python3 testScripts/changeConfig.py
 	@chmod +r $(PWD)/testScripts/testHexChat.py
 	@mkdir -p $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons/
 	@cp $(PWD)/testScripts/testHexChat.py $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons
@@ -190,10 +189,10 @@ addon:
 	@echo $(GREEN)...Addon added to  HexChat path $(E_NC)
 #	flatpak run io.github.Hexchat --command="py load ~/.var/app/io.github.Hexchat/config/hexchat/addons/testHexChat.py"
 
+# #-------------------- PROCESS UTILS ----------------------------#
 killPD:
 	@echo "Closing all processes related to $(NAME)..."
 	@pkill -f $(NAME)
-	@pkill -f hexchat
 	@echo "All related processes have been closed."
 
 closeFD:
@@ -212,26 +211,26 @@ closeFD:
 		done; \
 	fi
 checkOpen:
-	@echo "Checking open files for process name: $(NAME)"
+	@echo $(WHITE)"Checking open files for process name: $(NAME)"$(E_NC)
 	@pids=$$(pgrep $(NAME)); \
 	if [ -z "$$pids" ]; then \
-		echo "No process found with name: $(NAME)"; \
+		echo $(RED)"No process found with name: $(NAME)"$(E_NC); \
 	else \
 		for pid in $$pids; do \
 			echo "Open files for process ID: $$pid"; \
 			lsof -p $$pid; \
 		done; \
 	fi
-freePort: #checkOpen
+freePort: checkOpen;
 	@port="6667";\
-	echo "Freeing port $$port..."; \
 	pids=$$(lsof -t -i :$$port); \
 	if [ -z "$$pids" ]; then \
-		echo "Port $$port is already free."; \
+		echo $(WHITE)"Port $$port is already free."$(E_NC); \
 	else \
-		echo "Terminating processes using port $$port: $$pids"; \
+		echo $(YELLOW)"Freeing port $$port..."$(E_NC); \
+		echo $(YELLOW)"Terminating processes using port $$port: $$pids" $(E_NC); \
 		kill -9 $$pids; \
-		echo "Port $$port has been freed."; \
+		echo $(GREEN)"Port $$port has been freed." $(E_NC); \
 	fi
 # #-------------------- UTILS ----------------------------#
 info:
@@ -314,7 +313,7 @@ PURPLE = "\033[1;38;2;189;147;249m"
 define CPP
 
 		⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄
-		⣠⣾⣿⡟⠛⢻⠛⠛⠛⠛⠛⢿⣿⣿⠟⠛⠛⠛⣿⣿⣿⣄
+		⣠⣾⣿⡟⠛⢻⠛⠛⠛⠛⠛⢿⣿⣿⠟⠛⠛⠛⣿⣿⣷⣄
 		⣿⣿⣿⡇⠀⢸⠀⠀⣿⣿⡇⠀⣿⠁⠀⣠⣤⣤⣿⣿⣿⣿
 		⣿⣿⣿⡇⠀⢸⠀⠀⠿⠿⠃⣠⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿
 		⣿⣿⣿⡇⠀⢸⠀⠀⣀⣀⠀⠙⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿
