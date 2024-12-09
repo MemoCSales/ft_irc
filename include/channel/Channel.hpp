@@ -11,7 +11,7 @@
 
 class Client; // Forward declaration
 
-class Chanel{
+class Channel{
 private:
 	std::string _name; //chanel name
 	std::string _passWord;
@@ -20,10 +20,10 @@ private:
 	bool _created;
 	std::vector<Client *> members; // clients in the chanel
 	std::vector<Client *> operators;
-	std::mutex channelMutex; // protects the member lists
+	// std::mutex channelMutex; // protects the member lists
 
 public:
-	Chanel (const std::string& channelName) : _name(channelName) {}
+	Channel (const std::string& channelName) : _name(channelName) {}
 	void	addMember(Client* client);
 	void	removeMember(Client* client);
 	void	broadcast(const std::string& message, Client* sender);
@@ -56,5 +56,25 @@ public:
 
 
 };
+
+// class SendMessageFunctor
+// {
+// 	private:
+// 		Client* exclude;
+// 		std::string message;
+
+// 	public:
+// 		SendMessageFunctor(Client* exclude, const std::string& message)
+// 			: exclude(exclude), message(message) {}
+
+// 		void operator()(Client* client) const
+// 		{
+// 			if (client != exclude)
+// 			{
+// 				client->sendMessage(message);
+// 			}
+//     }
+// };
+
 
 #endif
