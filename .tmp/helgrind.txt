@@ -1,0 +1,472 @@
+^C==1333261== ---Thread-Announcement------------------------------------------
+==1333261== 
+==1333261== Thread #1 is the program's root thread
+==1333261== 
+==1333261== ---Thread-Announcement------------------------------------------
+==1333261== 
+==1333261== Thread #2 was created
+==1333261==    at 0x4BEC9F3: clone (clone.S:76)
+==1333261==    by 0x4BED8EE: __clone_internal (clone-internal.c:83)
+==1333261==    by 0x4B5B6D8: create_thread (pthread_create.c:295)
+==1333261==    by 0x4B5C1FF: pthread_create@@GLIBC_2.34 (pthread_create.c:828)
+==1333261==    by 0x4853767: ??? (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x11A4A0: Server::handleNewConnection() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11AA9B: Server::run() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E079: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261== 
+==1333261== ----------------------------------------------------------------
+==1333261== 
+==1333261==  Lock at 0x1FFEFFF080 was first observed
+==1333261==    at 0x4854BFE: pthread_mutex_init (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x119E56: Server::Server(int&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E06A: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==  Address 0x1ffefff080 is on thread #1's stack
+==1333261==  in frame #6, created by main (???:)
+==1333261== 
+==1333261== Possible data race during read of size 8 at 0x129058 by thread #1
+==1333261== Locks held: none
+==1333261==    at 0x49B7A22: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x11AC53: Server::signalHandler(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x4B0951F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==1333261==    by 0x4BDFBCC: poll (poll.c:29)
+==1333261==    by 0x11A964: Server::run() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E079: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261== 
+==1333261== This conflicts with a previous write of size 8 by thread #2
+==1333261== Locks held: 1, at address 0x1FFEFFF080
+==1333261==    at 0x49B7AE0: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x111796: Client::handleRead() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A6E1: Server::handleClient(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A75D: Server::clientHandler(void*) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x485396A: ??? (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x4B5BAC2: start_thread (pthread_create.c:442)
+==1333261==    by 0x4BECA03: clone (clone.S:100)
+==1333261==  Address 0x129058 is 24 bytes inside data symbol "_ZSt4cout@GLIBCXX_3.4"
+==1333261== 
+==1333261== ----------------------------------------------------------------
+==1333261== 
+==1333261==  Lock at 0x1FFEFFF080 was first observed
+==1333261==    at 0x4854BFE: pthread_mutex_init (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x119E56: Server::Server(int&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E06A: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==  Address 0x1ffefff080 is on thread #1's stack
+==1333261==  in frame #9, created by main (???:)
+==1333261== 
+==1333261== Possible data race during write of size 1 at 0x4DEDC91 by thread #1
+==1333261== Locks held: none
+==1333261==    at 0x4859796: mempcpy (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x4B52664: _IO_new_file_xsputn (fileops.c:1235)
+==1333261==    by 0x4B52664: _IO_file_xsputn@@GLIBC_2.2.5 (fileops.c:1196)
+==1333261==    by 0x4B46FD6: fwrite (iofwrite.c:39)
+==1333261==    by 0x49B7B64: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x11AC53: Server::signalHandler(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x4B0951F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==1333261==    by 0x4BDFBCC: poll (poll.c:29)
+==1333261==    by 0x11A964: Server::run() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E079: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261== 
+==1333261== This conflicts with a previous write of size 1 by thread #2
+==1333261== Locks held: 1, at address 0x1FFEFFF080
+==1333261==    at 0x48597B4: mempcpy (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x4B52664: _IO_new_file_xsputn (fileops.c:1235)
+==1333261==    by 0x4B52664: _IO_file_xsputn@@GLIBC_2.2.5 (fileops.c:1196)
+==1333261==    by 0x4B46FD6: fwrite (iofwrite.c:39)
+==1333261==    by 0x49B7B64: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x1117AB: Client::handleRead() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A6E1: Server::handleClient(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A75D: Server::clientHandler(void*) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==  Address 0x4dedc91 is 17 bytes inside a block of size 1,024 alloc'd
+==1333261==    at 0x484A919: malloc (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x4B45BA3: _IO_file_doallocate (filedoalloc.c:101)
+==1333261==    by 0x4B54CDF: _IO_doallocbuf (genops.c:347)
+==1333261==    by 0x4B53F5F: _IO_file_overflow@@GLIBC_2.2.5 (fileops.c:744)
+==1333261==    by 0x4B526D4: _IO_new_file_xsputn (fileops.c:1243)
+==1333261==    by 0x4B526D4: _IO_file_xsputn@@GLIBC_2.2.5 (fileops.c:1196)
+==1333261==    by 0x4B46FD6: fwrite (iofwrite.c:39)
+==1333261==    by 0x49B7B64: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x119D92: Server::Server(int&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E06A: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==  Block was alloc'd by thread #1
+==1333261== 
+==1333261== ----------------------------------------------------------------
+==1333261== 
+==1333261==  Lock at 0x1FFEFFF080 was first observed
+==1333261==    at 0x4854BFE: pthread_mutex_init (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x119E56: Server::Server(int&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E06A: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==  Address 0x1ffefff080 is on thread #1's stack
+==1333261==  in frame #6, created by main (???:)
+==1333261== 
+==1333261== Possible data race during write of size 8 at 0x129058 by thread #1
+==1333261== Locks held: none
+==1333261==    at 0x49B7AE0: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x11AC53: Server::signalHandler(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x4B0951F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==1333261==    by 0x4BDFBCC: poll (poll.c:29)
+==1333261==    by 0x11A964: Server::run() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E079: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261== 
+==1333261== This conflicts with a previous write of size 8 by thread #2
+==1333261== Locks held: 1, at address 0x1FFEFFF080
+==1333261==    at 0x49B7AE0: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x111796: Client::handleRead() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A6E1: Server::handleClient(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A75D: Server::clientHandler(void*) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x485396A: ??? (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x4B5BAC2: start_thread (pthread_create.c:442)
+==1333261==    by 0x4BECA03: clone (clone.S:100)
+==1333261==  Address 0x129058 is 24 bytes inside data symbol "_ZSt4cout@GLIBCXX_3.4"
+==1333261== 
+==1333261== ----------------------------------------------------------------
+==1333261== 
+==1333261==  Lock at 0x1FFEFFF080 was first observed
+==1333261==    at 0x4854BFE: pthread_mutex_init (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x119E56: Server::Server(int&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E06A: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==  Address 0x1ffefff080 is on thread #1's stack
+==1333261==  in frame #9, created by main (???:)
+==1333261== 
+==1333261== Possible data race during write of size 1 at 0x4DEDC92 by thread #1
+==1333261== Locks held: none
+==1333261==    at 0x48597B4: mempcpy (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x4B52664: _IO_new_file_xsputn (fileops.c:1235)
+==1333261==    by 0x4B52664: _IO_file_xsputn@@GLIBC_2.2.5 (fileops.c:1196)
+==1333261==    by 0x4B46FD6: fwrite (iofwrite.c:39)
+==1333261==    by 0x49A9AF7: std::ostreambuf_iterator<char, std::char_traits<char> > std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::_M_insert_int<long>(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, long) const (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B8119: std::ostream& std::ostream::_M_insert<long>(long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x11AC63: Server::signalHandler(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x4B0951F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==1333261==    by 0x4BDFBCC: poll (poll.c:29)
+==1333261==    by 0x11A964: Server::run() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E079: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261== 
+==1333261== This conflicts with a previous write of size 1 by thread #2
+==1333261== Locks held: 1, at address 0x1FFEFFF080
+==1333261==    at 0x48597B4: mempcpy (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x4B52664: _IO_new_file_xsputn (fileops.c:1235)
+==1333261==    by 0x4B52664: _IO_file_xsputn@@GLIBC_2.2.5 (fileops.c:1196)
+==1333261==    by 0x4B46FD6: fwrite (iofwrite.c:39)
+==1333261==    by 0x49B7B64: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x1117AB: Client::handleRead() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A6E1: Server::handleClient(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A75D: Server::clientHandler(void*) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==  Address 0x4dedc92 is 18 bytes inside a block of size 1,024 alloc'd
+==1333261==    at 0x484A919: malloc (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x4B45BA3: _IO_file_doallocate (filedoalloc.c:101)
+==1333261==    by 0x4B54CDF: _IO_doallocbuf (genops.c:347)
+==1333261==    by 0x4B53F5F: _IO_file_overflow@@GLIBC_2.2.5 (fileops.c:744)
+==1333261==    by 0x4B526D4: _IO_new_file_xsputn (fileops.c:1243)
+==1333261==    by 0x4B526D4: _IO_file_xsputn@@GLIBC_2.2.5 (fileops.c:1196)
+==1333261==    by 0x4B46FD6: fwrite (iofwrite.c:39)
+==1333261==    by 0x49B7B64: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x119D92: Server::Server(int&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E06A: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==  Block was alloc'd by thread #1
+==1333261== 
+==1333261== ----------------------------------------------------------------
+==1333261== 
+==1333261==  Lock at 0x1FFEFFF080 was first observed
+==1333261==    at 0x4854BFE: pthread_mutex_init (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x119E56: Server::Server(int&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E06A: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==  Address 0x1ffefff080 is on thread #1's stack
+==1333261==  in frame #6, created by main (???:)
+==1333261== 
+==1333261== Possible data race during read of size 8 at 0x129058 by thread #1
+==1333261== Locks held: none
+==1333261==    at 0x49B7A22: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x11AC78: Server::signalHandler(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x4B0951F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==1333261==    by 0x4BDFBCC: poll (poll.c:29)
+==1333261==    by 0x11A964: Server::run() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E079: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261== 
+==1333261== This conflicts with a previous write of size 8 by thread #2
+==1333261== Locks held: 1, at address 0x1FFEFFF080
+==1333261==    at 0x49B7AE0: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x111796: Client::handleRead() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A6E1: Server::handleClient(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A75D: Server::clientHandler(void*) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x485396A: ??? (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x4B5BAC2: start_thread (pthread_create.c:442)
+==1333261==    by 0x4BECA03: clone (clone.S:100)
+==1333261==  Address 0x129058 is 24 bytes inside data symbol "_ZSt4cout@GLIBCXX_3.4"
+==1333261== 
+==1333261== ----------------------------------------------------------------
+==1333261== 
+==1333261==  Lock at 0x1FFEFFF080 was first observed
+==1333261==    at 0x4854BFE: pthread_mutex_init (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x119E56: Server::Server(int&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E06A: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==  Address 0x1ffefff080 is on thread #1's stack
+==1333261==  in frame #6, created by main (???:)
+==1333261== 
+==1333261== Possible data race during write of size 8 at 0x129058 by thread #1
+==1333261== Locks held: none
+==1333261==    at 0x49B7AE0: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x11AC78: Server::signalHandler(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x4B0951F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==1333261==    by 0x4BDFBCC: poll (poll.c:29)
+==1333261==    by 0x11A964: Server::run() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E079: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261== 
+==1333261== This conflicts with a previous write of size 8 by thread #2
+==1333261== Locks held: 1, at address 0x1FFEFFF080
+==1333261==    at 0x49B7AE0: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x111796: Client::handleRead() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A6E1: Server::handleClient(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A75D: Server::clientHandler(void*) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x485396A: ??? (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x4B5BAC2: start_thread (pthread_create.c:442)
+==1333261==    by 0x4BECA03: clone (clone.S:100)
+==1333261==  Address 0x129058 is 24 bytes inside data symbol "_ZSt4cout@GLIBCXX_3.4"
+==1333261== 
+Interrupt signal (2) received. Closing server socket.
+==1333261== 
+==1333261== Use --history-level=approx or =none to gain increased speed, at
+==1333261== the cost of reduced accuracy of conflicting-access information
+==1333261== ERROR SUMMARY: 38 errors from 6 contexts (suppressed: 4492487 from 72)
+==1333261== 
+==1333261== 1 errors in context 1 of 6:
+==1333261== ----------------------------------------------------------------
+==1333261== 
+==1333261==  Lock at 0x1FFEFFF080 was first observed
+==1333261==    at 0x4854BFE: pthread_mutex_init (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x119E56: Server::Server(int&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E06A: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==  Address 0x1ffefff080 is in a rw- anonymous segment
+==1333261== 
+==1333261== Possible data race during write of size 8 at 0x129058 by thread #1
+==1333261== Locks held: none
+==1333261==    at 0x49B7AE0: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x11AC78: Server::signalHandler(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x4B0951F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==1333261==    by 0x4BDFBCC: poll (poll.c:29)
+==1333261==    by 0x11A964: Server::run() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E079: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261== 
+==1333261== This conflicts with a previous write of size 8 by thread #2
+==1333261== Locks held: 1, at address 0x1FFEFFF080
+==1333261==    at 0x49B7AE0: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x111796: Client::handleRead() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A6E1: Server::handleClient(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A75D: Server::clientHandler(void*) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x485396A: ??? (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x4B5BAC2: start_thread (pthread_create.c:442)
+==1333261==    by 0x4BECA03: clone (clone.S:100)
+==1333261==  Address 0x129058 is 24 bytes inside data symbol "_ZSt4cout@GLIBCXX_3.4"
+==1333261== 
+==1333261== 
+==1333261== 1 errors in context 2 of 6:
+==1333261== ----------------------------------------------------------------
+==1333261== 
+==1333261==  Lock at 0x1FFEFFF080 was first observed
+==1333261==    at 0x4854BFE: pthread_mutex_init (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x119E56: Server::Server(int&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E06A: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==  Address 0x1ffefff080 is in a rw- anonymous segment
+==1333261== 
+==1333261== Possible data race during read of size 8 at 0x129058 by thread #1
+==1333261== Locks held: none
+==1333261==    at 0x49B7A22: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x11AC78: Server::signalHandler(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x4B0951F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==1333261==    by 0x4BDFBCC: poll (poll.c:29)
+==1333261==    by 0x11A964: Server::run() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E079: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261== 
+==1333261== This conflicts with a previous write of size 8 by thread #2
+==1333261== Locks held: 1, at address 0x1FFEFFF080
+==1333261==    at 0x49B7AE0: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x111796: Client::handleRead() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A6E1: Server::handleClient(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A75D: Server::clientHandler(void*) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x485396A: ??? (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x4B5BAC2: start_thread (pthread_create.c:442)
+==1333261==    by 0x4BECA03: clone (clone.S:100)
+==1333261==  Address 0x129058 is 24 bytes inside data symbol "_ZSt4cout@GLIBCXX_3.4"
+==1333261== 
+==1333261== 
+==1333261== 1 errors in context 3 of 6:
+==1333261== ----------------------------------------------------------------
+==1333261== 
+==1333261==  Lock at 0x1FFEFFF080 was first observed
+==1333261==    at 0x4854BFE: pthread_mutex_init (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x119E56: Server::Server(int&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E06A: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==  Address 0x1ffefff080 is in a rw- anonymous segment
+==1333261== 
+==1333261== Possible data race during write of size 1 at 0x4DEDC92 by thread #1
+==1333261== Locks held: none
+==1333261==    at 0x48597B4: mempcpy (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x4B52664: _IO_new_file_xsputn (fileops.c:1235)
+==1333261==    by 0x4B52664: _IO_file_xsputn@@GLIBC_2.2.5 (fileops.c:1196)
+==1333261==    by 0x4B46FD6: fwrite (iofwrite.c:39)
+==1333261==    by 0x49A9AF7: std::ostreambuf_iterator<char, std::char_traits<char> > std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::_M_insert_int<long>(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, long) const (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B8119: std::ostream& std::ostream::_M_insert<long>(long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x11AC63: Server::signalHandler(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x4B0951F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==1333261==    by 0x4BDFBCC: poll (poll.c:29)
+==1333261==    by 0x11A964: Server::run() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E079: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261== 
+==1333261== This conflicts with a previous write of size 1 by thread #2
+==1333261== Locks held: 1, at address 0x1FFEFFF080
+==1333261==    at 0x48597B4: mempcpy (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x4B52664: _IO_new_file_xsputn (fileops.c:1235)
+==1333261==    by 0x4B52664: _IO_file_xsputn@@GLIBC_2.2.5 (fileops.c:1196)
+==1333261==    by 0x4B46FD6: fwrite (iofwrite.c:39)
+==1333261==    by 0x49B7B64: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x1117AB: Client::handleRead() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A6E1: Server::handleClient(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A75D: Server::clientHandler(void*) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==  Address 0x4dedc92 is 18 bytes inside a block of size 1,024 alloc'd
+==1333261==    at 0x484A919: malloc (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x4B45BA3: _IO_file_doallocate (filedoalloc.c:101)
+==1333261==    by 0x4B54CDF: _IO_doallocbuf (genops.c:347)
+==1333261==    by 0x4B53F5F: _IO_file_overflow@@GLIBC_2.2.5 (fileops.c:744)
+==1333261==    by 0x4B526D4: _IO_new_file_xsputn (fileops.c:1243)
+==1333261==    by 0x4B526D4: _IO_file_xsputn@@GLIBC_2.2.5 (fileops.c:1196)
+==1333261==    by 0x4B46FD6: fwrite (iofwrite.c:39)
+==1333261==    by 0x49B7B64: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x119D92: Server::Server(int&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E06A: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==  Block was alloc'd by thread #1
+==1333261== 
+==1333261== 
+==1333261== 1 errors in context 4 of 6:
+==1333261== ----------------------------------------------------------------
+==1333261== 
+==1333261==  Lock at 0x1FFEFFF080 was first observed
+==1333261==    at 0x4854BFE: pthread_mutex_init (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x119E56: Server::Server(int&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E06A: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==  Address 0x1ffefff080 is in a rw- anonymous segment
+==1333261== 
+==1333261== Possible data race during write of size 8 at 0x129058 by thread #1
+==1333261== Locks held: none
+==1333261==    at 0x49B7AE0: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x11AC53: Server::signalHandler(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x4B0951F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==1333261==    by 0x4BDFBCC: poll (poll.c:29)
+==1333261==    by 0x11A964: Server::run() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E079: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261== 
+==1333261== This conflicts with a previous write of size 8 by thread #2
+==1333261== Locks held: 1, at address 0x1FFEFFF080
+==1333261==    at 0x49B7AE0: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x111796: Client::handleRead() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A6E1: Server::handleClient(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A75D: Server::clientHandler(void*) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x485396A: ??? (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x4B5BAC2: start_thread (pthread_create.c:442)
+==1333261==    by 0x4BECA03: clone (clone.S:100)
+==1333261==  Address 0x129058 is 24 bytes inside data symbol "_ZSt4cout@GLIBCXX_3.4"
+==1333261== 
+==1333261== 
+==1333261== 1 errors in context 5 of 6:
+==1333261== ----------------------------------------------------------------
+==1333261== 
+==1333261==  Lock at 0x1FFEFFF080 was first observed
+==1333261==    at 0x4854BFE: pthread_mutex_init (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x119E56: Server::Server(int&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E06A: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==  Address 0x1ffefff080 is in a rw- anonymous segment
+==1333261== 
+==1333261== Possible data race during read of size 8 at 0x129058 by thread #1
+==1333261== Locks held: none
+==1333261==    at 0x49B7A22: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x11AC53: Server::signalHandler(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x4B0951F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==1333261==    by 0x4BDFBCC: poll (poll.c:29)
+==1333261==    by 0x11A964: Server::run() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E079: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261== 
+==1333261== This conflicts with a previous write of size 8 by thread #2
+==1333261== Locks held: 1, at address 0x1FFEFFF080
+==1333261==    at 0x49B7AE0: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x111796: Client::handleRead() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A6E1: Server::handleClient(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A75D: Server::clientHandler(void*) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x485396A: ??? (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x4B5BAC2: start_thread (pthread_create.c:442)
+==1333261==    by 0x4BECA03: clone (clone.S:100)
+==1333261==  Address 0x129058 is 24 bytes inside data symbol "_ZSt4cout@GLIBCXX_3.4"
+==1333261== 
+==1333261== 
+==1333261== 33 errors in context 6 of 6:
+==1333261== ----------------------------------------------------------------
+==1333261== 
+==1333261==  Lock at 0x1FFEFFF080 was first observed
+==1333261==    at 0x4854BFE: pthread_mutex_init (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x119E56: Server::Server(int&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E06A: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==  Address 0x1ffefff080 is in a rw- anonymous segment
+==1333261== 
+==1333261== Possible data race during write of size 1 at 0x4DEDC91 by thread #1
+==1333261== Locks held: none
+==1333261==    at 0x4859796: mempcpy (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x4B52664: _IO_new_file_xsputn (fileops.c:1235)
+==1333261==    by 0x4B52664: _IO_file_xsputn@@GLIBC_2.2.5 (fileops.c:1196)
+==1333261==    by 0x4B46FD6: fwrite (iofwrite.c:39)
+==1333261==    by 0x49B7B64: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x11AC53: Server::signalHandler(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x4B0951F: ??? (in /usr/lib/x86_64-linux-gnu/libc.so.6)
+==1333261==    by 0x4BDFBCC: poll (poll.c:29)
+==1333261==    by 0x11A964: Server::run() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E079: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261== 
+==1333261== This conflicts with a previous write of size 1 by thread #2
+==1333261== Locks held: 1, at address 0x1FFEFFF080
+==1333261==    at 0x48597B4: mempcpy (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x4B52664: _IO_new_file_xsputn (fileops.c:1235)
+==1333261==    by 0x4B52664: _IO_file_xsputn@@GLIBC_2.2.5 (fileops.c:1196)
+==1333261==    by 0x4B46FD6: fwrite (iofwrite.c:39)
+==1333261==    by 0x49B7B64: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x1117AB: Client::handleRead() (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A6E1: Server::handleClient(int) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11A75D: Server::clientHandler(void*) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==  Address 0x4dedc91 is 17 bytes inside a block of size 1,024 alloc'd
+==1333261==    at 0x484A919: malloc (in /usr/libexec/valgrind/vgpreload_helgrind-amd64-linux.so)
+==1333261==    by 0x4B45BA3: _IO_file_doallocate (filedoalloc.c:101)
+==1333261==    by 0x4B54CDF: _IO_doallocbuf (genops.c:347)
+==1333261==    by 0x4B53F5F: _IO_file_overflow@@GLIBC_2.2.5 (fileops.c:744)
+==1333261==    by 0x4B526D4: _IO_new_file_xsputn (fileops.c:1243)
+==1333261==    by 0x4B526D4: _IO_file_xsputn@@GLIBC_2.2.5 (fileops.c:1196)
+==1333261==    by 0x4B46FD6: fwrite (iofwrite.c:39)
+==1333261==    by 0x49B7B64: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x49B7EBA: std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30)
+==1333261==    by 0x119D92: Server::Server(int&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==    by 0x11E06A: main (in /home/lilizarr/42_Cursus/ft_irc/ircserv)
+==1333261==  Block was alloc'd by thread #1
+==1333261== 
+--1333261-- 
+--1333261-- used_suppression: 4492487 helgrind-glibc2X-005 /usr/libexec/valgrind/default.supp:947
+==1333261== 
+==1333261== ERROR SUMMARY: 38 errors from 6 contexts (suppressed: 4492487 from 72)
+make: *** [Makefile:141: hel] Interrupt
