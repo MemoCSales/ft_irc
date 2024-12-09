@@ -104,18 +104,12 @@ def cmd(word, word_eol, userdata):
 
 def runServer():
 	hexchat.hook_command("cmd", cmd)
+	# hexchat.command("set text_font Ubuntu Mono 9")
 	#Get info of current session
 	# hexchat.command(f"set irc_user_name {nick}")
 	# hexchat.command(f"set irc_real_name Real{nick}")
 
 	# Connect to server command
 	hexchat.command("server irc")
-	
-
-	# send message if server is correct
-
-
-
-# Hook into the server connection event using the 001 numeric reply code
 
 runServer()

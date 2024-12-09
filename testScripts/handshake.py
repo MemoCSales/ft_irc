@@ -23,9 +23,10 @@ __module_name__ = "On Handshake"
 __module_version__ = "1.0"
 __module_description__ = "Prints a message when the handshake is established"
 connection_established = False
-message = ""
+message = []
 #--------------------------------------------------------------------------------
 def send_message(nick):
+	print()
 	hexchat.command(f"msg {nick} {nick}test")
 	return False
 #--------------------------------------------------------------------------------
@@ -39,22 +40,25 @@ def hexChatMsg():
 		realname = context.get_info("realname")
 		context_id = context.get_info("contextid")
 		
-		hexchat.prnt(f"{GREEN}Connected to network: {network}{ENDC}")
-		hexchat.prnt(f"{GREEN}Server address: {server}{ENDC}")
-		hexchat.prnt(f"{GREEN}Nick: {nick}{ENDC}")
-		hexchat.prnt(f"{GREEN}User name: {user}{ENDC}")
-		hexchat.prnt(f"{GREEN}Real name: {realname}{ENDC}")
-		hexchat.prnt(f"{GREEN}Context ID: {context_id}{ENDC}")
+		hexchat.prnt(f"\n{LIGHT_GREY}Connected to network: {network}{ENDC}")
+		hexchat.prnt(f"{LIGHT_GREY}Server address: {server}{ENDC}")
+		hexchat.prnt(f"{LIGHT_GREY}Nick: {nick}{ENDC}")
+		hexchat.prnt(f"{LIGHT_GREY}User name: {user}{ENDC}")
+		hexchat.prnt(f"{LIGHT_GREY}Real name: {realname}{ENDC}")
+		hexchat.prnt(f"{LIGHT_GREY}Context ID: {context_id}{ENDC}")
 		hexchat.hook_timer(1000, send_message, nick)
 	else:
 		hexchat.prnt(f"{RED}Failed to get current context{ENDC}")
 	return False
 #--------------------------------------------------------------------------------
+
 def on_handshake(word, word_eol, userdata):
 	global connection_established
 	global message
+	if not word_eol:
+		message.append("\n")
 	if word_eol:
-		message += "\t" + ''.join(word_eol[0])
+		message.append(word_eol[0])
 		if "NOTICE" in word_eol[0]:
 			hexchat.prnt(f"{YELLOW}NOTICE{ENDC}")
 		elif "ERROR" in word_eol[0]:
@@ -63,8 +67,8 @@ def on_handshake(word, word_eol, userdata):
 			if not connection_established:
 				hexchat.prnt(f"{LIGHT_GREY}------------- HANDSHAKE WITH SERVER -------------{ENDC}")
 				connection_established = True
-			for line in message and "\n" in line:
-				hexchat.emit_print("Server Text", f"{line}")
+			for line in message:
+				hexchat.emit_print("Server Text", f"\t{BLUE}{line}{ENDC}")
 			hexChatMsg()
 			# try:
 			# 	message = message.encode('ascii', 'ignore').decode('ascii')
@@ -80,7 +84,6 @@ def on_handshake(word, word_eol, userdata):
 hexchat.hook_server("RAW LINE", on_handshake)
 # hexchat.hook_print("Server Text", on_handshake)
 #--------------------------------------------------------------------------------
-# hexchat.hook_server("001", on_handshake)
 # print(__module_name__, "version", __module_version__, "loaded.")
 # hexChatMsg()
 
