@@ -1,3 +1,5 @@
+this is a test
+
 ^C==1333261== ---Thread-Announcement------------------------------------------
 ==1333261== 
 ==1333261== Thread #1 is the program's root thread
