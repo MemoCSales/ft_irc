@@ -17,14 +17,14 @@
 - [x] Check if ip and port are restricted values or allowed, set up warnings?
 - [ ] If connection is lost with all clients, clean screen
 - [ ] when debug=true, keep log with connections
-- [ ] check with helgrind for threads and file descriptors
-- [ ] Find problem with hexChat, it keeps port open when closing from terminal
+- [x] check with helgrind for threads and file descriptors
+- [x] Find problem with hexChat, it keeps port open when closing from terminal
 - [ ] 
 - [ ] 
 - [ ] 
 
 ## Client
-- [ ] Check python testHexChaty on server message
+- [x] Check python testHexChaty on server message
 - [ ] Check if client connection is a new file descriptor when joining a channel or making new connection, is 
 # NOTES
 

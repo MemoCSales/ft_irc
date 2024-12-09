@@ -72,6 +72,7 @@ Server::Server(int& port, const std::string& password) : password(password)
 
 		pthread_mutex_init(&clientsMutex, NULL);
 		pthread_mutex_init(&channelsMutex, NULL);
+		pthread_mutex_init(&printMutex, NULL);
 		setupSignalHandlers();
 
 		// Start the periodic PING task
@@ -129,9 +130,7 @@ void Server::handleNewConnection()
 void Server::handleClient(int clientFD)
 {
 	pthread_mutex_lock(&clientsMutex);
-	std::map<int, Client*>::iterator it = clients.find(clientFD);
-	if (it != clients.end())
-		it->second->handleRead();
+	clients.at(clientFD)->handleRead();
 	pthread_mutex_unlock(&clientsMutex);
 }
 
@@ -149,7 +148,6 @@ void* Server::clientHandler(void* arg)
 		pthread_mutex_unlock(&server->clientsMutex);
 		server->removeClient(client->getFd());
 	}
-	std::cerr << error("END CLIENT", 0);
 	return NULL;
 }
 
@@ -211,26 +209,28 @@ void Server::signalHandler(int signum)
 
 Server::~Server()
 {
-	pthread_mutex_destroy(&clientsMutex);
-	pthread_mutex_destroy(&channelsMutex);
-	// pthread_mutex_lock(&clientsMutex);
+	pthread_mutex_lock(&clientsMutex);
 	for (ClientsIte it = clients.begin(); it != clients.end(); ++it)
 	{
 		delete it->second;
 		close(it->first);
 		clients.erase(it);
 	}
-	// pthread_mutex_unlock(&clientsMutex);
-	// pthread_mutex_lock(&channelsMutex);
+	pthread_mutex_unlock(&clientsMutex);
+	pthread_mutex_lock(&channelsMutex);
 	for (ChannelIte it = channels.begin(); it != channels.end(); ++it)
 	{
 		delete it->second;
 		// close(it->first);
 		channels.erase(it);
 	}
-	// pthread_mutex_unlock(&channelsMutex);
-	// pthread_mutex_destroy(&clientsMutex);
-	// pthread_mutex_destroy(&channelsMutex);
+	pthread_mutex_unlock(&channelsMutex);
+
+	pthread_mutex_destroy(&clientsMutex);
+	pthread_mutex_destroy(&channelsMutex);
+	pthread_mutex_destroy(&printMutex);
+	clients.clear();
+	channels.clear();
 	close(serverFD);
 	removeLockFile();
 }

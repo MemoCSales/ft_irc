@@ -34,6 +34,7 @@ class Server
 		std::map<std::string, Channel*> channels;
 		pthread_mutex_t clientsMutex;
 		pthread_mutex_t channelsMutex;
+		pthread_mutex_t printMutex;
 		std::string const password;
 		std::string const lockFilePath;
 		static Server* instance;
