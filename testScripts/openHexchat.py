@@ -84,6 +84,9 @@ def modify_hexchat_config():
 				hexchat_config_file.write(f"irc_user_name = {USERNAME}\n")
 			elif line.startswith(f"irc_real_name ="):
 				hexchat_config_file.write(f"irc_real_name = Real{USERNAME}\n")
+			# elif line.startswith("text_font ="):
+			# 	if line.strip() != "text_font = Ubuntu Mono 9":
+			# 		hexchat_config_file.write("text_font = Ubuntu Mono 9\n")
 			else:
 				hexchat_config_file.write(line)
 		
@@ -98,7 +101,8 @@ nick, username, realname = modify_hexchat_config()
 # command = f'flatpak run io.github.Hexchat --existing--command="server {network}"'
 command = (
 	'flatpak run io.github.Hexchat '
-	'--command="py load ~/.var/app/io.github.Hexchat/config/hexchat/addons/testHexChat.py"'
+	'--command="set text_font Ubuntu Mono 9" '
+	'--command="py load ~/.var/app/io.github.Hexchat/config/hexchat/addons/testHexChat.py" '
 )
 #	'--command="server irc"'
 print("\n", MAG, f"command = {command}", ENDC)

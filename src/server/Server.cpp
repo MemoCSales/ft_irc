@@ -86,19 +86,25 @@ Server::Server(int& port, const std::string& password) : password(password)
 
 Server::~Server()
 {
-	pthread_mutex_destroy(&clientsMutex);
-	pthread_mutex_destroy(&channelsMutex);
-	close(serverFD);
-
+	pthread_mutex_lock(&clientsMutex);
 	for (ClientsIte it = clients.begin(); it != clients.end(); ++it)
 	{
 		delete it->second;
+		close(it->first);
+		clients.erase(it);
 	}
-
+	pthread_mutex_unlock(&clientsMutex);
+	pthread_mutex_lock(&channelsMutex);
 	for (ChannelIte it = channels.begin(); it != channels.end(); ++it)
 	{
 		delete it->second;
+		// close(it->first);
+		channels.erase(it);
 	}
+	pthread_mutex_unlock(&channelsMutex);
+	pthread_mutex_destroy(&clientsMutex);
+	pthread_mutex_destroy(&channelsMutex);
+	close(serverFD);
 	removeLockFile();
 }
 
@@ -115,29 +121,29 @@ void Server::setNonBlocking(int fd)
 	}
 }
 
-static std::string welcomeMsg()
+std::string Server::welcomeMsg()
 {
-	
 	std::stringstream msg;
 	
 
-	msg << "\n\t ⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄" ;
-	msg << "\n\t ⣠⣾⣿⡟⠛⢻⠛⠛⠛⠛⠛⢿⣿⣿⠟⠛⠛⠛⣿⣿⣷⣄" ;
-	msg << "\n\t ⣿⣿⣿⡇⠀⢸⠀⠀⣿⣿⡇⠀⣿⠁⠀⣠⣤⣤⣿⣿⣿⣿" ;
-	msg << "\n\t ⣿⣿⣿⡇⠀⢸⠀⠀⠿⠿⠃⣠⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿" ;
-	msg << "\n\t ⣿⣿⣿⡇⠀⢸⠀⠀⣀⣀⠀⠙⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿" ;
-	msg << "\n\t ⣿⣿⣿⣇⣀⣸⣀⣀⣿⣿⣀⣀⣿⣦⡀⣀⣀⣀⣿⣿⣿⣿" ;
-	msg << "\n\t ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠿⢿⣿⣿⣿⣿⣿⣿" ;
-	msg << "\n\t ⣿⣿⣿⣿⣿⣿⡿⠿⠛⠿⡿⠉⠀⠀⠀⠀⠈⠹⣿⣿⣿⣿" ;
-	msg << "\n\t ⣿⣿⣿⣿⡿⠁⠀⠀⠀⠀⢇⠀⠛⠘⠃⠛⠀⢠⣿⣿⣿⣿" ;
-	msg << "\n\t ⣿⣿⣿⣿⣧⡀⠛⠘⠃⠛⠀⢑⣤⣄⣀⣤⡀⣿⣿⣿⣿⣿" ;
-	msg << "\n\t ⣿⣿⣿⣿⣿⡗⢀⣀⣀⣀⣤⣾⣿⣿⣿⣿⣷⣾⣿⣿⣿⣿" ;
-	msg << "\n\t ⠙⢿⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋" ;
-	msg << "\n\t ⠀⠀⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋" ;
-	msg << std::endl;
-	msg << "\n\tWelcome to the FT_IRC server!" << std::endl << std::endl;
+	msg << "\t⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⠀⠀" << std::endl;
+	msg << "\t⣠⣾⣿⡟⠛⢻⠛⠛⠛⠛⠛⢿⣿⣿⠟⠛⠛⠛⣿⣿⣷⣄" << std::endl;
+	msg << "\t⣿⣿⣿⡇⠀⢸⠀⠀⣿⣿⡇⠀⣿⠁⠀⣠⣤⣤⣿⣿⣿⣿" << std::endl;
+	msg << "\t⣿⣿⣿⡇⠀⢸⠀⠀⠿⠿⠃⣠⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿" << std::endl;
+	msg << "\t⣿⣿⣿⡇⠀⢸⠀⠀⣀⣀⠀⠙⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿" << std::endl;
+	msg << "\t⣿⣿⣿⣇⣀⣸⣀⣀⣿⣿⣀⣀⣿⣦⡀⣀⣀⣀⣿⣿⣿⣿" << std::endl;
+	msg << "\t⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠿⢿⣿⣿⣿⣿⣿⣿" << std::endl;
+	msg << "\t⣿⣿⣿⣿⣿⣿⡿⠿⠛⠿⡿⠉⠀⠀⠀⠀⠈⠹⣿⣿⣿⣿" << std::endl;
+	msg << "\t⣿⣿⣿⣿⡿⠁⠀⠀⠀⠀⢇⠀⠛⠘⠃⠛⠀⢠⣿⣿⣿⣿" << std::endl;
+	msg << "\t⣿⣿⣿⣿⣧⡀⠛⠘⠃⠛⠀⢑⣤⣄⣀⣤⡀⣿⣿⣿⣿⣿" << std::endl;
+	msg << "\t⣿⣿⣿⣿⣿⡗⢀⣀⣀⣀⣤⣾⣿⣿⣿⣿⣷⣾⣿⣿⣿⣿" << std::endl;
+	msg << "\t⠙⢿⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋" << std::endl;
+	msg << "\t⠀⠀⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋⠀⠀" << std::endl;
+	msg << "\nWelcome to the FT_IRC server!" << std::endl << std::endl;
 	return msg.str();
+	// return getColorStr(FGREEN, msg.str());
 }
+
 void Server::handleNewConnection()
 {
 	try
@@ -299,6 +305,7 @@ void Server::removeClient(int clientFD)
 	if (it != clients.end())
 	{
 		delete it->second;
+		close(clientFD);
 		clients.erase(it);
 	}
 	pthread_mutex_unlock(&clientsMutex);

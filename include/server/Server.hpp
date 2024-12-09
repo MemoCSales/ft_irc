@@ -55,6 +55,7 @@ class Server
 		static Server* getInstance(); // is it the only solution?
 		~Server();
 		void run();
+		std::string welcomeMsg();
 		std::string const getPassword() const;
 		std::map<std::string, Channel*>& getChannels();
 		std::map<int, Client*>& getClients();
