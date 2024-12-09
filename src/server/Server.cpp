@@ -74,6 +74,9 @@ Server::Server(int& port, const std::string& password) : password(password)
 		pthread_mutex_init(&channelsMutex, NULL);
 		setupSignalHandlers();
 
+		setOperName();
+		setOperPassword();
+
 		// Start the periodic PING task
 		// startPingTask();
 	}
@@ -337,4 +340,21 @@ void Server::startPingTask() {
 	pthread_t thread;
 	pthread_create(&thread, NULL, pingTask, this);
 	pthread_detach(thread);
+}
+
+
+void Server::setOperName(void) {
+	_operName = OPER_NAME;
+}
+
+void Server::setOperPassword(void) {
+	_operPassword = OPER_PASS;
+}
+
+std::string const Server::getOperName() const {
+	return _operName;
+}
+
+std::string const Server::getOperPassword() const {
+	return _operPassword;
 }

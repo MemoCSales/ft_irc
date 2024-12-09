@@ -23,6 +23,7 @@ class Client
 	private:
 		int _clientFD;
 		bool _authenticated;
+		bool _serverOperator;
 	public:
 		std::string nickname;
 		std::string username;
@@ -39,6 +40,10 @@ class Client
 
 		// Setter
 		void setAuthenticated(bool);
+		void setServerOperator(bool);
+
+		// Getters
+		bool getServerOperator() const;
 
 };
 

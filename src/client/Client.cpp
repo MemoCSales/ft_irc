@@ -57,7 +57,15 @@ void Client::setAuthenticated(bool flag) {
 	_authenticated = flag;
 }
 
+void Client::setServerOperator(bool flag) {
+	_serverOperator = flag;
+}
+
 int Client::getFd() const
 {
 	return _clientFD;
+}
+
+bool Client::getServerOperator() const {
+	return _serverOperator;
 }

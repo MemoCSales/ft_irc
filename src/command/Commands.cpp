@@ -9,6 +9,7 @@ Command::Command(CommandType type, Server& server) : _type(type), _server(server
 	commands[QUIT] = &Command::handleQuit;
 	commands[PING] = &Command::handlePing;
 	commands[PONG] = &Command::handlePong;
+	commands[OPER] = &Command::handleOper;
 }
 
 void Command::execute(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
@@ -29,12 +30,12 @@ void Command::handlePass(Client& client, const std::string& args, std::map<std::
 	if (password == _server.getPassword()) {
 		client.setAuthenticated(true);
 		std::cout << "Client authenticated -> fd: " << client.getFd() << std::endl;
+		if (!client.nickname.empty() && !client.username.empty()) {
+			response = RPL_WELCOME(client.nickname);
+			client.sendMessage(response);
+		}
 	} else {
 		response = ERR_PASSWDMISMATCH;
-		client.sendMessage(response);
-	}
-	if (!client.nickname.empty() && !client.username.empty()) {
-		std::string response = RPL_WELCOME(client.nickname);
 		client.sendMessage(response);
 	}
 }
@@ -184,4 +185,36 @@ void Command::handlePong(Client& client, const std::string& args, std::map<std::
 		return;
 	}
 	std::cout << "PONG command received with the token: " << reason  << std::endl;
+}
+
+void Command::handleOper(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
+	(void)channels;
+	std::string command = "OPER";
+	std::istringstream stream(args);
+	std::string name, password, response;
+
+	stream >> name >> password;
+	name = trim(name);
+	password = trim(password);
+
+	if (name.empty() || password.empty()) {
+		response = ERR_NEEDMOREPARAMS(command);
+		client.sendMessage(response);
+		return ;
+	}
+	if (name != _server.getOperName()) {
+		response = ERR_NOOPERHOST;
+		client.sendMessage(response);
+		return ;
+	}
+	if (password != _server.getOperPassword()) {
+		response = ERR_PASSWDMISMATCH;
+		client.sendMessage(response);
+		return ;
+	}
+
+	client.setServerOperator(true);
+	response = RPL_YOUREOPER;
+	client.sendMessage(response);
+	std::cout << "Client " << client.nickname << " is now a server operator." << std::endl;
 }

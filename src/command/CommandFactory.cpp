@@ -10,6 +10,7 @@ CommandFactory::CommandFactory(Server& server) {
 	commands["QUIT"] = new CommandCreatorImpl<Command>(QUIT, server);
 	commands["PING"] = new CommandCreatorImpl<Command>(PING, server);
 	commands["PONG"] = new CommandCreatorImpl<Command>(PONG, server);
+	commands["OPER"] = new CommandCreatorImpl<Command>(OPER, server);
 }
 
 CommandFactory::~CommandFactory() {
