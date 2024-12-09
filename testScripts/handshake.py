@@ -27,7 +27,7 @@ message = []
 #--------------------------------------------------------------------------------
 def send_message(nick):
 	print()
-	# hexchat.command(f"msg {nick} {nick}test")
+	hexchat.command(f"msg {nick} {nick}test")
 	return False
 #--------------------------------------------------------------------------------
 def hexChatMsg():
@@ -69,7 +69,8 @@ def on_handshake(word, word_eol, userdata):
 				hexchat.prnt(f"{LIGHT_GREY}------------- HANDSHAKE WITH SERVER -------------{ENDC}")
 				connection_established = True
 			for line in message:
-				hexchat.emit_print("Server Text", f"\t{BLUE}{line}{ENDC}")
+				hexchat.emit_print("Server Text", f"\t{line}")
+				# hexchat.emit_print("Server Text", f"\t{BLUE}{line}{ENDC}")
 			hexChatMsg()
 		elif connection_established:
 			hexchat.emit_print("Server Text", f"\t{BLUE}{word_eol[0]}{ENDC}")

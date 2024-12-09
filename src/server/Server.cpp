@@ -84,66 +84,6 @@ Server::Server(int& port, const std::string& password) : password(password)
 	}
 }
 
-Server::~Server()
-{
-	pthread_mutex_lock(&clientsMutex);
-	for (ClientsIte it = clients.begin(); it != clients.end(); ++it)
-	{
-		delete it->second;
-		close(it->first);
-		clients.erase(it);
-	}
-	pthread_mutex_unlock(&clientsMutex);
-	pthread_mutex_lock(&channelsMutex);
-	for (ChannelIte it = channels.begin(); it != channels.end(); ++it)
-	{
-		delete it->second;
-		// close(it->first);
-		channels.erase(it);
-	}
-	pthread_mutex_unlock(&channelsMutex);
-	pthread_mutex_destroy(&clientsMutex);
-	pthread_mutex_destroy(&channelsMutex);
-	close(serverFD);
-	removeLockFile();
-}
-
-void Server::setNonBlocking(int fd)
-{
-	int flags = fcntl(fd, F_GETFL, 0);
-	if (flags == -1)
-	{
-		throw std::runtime_error("Failed to get file descriptor flags: " + std::string(strerror(errno)));
-	}
-	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1)
-	{
-		throw std::runtime_error("Failed to set non-blocking mode: " + std::string(strerror(errno)));
-	}
-}
-
-std::string Server::welcomeMsg()
-{
-	std::stringstream msg;
-	
-
-	msg << "\t⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⠀⠀" << std::endl;
-	msg << "\t⣠⣾⣿⡟⠛⢻⠛⠛⠛⠛⠛⢿⣿⣿⠟⠛⠛⠛⣿⣿⣷⣄" << std::endl;
-	msg << "\t⣿⣿⣿⡇⠀⢸⠀⠀⣿⣿⡇⠀⣿⠁⠀⣠⣤⣤⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⡇⠀⢸⠀⠀⠿⠿⠃⣠⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⡇⠀⢸⠀⠀⣀⣀⠀⠙⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⣇⣀⣸⣀⣀⣿⣿⣀⣀⣿⣦⡀⣀⣀⣀⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠿⢿⣿⣿⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⣿⣿⣿⡿⠿⠛⠿⡿⠉⠀⠀⠀⠀⠈⠹⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⣿⡿⠁⠀⠀⠀⠀⢇⠀⠛⠘⠃⠛⠀⢠⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⣿⣧⡀⠛⠘⠃⠛⠀⢑⣤⣄⣀⣤⡀⣿⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⣿⣿⡗⢀⣀⣀⣀⣤⣾⣿⣿⣿⣿⣷⣾⣿⣿⣿⣿" << std::endl;
-	msg << "\t⠙⢿⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋" << std::endl;
-	msg << "\t⠀⠀⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋⠀⠀" << std::endl;
-	msg << "\nWelcome to the FT_IRC server!" << std::endl << std::endl;
-	return msg.str();
-	// return getColorStr(FGREEN, msg.str());
-}
-
 void Server::handleNewConnection()
 {
 	try
@@ -206,8 +146,10 @@ void* Server::clientHandler(void* arg)
 	}
 	catch (const std::exception& e) {
 		std::cerr << "Error handling client: " << e.what() << std::endl;
+		pthread_mutex_unlock(&server->clientsMutex);
 		server->removeClient(client->getFd());
 	}
+	std::cerr << error("END CLIENT", 0);
 	return NULL;
 }
 
@@ -267,6 +209,68 @@ void Server::signalHandler(int signum)
 	exit(signum);
 }
 
+Server::~Server()
+{
+	pthread_mutex_destroy(&clientsMutex);
+	pthread_mutex_destroy(&channelsMutex);
+	// pthread_mutex_lock(&clientsMutex);
+	for (ClientsIte it = clients.begin(); it != clients.end(); ++it)
+	{
+		delete it->second;
+		close(it->first);
+		clients.erase(it);
+	}
+	// pthread_mutex_unlock(&clientsMutex);
+	// pthread_mutex_lock(&channelsMutex);
+	for (ChannelIte it = channels.begin(); it != channels.end(); ++it)
+	{
+		delete it->second;
+		// close(it->first);
+		channels.erase(it);
+	}
+	// pthread_mutex_unlock(&channelsMutex);
+	// pthread_mutex_destroy(&clientsMutex);
+	// pthread_mutex_destroy(&channelsMutex);
+	close(serverFD);
+	removeLockFile();
+}
+
+void Server::setNonBlocking(int fd)
+{
+	int flags = fcntl(fd, F_GETFL, 0);
+	if (flags == -1)
+	{
+		throw std::runtime_error("Failed to get file descriptor flags: " + std::string(strerror(errno)));
+	}
+	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1)
+	{
+		throw std::runtime_error("Failed to set non-blocking mode: " + std::string(strerror(errno)));
+	}
+}
+
+std::string Server::welcomeMsg()
+{
+	std::stringstream msg;
+	
+
+	msg << "\t⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⠀⠀" << std::endl;
+	msg << "\t⣠⣾⣿⡟⠛⢻⠛⠛⠛⠛⠛⢿⣿⣿⠟⠛⠛⠛⣿⣿⣷⣄" << std::endl;
+	msg << "\t⣿⣿⣿⡇⠀⢸⠀⠀⣿⣿⡇⠀⣿⠁⠀⣠⣤⣤⣿⣿⣿⣿" << std::endl;
+	msg << "\t⣿⣿⣿⡇⠀⢸⠀⠀⠿⠿⠃⣠⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿" << std::endl;
+	msg << "\t⣿⣿⣿⡇⠀⢸⠀⠀⣀⣀⠀⠙⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿" << std::endl;
+	msg << "\t⣿⣿⣿⣇⣀⣸⣀⣀⣿⣿⣀⣀⣿⣦⡀⣀⣀⣀⣿⣿⣿⣿" << std::endl;
+	msg << "\t⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠿⢿⣿⣿⣿⣿⣿⣿" << std::endl;
+	msg << "\t⣿⣿⣿⣿⣿⣿⡿⠿⠛⠿⡿⠉⠀⠀⠀⠀⠈⠹⣿⣿⣿⣿" << std::endl;
+	msg << "\t⣿⣿⣿⣿⡿⠁⠀⠀⠀⠀⢇⠀⠛⠘⠃⠛⠀⢠⣿⣿⣿⣿" << std::endl;
+	msg << "\t⣿⣿⣿⣿⣧⡀⠛⠘⠃⠛⠀⢑⣤⣄⣀⣤⡀⣿⣿⣿⣿⣿" << std::endl;
+	msg << "\t⣿⣿⣿⣿⣿⡗⢀⣀⣀⣀⣤⣾⣿⣿⣿⣿⣷⣾⣿⣿⣿⣿" << std::endl;
+	msg << "\t⠙⢿⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋" << std::endl;
+	msg << "\t⠀⠀⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋⠀⠀" << std::endl;
+	msg << "\nWelcome to the FT_IRC server!" << std::endl << std::endl;
+	return msg.str();
+	// return getColorStr(FGREEN, msg.str());
+}
+
 Server* Server::getInstance()
 {
 	return instance;
@@ -294,10 +298,11 @@ void Server::removeClient(int clientFD)
 	if (it != clients.end())
 	{
 		delete it->second;
-		close(clientFD);
+		close(it->first);
 		clients.erase(it);
 	}
 	pthread_mutex_unlock(&clientsMutex);
+	pthread_exit(NULL);
 }
 
 std::string const Server::getPassword() const {
