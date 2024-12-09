@@ -64,13 +64,15 @@ def on_handshake(word, word_eol, userdata):
 			hexchat.prnt(f"{YELLOW}NOTICE{ENDC}")
 		elif "ERROR" in word_eol[0]:
 			hexchat.prnt(f"{RED}ERROR{ENDC}")
-		elif "Welcome" in word:
+		elif "FT_IRC" in word:
 			if not connection_established:
 				hexchat.prnt(f"{LIGHT_GREY}------------- HANDSHAKE WITH SERVER -------------{ENDC}")
 				connection_established = True
 			for line in message:
 				hexchat.emit_print("Server Text", f"\t{BLUE}{line}{ENDC}")
 			hexChatMsg()
+		elif connection_established:
+			hexchat.emit_print("Server Text", f"\t{BLUE}{word_eol[0]}{ENDC}")
 			# try:
 			# 	message = message.encode('ascii', 'ignore').decode('ascii')
 			# except UnicodeEncodeError:

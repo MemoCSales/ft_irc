@@ -168,7 +168,6 @@ void Server::handleNewConnection()
 		inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
 		int clientPort = ntohs(clientAddress.sin_port);
 		
-		
 		std::cout << getColorStr(FGREEN, "New client connected: ") << clientIP << ":" << clientPort
 		<< "[" << clientSocket << "]"<< std::endl;
 
@@ -177,9 +176,8 @@ void Server::handleNewConnection()
 
 		pthread_mutex_unlock(&clientsMutex);
 
-		ClientHandler* handler = new ClientHandler(this, clientSocket);
 		pthread_t thread;
-		pthread_create(&thread, NULL, ClientHandler::start, handler);
+		pthread_create(&thread, NULL, Server::clientHandler, newClient);
 		pthread_detach(thread);
 	}
 	catch (const std::exception& e)
@@ -190,33 +188,27 @@ void Server::handleNewConnection()
 
 void Server::handleClient(int clientFD)
 {
+	pthread_mutex_lock(&clientsMutex);
+	std::map<int, Client*>::iterator it = clients.find(clientFD);
+	if (it != clients.end())
+		it->second->handleRead();
+	pthread_mutex_unlock(&clientsMutex);
+}
+
+void* Server::clientHandler(void* arg)
+{
+	Client* client = static_cast<Client*>(arg);
+	Server* server = Server::getInstance();
 	try
 	{
 		while (true)
-		{
-			pthread_mutex_lock(&clientsMutex);
-			std::map<int, Client*>::iterator it = clients.find(clientFD);
-			if (it != clients.end())
-			{
-				try
-				{
-					it->second->handleRead();
-				} catch (const std::runtime_error& e)
-				{
-					std::cerr << "Client " << clientFD << " error: " << e.what() << std::endl;
-					pthread_mutex_unlock(&clientsMutex);
-					throw; // Re-throw to handle cleanup outside the loop
-				}
-			}
-			pthread_mutex_unlock(&clientsMutex);
-		}
+			server->handleClient(client->getFd());
 	}
-	catch (const std::exception& e)
-	{
+	catch (const std::exception& e) {
 		std::cerr << "Error handling client: " << e.what() << std::endl;
-		close(clientFD);
-		removeClient(clientFD);
+		server->removeClient(client->getFd());
 	}
+	return NULL;
 }
 
 void Server::run()
@@ -227,19 +219,16 @@ void Server::run()
 		{
 			int pollCount = poll(pollFDs.data(), pollFDs.size(), -1);
 			if (pollCount < 0)
-			{
 				throw std::runtime_error("Poll failed: " + std::string(strerror(errno)));
-			}
 
 			for (size_t i = 0; i < pollFDs.size(); ++i)
 			{
 				if (pollFDs[i].revents & POLLIN)
 				{
-					if (pollFDs[i].fd == serverFD) {
+					if (pollFDs[i].fd == serverFD)
 						handleNewConnection();
-					} else {
+					else
 						handleClient(pollFDs[i].fd);
-					}
 				}
 			}
 		}

@@ -61,8 +61,8 @@ class Server
 		std::map<int, Client*>& getClients();
 		void sendPingToClients();
 		void startPingTask();
-
-		friend class ClientHandler;
+		static void* clientHandler(void* arg);
+		// friend class ClientHandler;
 };
 
 /**
@@ -97,28 +97,28 @@ class Server
  * This operator invokes the server's handleClient method with the client
  * file descriptor.
  */
-class ClientHandler
-{
-	private:
-		Server* server;
-		int clientFD;
+// class ClientHandler
+// {
+// 	private:
+// 		Server* server;
+// 		int clientFD;
 
-	public:
-		ClientHandler(Server* srv, int fd) : server(srv), clientFD(fd) {}
+// 	public:
+// 		ClientHandler(Server* srv, int fd) : server(srv), clientFD(fd) {}
 
-		static void* start(void* arg)
-		{
-			ClientHandler* handler = static_cast<ClientHandler*>(arg);
-			(*handler)();
-			delete handler;
-			return NULL;
-		}
+// 		static void* start(void* arg)
+// 		{
+// 			ClientHandler* handler = static_cast<ClientHandler*>(arg);
+// 			(*handler)();
+// 			delete handler;
+// 			return NULL;
+// 		}
 
-		void operator()() const
-		{
-			server->handleClient(clientFD);
-		}
-};
+// 		void operator()() const
+// 		{
+// 			server->handleClient(clientFD);
+// 		}
+// };
 
 /**
  * @class SockAddressInitializer
