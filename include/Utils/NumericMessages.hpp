@@ -12,6 +12,7 @@
 # define ERR_ALREADYREGISTERED ":server 462 * :You may not reregister\r\n"
 # define ERROR(reason) "Error: " + reason + "\r\n"
 # define ERR_NOOPERHOST " server 491 * :No O-lines for your host\r\n"
+# define ERR_NOTREGISTERED " server 451 * :You have not registered\r\n"
 
 
 /* REPLY MESSAGES */

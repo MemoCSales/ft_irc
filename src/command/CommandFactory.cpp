@@ -11,6 +11,7 @@ CommandFactory::CommandFactory(Server& server) {
 	commands["PING"] = new CommandCreatorImpl<Command>(PING, server);
 	commands["PONG"] = new CommandCreatorImpl<Command>(PONG, server);
 	commands["OPER"] = new CommandCreatorImpl<Command>(OPER, server);
+	commands["PRIVMSG"] = new CommandCreatorImpl<Command>(PRIVMSG, server);
 }
 
 CommandFactory::~CommandFactory() {

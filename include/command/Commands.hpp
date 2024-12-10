@@ -13,7 +13,8 @@ enum CommandType {
 	QUIT,
 	PING,
 	PONG,
-	OPER
+	OPER,
+	PRIVMSG
 };
 
 class Command : public ICommand {
@@ -29,6 +30,7 @@ class Command : public ICommand {
 		void handlePing(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
 		void handlePong(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
 		void handleOper(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
+		void handlePrivMsg(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
 
 		// ReturnType (ClassName::*PointerName)(ParameterTypes)
 		typedef void(Command::*CommandHandler) (Client& client, const std::string& args, std::map<std::string, Channel*>& channels);

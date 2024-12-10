@@ -1,6 +1,7 @@
 # include "Commands.hpp"
 # include "NumericMessages.hpp"
 # include "Utils.hpp"
+# include "InputParser.hpp"
 
 Command::Command(CommandType type, Server& server) : _type(type), _server(server) {
 	commands[PASS] = &Command::handlePass;
@@ -10,6 +11,7 @@ Command::Command(CommandType type, Server& server) : _type(type), _server(server
 	commands[PING] = &Command::handlePing;
 	commands[PONG] = &Command::handlePong;
 	commands[OPER] = &Command::handleOper;
+	commands[PRIVMSG] = &Command::handlePrivMsg;
 }
 
 void Command::execute(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
@@ -46,6 +48,12 @@ void Command::handleNick(Client& client, const std::string& args, std::map<std::
 	std::string oldNick = client.nickname;
 	bool nickExists = false;
 
+	// Checks if the Client is already authenticated
+	if (!client.isAuthenticated()) {
+		client.sendMessage(ERR_NOTREGISTERED);
+		return;
+	}
+
 	//check for a valid newNickname : ERR_ERRONEUSNICKNAME 432
 	std::map<int, Client*>& clients = _server.getClients();
 	std::map<int, Client*>::iterator it = clients.begin();
@@ -81,16 +89,26 @@ void Command::handleNick(Client& client, const std::string& args, std::map<std::
 
 void Command::handleUser(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	(void)channels;
-	std::istringstream stream(args);
-	std::string userName, mode, unused, realName;
 
-	stream >> userName >> mode >> unused;
-	std::getline(stream, realName);
+	// Checks if the Client is already authenticated
+	if (!client.isAuthenticated()) {
+		client.sendMessage(ERR_NOTREGISTERED);
+		return;
+	}
+	std::vector<std::string> tokens = InputParser::parseInput(args, ' ');
 
-	userName = trim(userName);
-	mode = trim(mode);
-	unused = trim(unused);
-	realName = trim(realName);
+	if (tokens.size() < 4) {
+		std::string command = "USER";
+		std::string response = ERR_NEEDMOREPARAMS(command);
+		client.sendMessage(response);
+		client.sendMessage("Usage: Command <username> 0 * <realname>\r\n");
+		return ;
+	}
+
+	std::string userName = trim(tokens[0]);
+	std::string mode = trim(tokens[1]);
+	std::string unused = trim(tokens[2]);
+	std::string realName = trim(tokens[3]);
 
 	if (!realName.empty() && realName[0] == ':') {
 		realName = realName.substr(1);
@@ -125,13 +143,13 @@ void Command::handleUser(Client& client, const std::string& args, std::map<std::
 }
 
 void Command::handleQuit(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
-	std::istringstream stream(args);
-	std::string reason, response;
+	std::vector<std::string> tokens = InputParser::parseInput(args, ' ');
+	std::string reason = tokens.empty() ? "" : tokens[0];
+	std::string response;
 
-	getline(stream, reason);
 	if (reason.empty()) {
 		response = "Quit";
-		std::cout << response << std::endl;
+		// std::cout << response << std::endl;
 	} else {
 		response = RPL_QUIT(reason);
 	}
@@ -151,13 +169,11 @@ void Command::handleQuit(Client& client, const std::string& args, std::map<std::
 void Command::handlePing(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	(void)channels;
 
-	std::istringstream stream(args);
-	std::string reason;
+	std::vector<std::string> tokens = InputParser::parseInput(args, ' ');
+	std::string reason = tokens.empty() ? "" : trim(tokens[0]);
 
-	getline(stream, reason);
-	reason = trim(reason);
-	std::cout << "Reason: " << reason << std::endl;
-	// printAsciiDecimal(reason);
+	InputParser::printTokens(tokens);
+
 	if (reason.empty()) {
 		std::string command = "PING";
 		std::string response = ERR_NEEDMOREPARAMS(command);
@@ -171,13 +187,9 @@ void Command::handlePing(Client& client, const std::string& args, std::map<std::
 void Command::handlePong(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	(void)channels;
 
-	std::istringstream stream(args);
-	std::string reason;
+	std::vector<std::string> tokens = InputParser::parseInput(args, ' ');
+	std::string reason = tokens.empty() ? "" : trim(tokens[0]);
 
-	getline(stream, reason);
-	reason = trim(reason);
-	std::cout << "Reason: " << reason << std::endl;
-	printAsciiDecimal(reason);
 	if (reason.empty()) {
 		std::string command = "PING";
 		std::string response = ERR_NEEDMOREPARAMS(command);
@@ -189,13 +201,25 @@ void Command::handlePong(Client& client, const std::string& args, std::map<std::
 
 void Command::handleOper(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	(void)channels;
-	std::string command = "OPER";
-	std::istringstream stream(args);
-	std::string name, password, response;
 
-	stream >> name >> password;
-	name = trim(name);
-	password = trim(password);
+	// Checks if the Client is already authenticated
+	if (!client.isAuthenticated() || client.nickname.empty() || client.username.empty()) {
+		client.sendMessage(ERR_NOTREGISTERED);
+		return;
+	}
+
+	std::string command = "OPER";
+	std::string response;
+	std::vector<std::string> tokens = InputParser::parseInput(args, ' ');
+
+	if (tokens.size() < 2) {
+		client.sendMessage(ERR_NEEDMOREPARAMS(command));
+		client.sendMessage("Usage: Command <name> <password>\r\n");
+		return ;
+	}
+
+	std::string name = trim(tokens[0]);
+	std::string password = trim(tokens[1]);
 
 	if (name.empty() || password.empty()) {
 		response = ERR_NEEDMOREPARAMS(command);
@@ -217,4 +241,20 @@ void Command::handleOper(Client& client, const std::string& args, std::map<std::
 	response = RPL_YOUREOPER;
 	client.sendMessage(response);
 	std::cout << "Client " << client.nickname << " is now a server operator." << std::endl;
+}
+
+void Command::handlePrivMsg(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
+	(void)channels;
+	(void)args;
+
+	// Checks if the Client is already authenticated
+	if (!client.isAuthenticated() || client.nickname.empty() || client.username.empty()) {
+		client.sendMessage(ERR_NOTREGISTERED);
+		return;
+	}
+
+	// Find the position of the colon that tells me the start of the message
+
+
+
 }
