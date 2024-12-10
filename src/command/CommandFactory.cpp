@@ -10,7 +10,12 @@ CommandFactory::CommandFactory(Server& server) {
 	commands["QUIT"] = new CommandCreatorImpl<Command>(QUIT, server);
 	commands["JOIN"] = new CommandCreatorImpl<Command>(JOIN, server);
 	commands["TOPIC"] = new CommandCreatorImpl<Command>(TOPIC, server);
+	commands["INVITE"] = new CommandCreatorImpl<Command>(INVITE, server);
 	commands["PART"] = new CommandCreatorImpl<Command>(PART, server);
+	commands["KICK"] = new CommandCreatorImpl<Command>(KICK, server);
+	commands["MODE"] = new CommandCreatorImpl<Command>(MODE, server);
+
+
 
 
 

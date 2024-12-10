@@ -28,10 +28,10 @@ class Client
 	private:
 		int _clientFD;
 		bool _authenticated;
-                Server* server;
-                Channel* currentChannel; // Pointer to the current channel
-                bool _isOperator;
-                std::vector<Channel *> channels;
+		Server* server;
+		Channel* currentChannel; // Pointer to the current channel
+		bool _isOperator;
+		std::vector<Channel *> channels;
 	public:
 		std::string nickname;
 		std::string username;
@@ -39,7 +39,7 @@ class Client
 		std::string _buffer;
 		pthread_t thread;
 
-                Client( Server* srv);
+		Client( Server* srv);
 
 		Client(int fd);
 		~Client();
@@ -47,27 +47,29 @@ class Client
 		void sendMessage(const std::string &message);
 		void handleRead();
 		bool isAuthenticated() const;
+//		std::string getClientNick() const {return nickname;}
 
 		// Setter
 		void setAuthenticated(bool);
 
-                //-------my fct
-                void handleCommunication(); // Handles communication with this client
-                void joinChannel(const std::string& channelName,Server& server);
-                void exitChanel(std::string& channelName, Server &server);
-                int getSocket() const { return _clientFD; }
+		//-------my fct
+		void handleCommunication(); // Handles communication with this client
+		void joinChannel(const std::string& channelName,Server& server);
+		void exitChanel(std::string& channelName, Server &server);
+		int getSocket() const { return _clientFD; }
+		std::string getClientNick() const {return this->nickname;}
 
-                ////just for  testing/debuging ///
-                void	setCurrentChannel(Channel *chanel);
-                // commands
+		////just for  testing/debuging ///
+		void	setCurrentChannel(Channel *chanel);
+		// commands
 
-                void 	chanelCommands(std::istringstream& stream);
-                void 	kickCommand(const std::string& channelName, const std::string& targetName);
-                void 	setPass(std::string message);
-                void	modeCommands(std::string message);
-                void	sendInvitation(std::string channelName);
+		void 	chanelCommands(std::istringstream& stream);
+		void 	kickCommand(const std::string& channelName, const std::string& targetName,Server &server);
+		void 	setPass(std::string channelName, std::string passWord);
+		void	modeCommands(std::string message);
+		void	channelTopic(std::string &channelName, std::string &channelTopic);
+		void 	sendInvitation(const std::string &channelName, const std::string &targetNick, Server &server);
 
-                void	channelTopic(std::string &channelName, std::string &channelTopic);
 
 
 };

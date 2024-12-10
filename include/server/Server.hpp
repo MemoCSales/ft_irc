@@ -68,6 +68,7 @@ class Server
 		Channel* getChannel(const std::string& name);
 		void removeChannel(const std::string& name);
 		void sendChannelInvitation(const std::string& channelName);
+		Client* getClientByNick(const std::string& nick);
 };
 
 /**

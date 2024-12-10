@@ -23,7 +23,7 @@ private:
 	// std::mutex channelMutex; // protects the member lists
 
 public:
-	Channel (const std::string& channelName) : _name(channelName) {}
+	Channel (const std::string& channelName) : _name(channelName) ,_topic("null") {}
 	void	addMember(Client* client);
 	void	removeMember(Client* client);
 	void	broadcast(const std::string& message, Client* sender);

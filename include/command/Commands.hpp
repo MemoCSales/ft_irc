@@ -13,8 +13,10 @@ enum CommandType {
 	QUIT,
 	JOIN,
 	TOPIC,
-	PART
-
+	PART,
+	KICK,
+	MODE,
+	INVITE
 };
 
 class Command : public ICommand {
@@ -31,6 +33,9 @@ class Command : public ICommand {
 		void handleJoin(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
 		void handleTopic(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
 		void handlePart(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
+		void handleKick(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
+		void handleMode(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
+		void handleInvite(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
 
 		// ReturnType (ClassName::*PointerName)(ParameterTypes)
 		typedef void(Command::*CommandHandler) (Client& client, const std::string& args, std::map<std::string, Channel*>& channels);

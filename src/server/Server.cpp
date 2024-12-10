@@ -301,44 +301,34 @@ Channel* Server::getOrCreateChannel(const std::string& name) {
 }
 
 
-Channel* Server::getChannel(const std::string& name) {
-    // pthread_mutex_lock(&clientsMutex);
-	(void)name;
-	std::cout << "here in get channel\n";
-	std::cout << channels.size() << std::endl;
-
-	// std::cout << channels["#first"]->getName() << std::endl;
-	std::cout << "after " << std::endl;
-	// for (std::map<std::string, Channel*>::iterator it = channel.begin)
-    // if (it != channels.end()) {
-    //     // pthread_mutex_unlock(&clientsMutex); // Ensure mutex is unlocked before returning
-    //     return it->second;
-    // }
-
-    // pthread_mutex_unlock(&clientsMutex);
-    return NULL;
+Channel *Server::getChannel(const std::string &name) {
+	pthread_mutex_lock(&channelsMutex);
+	// Check if the channel exists
+	std::map<std::string, Channel *>::iterator it = channels.find(name);
+	if (it != channels.end()) {
+		// Unlock the mutex before returning
+		pthread_mutex_unlock(&channelsMutex);
+		return it->second;// Return the existing channel
+	}
+	pthread_mutex_unlock(&channelsMutex);
+	return NULL;// Return the new channel
 }
 
 void Server::removeChannel(const std::string& name) {
     // pthread_mutex_lock(&clientsMutex);
-
     std::map<std::string, Channel*>::iterator it = channels.find(name);
     if (it != channels.end()) {
         delete it->second;
         channels.erase(it);
     }
-
     // pthread_mutex_unlock(&clientsMutex);
 }
 
-void Server::sendChannelInvitation(const std::string& channelName) {
-    pthread_mutex_lock(&clientsMutex);
-    for (std::map<int, Client*>::iterator it = clients.begin(); it != clients.end(); ++it) {
-        if (it->second) { // Check if the Client pointer is valid
-            it->second->sendInvitation(channelName); // Access the Client object
-        }
-    }
-    pthread_mutex_unlock(&clientsMutex);
+Client* Server::getClientByNick(const std::string& nick) {
+	for (std::map<int, Client*>::iterator it = clients.begin(); it != clients.end(); ++it) {
+		if (it->second->getClientNick() == nick) {
+			return it->second;
+		}
+	}
+	return NULL;
 }
-
-

@@ -26,13 +26,24 @@ void CommandParser::parseAndExecute(Client& client, const std::string& message, 
 	// printAsciiDecimal(args);
 	// std::cout << "Client AUTH: " << client.isAuthenticated() << std::endl;
 	// std::cout << "Cap Negotiation: " << client.isCapNegotiation() << std::endl;
-
-	CommandPtr command = commandFactory->createCommand(commandName);
-	if (command) {
-		command->execute(client, args, channels);
-		delete command;
-	} else {
-		std::string response = ERR_UNKNOWNCOMMAND(commandName);
-		client.sendMessage(response);
+	if (commandName[0] == '#') {  // need to check if the channel exists
+	Client *clientPtr = &client;
+		for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); ++it) {
+			if (it->first == commandName) {
+				it->second->broadcast(args,clientPtr);
+				break;
+			}
+		}
 	}
+	else {
+		CommandPtr command = commandFactory->createCommand(commandName);
+		if (command) {
+			command->execute(client, args, channels);
+			delete command;
+		} else {
+			std::string response = ERR_UNKNOWNCOMMAND(commandName);
+			client.sendMessage(response);
+		}
+	}
+
 }

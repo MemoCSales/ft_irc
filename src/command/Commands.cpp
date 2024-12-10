@@ -1,6 +1,7 @@
 # include "Commands.hpp"
 # include "NumericMessages.hpp"
 # include "Utils.hpp"
+//#include "Client.hpp"
 
 Command::Command(CommandType type, Server& server) : _type(type), _server(server) {
 	commands[PASS] = &Command::handlePass;
@@ -10,6 +11,9 @@ Command::Command(CommandType type, Server& server) : _type(type), _server(server
 	commands[JOIN] = &Command::handleJoin;
 	commands[TOPIC] = &Command::handleTopic;
 	commands[PART] = &Command::handlePart;
+	commands[KICK] = &Command::handleKick;
+	commands[INVITE] = &Command::handleInvite;
+	commands[MODE] = &Command::handleMode;
 
 
 }
@@ -173,8 +177,8 @@ void	Command::handleTopic(Client& client, const std::string& args, std::map<std:
 	std::string topic;
 	stream >> topic;
 	client.channelTopic(channelName, topic);
-	
 }
+
 void	Command::handlePart(Client& client, const std::string& args, std::map<std::string, Channel*>& channels){
 	(void)channels;
 	std::istringstream stream(args);
@@ -182,3 +186,42 @@ void	Command::handlePart(Client& client, const std::string& args, std::map<std::
 	stream >> channelName;
 	client.exitChanel(channelName, _server);
 }
+
+void	Command::handleKick(Client& client, const std::string& args, std::map<std::string, Channel*>& channels){
+	(void)channels;
+	std::istringstream stream(args);
+	std::string channelName;
+	stream >> channelName;
+	std::string target;
+	stream >> target;
+	client.kickCommand(channelName, target, _server);
+
+}
+
+void	Command::handleMode(Client& client, const std::string& args, std::map<std::string, Channel*>& channels){
+	(void)channels;
+	std::istringstream stream(args);
+	std::string channelName;
+	stream >> channelName;
+	std:: string flag;
+	stream >> flag;
+	if(flag == "k")
+	{
+		std::cout << "pass statement\n";
+		std::string passWord;
+		stream >> passWord;
+		client.setPass(channelName, passWord);
+	}
+}
+
+void	Command::handleInvite(Client& client, const std::string& args, std::map<std::string, Channel*>& channels){
+	(void)channels;
+	std::istringstream stream(args);
+	std::string channelName;
+	stream >> channelName;
+	std::string target;
+	stream >> target;
+
+	client.sendInvitation(channelName,target,_server);
+}
+
