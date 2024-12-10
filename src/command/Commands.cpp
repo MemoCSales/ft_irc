@@ -245,7 +245,8 @@ void Command::handleOper(Client& client, const std::string& args, std::map<std::
 
 void Command::handlePrivMsg(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	(void)channels;
-	(void)args;
+	std::string command = "PRIVMSG";
+	// (void)args;
 
 	// Checks if the Client is already authenticated
 	if (!client.isAuthenticated() || client.nickname.empty() || client.username.empty()) {
@@ -254,7 +255,35 @@ void Command::handlePrivMsg(Client& client, const std::string& args, std::map<st
 	}
 
 	// Find the position of the colon that tells me the start of the message
+	size_t colonPos = args.find(" :");
+	if (colonPos == std::string::npos) {
+		client.sendMessage(ERR_NEEDMOREPARAMS(command));
+		client.sendMessage("Usage: Command <target>{,<target>} :<text to be sent>\r\n");
+		return;
+	}
 
+	// Extract the targets and the message
+	std::string targetsStr = args.substr(0, colonPos);
+	std::string message = args.substr(colonPos + 2); // Skipping the " :"
 
+	// Split the target by comma
+	std::vector<std::string> tokens = InputParser::parseInput(targetsStr, ',');
 
+	// Debug printing
+	InputParser::printTokens(tokens);
+	std::cout << "Message: " << message << std::endl;
+
+	for (std::vector<std::string>::iterator itVector = tokens.begin(); itVector != tokens.end(); itVector++) {
+		bool found = false;
+		for (ClientsIte itClient = _server.getClients().begin(); itClient != _server.getClients().end(); itClient++) {
+			if (*itVector == itClient->second->nickname) {
+				itClient->second->sendMessage(client.nickname + ": " + message);
+				found = true;
+				break;
+			}
+			if (!found) {
+				client.sendMessage(ERR_NOSUCKNICK(*itVector));
+			}
+		}
+	}
 }

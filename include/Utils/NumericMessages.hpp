@@ -13,6 +13,7 @@
 # define ERROR(reason) "Error: " + reason + "\r\n"
 # define ERR_NOOPERHOST " server 491 * :No O-lines for your host\r\n"
 # define ERR_NOTREGISTERED " server 451 * :You have not registered\r\n"
+# define ERR_NOSUCKNICK(nickname) " server 401 * (" + nickname + ") :No such nickname \r\n"
 
 
 /* REPLY MESSAGES */
