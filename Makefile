@@ -24,7 +24,7 @@ S			= -1
 #------ DEBUG UTILS ------#
 CXX			:= c++
 MAKEFLAGS	+= --no-print-directory #--jobs
-VALGRIND	:= valgrind -s --leak-check=yes --show-leak-kinds=all -q 
+VALGRIND	:= valgrind -s --leak-check=yes --show-leak-kinds=all -q
 HELGRIND	:= valgrind -s --tool=helgrind
 MAC_LEAKS	:= leaks -atExit --
 
@@ -55,7 +55,7 @@ endif
 # MAKEFLAGS	+= -j4 #--debug #// -j for multinodes
 ifeq ($(S), 1)
 #------ INCLUDE SANATIZER FLAGS ------#
-D_FLAGS		+= -fsanitize=address,undefined,vptr
+D_FLAGS		+= -pthread -fsanitize=thread,undefined,vptr  -fno-optimize-sibling-calls
 endif
 # To enable verbose output during compilation Make V=1
 V ?= 0
@@ -121,8 +121,8 @@ re: fclean all
 # ATTENTION !!!!!!!!!!!!!!  USE WITH S=0 !
 ## do not use yet as it does not handle 
 val: $(NAME)
-	@echo $(RED) $(VALGRIND) ./$(NAME) $(shell echo $(num)) $(E_NC) "\n"
-	@$(VALGRIND) ./$(NAME) $(shell echo "$(num)"); echo
+	@echo $(RED) $(VALGRIND) ./$(NAME) $$port $$pass $(E_NC) "\n"
+	@$(VALGRIND) ./$(NAME) $$port $$pass ; echo
 leaks: $(NAME)
 	@echo $(RED)$(MAC_LEAKS) ./$(NAME) "$i" $(E_NC)  "\n"
 	@$(MAC_LEAKS) ./$(NAME)
@@ -137,12 +137,20 @@ check:
 		echo  $(f) [$(GREEN) OK $(E_NC)]; \
 	fi
 
+hel:$(NAME)
+	@port="6667"; \
+	pass="42";\
+	if [ "$(S)" -lt 1 ]; then \
+		echo $(RED) $(HELGRIND) ./$(NAME) $$port $$pass $(E_NC) "\n"; \
+		$(HELGRIND) ./$(NAME) $$port $$pass; \
+	fi;
+
 server: $(NAME)
 	@port="6667"; \
 	pass="42";\
 	echo $(BOLD) $(CYAN) ./$(NAME) $$port $$pass $(E_NC) "\n"; \
 	if [ "$(S)" = "0" ]; then \
-		echo $(E_NC); $(MAKE) -C . val; \
+		echo $(E_NC); $(MAKE) -C . val port=$$port pass=$$pass; \
 	else \
 		if [ -z "$(i)" ]; then \
 			echo $(E_NC); ./$(NAME) $$port $$pass; \
@@ -421,7 +429,7 @@ define CPP_CONTENT
 {{CLASS_NAME}}::{{CLASS_NAME}}({{CLASS_NAME}} const& rhs)
 {
 
-}sparse-checkout
+}
 
 {{CLASS_NAME}}::~{{CLASS_NAME}}(void)
 {
