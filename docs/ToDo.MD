@@ -18,11 +18,18 @@
 - [ ] If connection is lost with all clients, clean screen
 - [ ] when debug=true, keep log with connections
 - [x] check with helgrind for threads and file descriptors
-- [ ] fix print mutex in server
+- [x] fix print mutex in server
+- [ ] run make S=1 re server
+	- [ ] 
 
 ## Client
 - [x] Check python testHexChaty on server message
 - [ ] Check if client connection is a new file descriptor when joining a channel or making new connection, is 
+- [ ] Handle message when PASS is wrong
+
+## Channel
+- [ ] Integrate Marian's code 
+	- [ ] Add channel handler
 # NOTES
 
 In IRC, server replies are identified by numeric codes. These codes are used to convey various types of information, such as connection status, errors, and responses to commands. Here are some common numeric reply codes that you might find useful when hooking server events in HexChat:

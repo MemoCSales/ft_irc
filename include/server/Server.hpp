@@ -12,6 +12,7 @@
 # include <cerrno>
 # include <cstring> // strerror
 #include "Mutex.hpp"
+#include <csignal>
 #include "LockGuard.hpp"
 
 # ifndef DEBUG
@@ -32,12 +33,17 @@ class Server
 {
 	private:
 		int serverFD;
+		static volatile sig_atomic_t shutdownFlag;
+		// std::vector<pthread_t> workerThreads;
+		// pthread_cond_t shutdownCond;
+		// pthread_mutex_t shutdownMutex;
 		std::vector<struct pollfd> pollFDs;
 		std::map<int, Client*> clients;
 		std::map<std::string, Channel*> channels;
 		Mutex clientsMutex;
 		Mutex channelsMutex;
 		Mutex printMutex;
+		Mutex shutdownMutex;
 		std::string const password;
 		std::string const lockFilePath;
 		static Server* instance;
@@ -48,9 +54,13 @@ class Server
 
 		void setNonBlocking(int fd);
 		void setupSignalHandlers();
+		// To delete
 		void createLockFile();
 		void removeLockFile();
+		// End to delete
+
 		void removeClient(int clientFD);
+		static void signalHandlerWrapper(int signum);
 		// Disable copy constructor and assignment operator
 		Server(const Server&);
 		Server& operator=(const Server&);

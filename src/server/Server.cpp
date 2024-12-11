@@ -12,10 +12,11 @@
 #include <netdb.h>
 #include <utility>
 #include <stdexcept>
-#include <csignal>
+
 #include <fstream>
 
 Server* Server::instance = NULL;
+volatile sig_atomic_t Server::shutdownFlag = 0;
 
 Server::Server(int& port, const std::string& password) : 
 password(password)
@@ -135,7 +136,14 @@ void* Server::clientHandler(void* arg)
 	try
 	{
 		while (true)
+		{
+			{
+				LockGuard lock(server->shutdownMutex);
+				if (Server::shutdownFlag)
+					break;
+			}
 			server->handleClient(client->getFd());
+		}
 	}
 	catch (const std::exception& e)
 	{
@@ -154,7 +162,7 @@ void* Server::clientHandler(void* arg)
 
 void Server::run()
 {
-	while (true)
+	while (!instance->shutdownFlag)
 	{
 		try
 		{
@@ -177,43 +185,46 @@ void Server::run()
 			std::cerr << "Error in server run loop: " << e.what() << std::endl;
 		}
 	}
-}
-
-void Server::setupSignalHandlers()
-{
-	signal(SIGINT, Server::signalHandler);
-	signal(SIGTERM, Server::signalHandler);
-}
-
-void Server::signalHandler(int signum)
-{
 	{
-		LockGuard lock(instance->printMutex);
-		std::cout << "Interrupt signal (" << signum << ") received. Closing server socket." << std::endl;
-	}
-
-	// Access the server instance
-	Server* server = Server::getInstance();
-
-	// Send a message to each client
-	{
-		LockGuard lock(server->clientsMutex);
-		ClientsIte it = server->clients.begin();
-		for (; it != server->clients.end(); ++it)
+		LockGuard lock(clientsMutex);
+		ClientsIte it = clients.begin();
+		for (; it != clients.end(); ++it)
 		{
 			it->second->sendMessage("Server is shutting down.\n\n");
 		}
 	}
-
 	// Close the server socket
-	close(server->serverFD);
-
-	// Exit the program
-	exit(signum);
+	close(serverFD);
 }
+
+void Server::setupSignalHandlers()
+{
+	signal(SIGINT, Server::signalHandlerWrapper);
+	signal(SIGTERM, Server::signalHandlerWrapper);
+}
+
+void Server::signalHandlerWrapper(int signum)
+{
+	if (instance) {
+		instance->signalHandler(signum);
+	}
+}
+
+void Server::signalHandler(int signum)
+{
+	const char* msg = "Interrupt signal received. Shutting down server.\n";
+	write(STDERR_FILENO, msg, strlen(msg));
+	{
+		LockGuard lock(instance->shutdownMutex);
+		instance-> shutdownFlag = 1;
+	}
+	(void)signum;
+}
+
 
 Server::~Server()
 {
+	LockGuard lock(clientsMutex);
 	for (ClientsIte it = clients.begin(); it != clients.end(); ++it)
 	{
 		delete it->second;

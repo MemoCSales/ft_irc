@@ -157,7 +157,13 @@ server: $(NAME)
 		else \
 			echo $(E_NC); ./$(NAME) $(i); \
 		fi; \
-	fi
+	fi;
+	ret=$$?; \
+	if [ $$ret -eq 0 ]; then \
+		echo $(GREEN)"server finished"  $(E_NC); \
+	else \
+		echo $(RED)"...server terminated"  $(E_NC); \
+	fi;
 
 client: $(NAME)
 	@address="localhost"; \
@@ -174,6 +180,15 @@ client: $(NAME)
 	fi
 test:$(NAME)
 	./testScripts/runClients.sh
+dclient:$(NAME)
+	@chmod +x testScripts/defaultClient.sh
+	@./testScripts/defaultClient.sh; \
+	ret=$$?; \
+	if [ $$ret -eq 0 ]; then \
+		echo $(GREEN)"dClient finished"  $(E_NC); \
+	else \
+		echo $(RED)"...dClient terminated"  $(E_NC); \
+	fi;
 delUsers:
 	@pgrep -x "hexchat" > /dev/null; \
 	ret=$$?; \
