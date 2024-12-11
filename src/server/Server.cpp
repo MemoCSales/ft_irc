@@ -17,7 +17,8 @@
 
 Server* Server::instance = NULL;
 
-Server::Server(int& port, const std::string& password) : password(password)
+Server::Server(int& port, const std::string& password) : 
+password(password)
 {
 	instance = this;
 	try
@@ -27,20 +28,7 @@ Server::Server(int& port, const std::string& password) : password(password)
 		{
 			throw std::runtime_error("Can't create socket");
 		}
-		/**
-		 class stores the port and password and uses them during
-		 initialization and operation. The welcome message is
-		 displayed when the server starts listening on the specified
-		 IP address and port. The `SO_REUSEADDR` option is used to
-		 allow the server to bind to the port even if it is in the
-		 `TIME_WAIT` state. Additionally, signal handlers are set up
-		 to handle interruptions and close the server socket
-		 gracefully.
-		 * 
-		 */
 		int opt = 1;
-		// | SO_REUSEPORT
-		//if (bind(listeningSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) == -1) {
 		if (setsockopt(serverFD, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 		{
 			throw std::runtime_error("setsockopt(SO_REUSEADDR) failed");
@@ -70,8 +58,6 @@ Server::Server(int& port, const std::string& password) : password(password)
 		struct pollfd serverP_FDs = {serverFD, POLLIN, 0};
 		pollFDs.push_back(serverP_FDs);
 
-		pthread_mutex_init(&clientsMutex, NULL);
-		pthread_mutex_init(&channelsMutex, NULL);
 		setupSignalHandlers();
 
 		setOperName();
@@ -102,22 +88,26 @@ void Server::handleNewConnection()
 		struct pollfd pfd = {clientSocket, POLLIN, 0};
 		pollFDs.push_back(pfd);
 
-		pthread_mutex_lock(&clientsMutex);
-		Client* newClient = new Client(clientSocket);
-		clients.insert(std::make_pair(clientSocket, newClient));
+		Client* newClient;
+		{
+			LockGuard lock(clientsMutex);
+			newClient = new Client(clientSocket);
+			clients.insert(std::make_pair(clientSocket, newClient));
 
-		// Get client's IP address and port
-		char clientIP[INET_ADDRSTRLEN];
-		inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
-		int clientPort = ntohs(clientAddress.sin_port);
-		
-		std::cout << getColorStr(FGREEN, "New client connected: ") << clientIP << ":" << clientPort
-		<< "[" << clientSocket << "]"<< std::endl;
+			// Get client's IP address and port
+			char clientIP[INET_ADDRSTRLEN];
+			inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
+			int clientPort = ntohs(clientAddress.sin_port);
 
-		// Send welcome message
-		newClient->sendMessage(welcomeMsg());
+			{
+				LockGuard printLock(printMutex);
+				std::cout << getColorStr(FGREEN, "New client connected: ") << clientIP << ":" << clientPort
+						  << "[" << clientSocket << "]" << std::endl;
+			}
 
-		pthread_mutex_unlock(&clientsMutex);
+			// Send welcome message
+			newClient->sendMessage(welcomeMsg());
+		}
 
 		pthread_t thread;
 		pthread_create(&thread, NULL, Server::clientHandler, newClient);
@@ -125,17 +115,17 @@ void Server::handleNewConnection()
 	}
 	catch (const std::exception& e)
 	{
+		LockGuard printLock(printMutex);
 		std::cerr << "Error handling new connection: " << e.what() << std::endl;
 	}
 }
 
 void Server::handleClient(int clientFD)
 {
-	pthread_mutex_lock(&clientsMutex);
-	std::map<int, Client*>::iterator it = clients.find(clientFD);
+	LockGuard lock(clientsMutex);
+	ClientsIte it = clients.find(clientFD);
 	if (it != clients.end())
 		it->second->handleRead();
-	pthread_mutex_unlock(&clientsMutex);
 }
 
 void* Server::clientHandler(void* arg)
@@ -147,12 +137,18 @@ void* Server::clientHandler(void* arg)
 		while (true)
 			server->handleClient(client->getFd());
 	}
-	catch (const std::exception& e) {
-		std::cerr << "Error handling client: " << e.what() << std::endl;
-		pthread_mutex_unlock(&server->clientsMutex);
+	catch (const std::exception& e)
+	{
+		{
+			LockGuard printLock(server->printMutex);
+			std::cerr << "Error handling client: " << e.what() << std::endl;
+		}
 		server->removeClient(client->getFd());
 	}
-	std::cerr << error("END CLIENT\r\n", 0);
+	{
+		LockGuard printLock(server->printMutex);
+		std::cerr << error("END CLIENT\r\n", 0);
+	}
 	return NULL;
 }
 
@@ -177,6 +173,7 @@ void Server::run()
 		}
 		catch (const std::exception& e)
 		{
+			LockGuard printLock(printMutex);
 			std::cerr << "Error in server run loop: " << e.what() << std::endl;
 		}
 	}
@@ -190,18 +187,23 @@ void Server::setupSignalHandlers()
 
 void Server::signalHandler(int signum)
 {
-	std::cout << "Interrupt signal (" << signum << ") received. Closing server socket." << std::endl;
+	{
+		LockGuard lock(instance->printMutex);
+		std::cout << "Interrupt signal (" << signum << ") received. Closing server socket." << std::endl;
+	}
 
 	// Access the server instance
 	Server* server = Server::getInstance();
 
 	// Send a message to each client
-	pthread_mutex_lock(&server->clientsMutex);
-	for (ClientsIte it = server->clients.begin(); it != server->clients.end(); ++it)
 	{
-		it->second->sendMessage("Server is shutting down.\n\n");
+		LockGuard lock(server->clientsMutex);
+		ClientsIte it = server->clients.begin();
+		for (; it != server->clients.end(); ++it)
+		{
+			it->second->sendMessage("Server is shutting down.\n\n");
+		}
 	}
-	pthread_mutex_unlock(&server->clientsMutex);
 
 	// Close the server socket
 	close(server->serverFD);
@@ -212,26 +214,17 @@ void Server::signalHandler(int signum)
 
 Server::~Server()
 {
-	pthread_mutex_destroy(&clientsMutex);
-	pthread_mutex_destroy(&channelsMutex);
-	// pthread_mutex_lock(&clientsMutex);
 	for (ClientsIte it = clients.begin(); it != clients.end(); ++it)
 	{
 		delete it->second;
 		close(it->first);
 		clients.erase(it);
 	}
-	// pthread_mutex_unlock(&clientsMutex);
-	// pthread_mutex_lock(&channelsMutex);
 	for (ChannelIte it = channels.begin(); it != channels.end(); ++it)
 	{
 		delete it->second;
-		// close(it->first);
 		channels.erase(it);
 	}
-	// pthread_mutex_unlock(&channelsMutex);
-	// pthread_mutex_destroy(&clientsMutex);
-	// pthread_mutex_destroy(&channelsMutex);
 	close(serverFD);
 	removeLockFile();
 }
@@ -269,7 +262,6 @@ std::string Server::welcomeMsg()
 	msg << "\t⠀⠀⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋⠀⠀" << std::endl;
 	msg << "\nWelcome to the FT_IRC server!" << std::endl << std::endl;
 	return msg.str();
-	// return getColorStr(FGREEN, msg.str());
 }
 
 Server* Server::getInstance()
@@ -294,7 +286,7 @@ void Server::removeLockFile()
 
 void Server::removeClient(int clientFD)
 {
-	pthread_mutex_lock(&clientsMutex);
+	LockGuard lock(clientsMutex);
 	ClientsIte it = clients.find(clientFD);
 	if (it != clients.end())
 	{
@@ -302,7 +294,6 @@ void Server::removeClient(int clientFD)
 		close(it->first);
 		clients.erase(it);
 	}
-	pthread_mutex_unlock(&clientsMutex);
 }
 
 std::string const Server::getPassword() const {
@@ -318,12 +309,12 @@ std::map<int, Client*>& Server::getClients() {
 }
 
 void Server::sendPingToClients() {
-	pthread_mutex_lock(&clientsMutex);
-	for (ClientsIte it = clients.begin(); it != clients.end(); it++) {
+	LockGuard lock(clientsMutex);
+	for (ClientsIte it = clients.begin(); it != clients.end(); it++)
+	{
 		std::cout << "Sending PING to client: " << it->first << std::endl;
 		it->second->sendMessage("PING ping\r\n");
 	}
-	pthread_mutex_unlock(&clientsMutex);
 }
 
 void* pingTask(void* arg) {
