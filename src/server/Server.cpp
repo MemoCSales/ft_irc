@@ -329,7 +329,7 @@ void Server::sendPingToClients() {
 void* pingTask(void* arg) {
 	Server* server = static_cast<Server*>(arg);
 	while (true) {
-		sleep(60);
+		sleep(600);
 		server->sendPingToClients();
 	}
 	return NULL;

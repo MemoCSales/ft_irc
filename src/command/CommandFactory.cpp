@@ -4,6 +4,7 @@ typedef std::map<std::string, CommandCreator*>::iterator itBegin;
 typedef std::map<std::string, CommandCreator*>::iterator itFind;
 
 CommandFactory::CommandFactory(Server& server) {
+	commands["CAP"] = new CommandCreatorImpl<Command>(CAP, server);
 	commands["PASS"] = new CommandCreatorImpl<Command>(PASS, server);
 	commands["NICK"] = new CommandCreatorImpl<Command>(NICK, server);
 	commands["USER"] = new CommandCreatorImpl<Command>(USER, server);

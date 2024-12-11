@@ -7,6 +7,7 @@
 class Client;
 
 enum CommandType {
+	CAP,
 	PASS,
 	NICK,
 	USER,
@@ -23,6 +24,7 @@ class Command : public ICommand {
 		Server& _server;
 
 		// Command Methods
+		void handleCap(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
 		void handlePass(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
 		void handleNick(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
 		void handleUser(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);

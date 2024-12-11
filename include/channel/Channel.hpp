@@ -17,13 +17,14 @@ class Channel
 	public:
 		std::string name;
 		std::vector<Client*> members;
-		pthread_mutex_t mutex;
+		pthread_mutex_t channelMutex;
 
 		Channel(std::string const& name);
 		~Channel();
 		void addMember(Client *client);
 		void removeMember(Client *client);
 		void broadcast(std::string const &message, Client *exclude = NULL);
+		bool isMember(Client *client);
 };
 
 class SendMessageFunctor

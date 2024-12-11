@@ -4,6 +4,7 @@
 # include "InputParser.hpp"
 
 Command::Command(CommandType type, Server& server) : _type(type), _server(server) {
+	commands[CAP] = &Command::handleCap;
 	commands[PASS] = &Command::handlePass;
 	commands[NICK] = &Command::handleNick;
 	commands[USER] = &Command::handleUser;
@@ -18,6 +19,13 @@ void Command::execute(Client& client, const std::string& args, std::map<std::str
 	if (commands.find(_type) != commands.end()) {
 		(this->*commands[_type])(client, args, channels);
 	}
+}
+
+void Command::handleCap(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
+	(void) client;
+	(void) args;
+	(void) channels;
+	return ;
 }
 
 void Command::handlePass(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
@@ -40,10 +48,10 @@ void Command::handlePass(Client& client, const std::string& args, std::map<std::
 		response = ERR_PASSWDMISMATCH;
 		client.sendMessage(response);
 	}
+	client.sendMessage("You have been authenticated. Please continue your registration.");
 }
 
 void Command::handleNick(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
-	(void)channels;
 	std::string newNick = trim(args);
 	std::string oldNick = client.nickname;
 	bool nickExists = false;
@@ -56,8 +64,7 @@ void Command::handleNick(Client& client, const std::string& args, std::map<std::
 
 	//check for a valid newNickname : ERR_ERRONEUSNICKNAME 432
 	std::map<int, Client*>& clients = _server.getClients();
-	std::map<int, Client*>::iterator it = clients.begin();
-	for (; it != clients.end(); it++) {
+	for (ClientsIte it = clients.begin(); it != clients.end(); it++) {
 		if (it->second->nickname == newNick) {
 			nickExists = true;
 			break;
@@ -75,9 +82,16 @@ void Command::handleNick(Client& client, const std::string& args, std::map<std::
 		std::string response = RPL_NICKCHANGE(oldNick, user, host, newNick);
 		client.sendMessage(response);
 
-		// todo: Inform other clients about the nickname change
+		// Inform other clients about the nickname change
+		std::string message = ":" + oldNick + "!@localhost NICK: " + newNick;
+		for (ChannelIte itChannel = channels.begin(); itChannel != channels.end(); itChannel++) {
+			Channel* channel = itChannel->second;
+			if (channel->isMember(&client)) {
+				channel->broadcast(message, &client);
+			}
+		}
 
-		// Check before sending the welcome message
+		// Check before s`ending the welcome message
 		if (!client.username.empty() && client.isAuthenticated()) {
 			std::string response = RPL_WELCOME(client.nickname);
 			client.sendMessage(response);
@@ -122,7 +136,7 @@ void Command::handleUser(Client& client, const std::string& args, std::map<std::
 	}
 
 	std::map<int, Client*>& clients = _server.getClients();
-	for (std::map<int, Client*>::iterator it = clients.begin(); it != clients.end(); it++) {
+	for (ClientsIte it = clients.begin(); it != clients.end(); it++) {
 		if (client.username == userName) {
 			std::string response = ERR_ALREADYREGISTERED;
 			client.sendMessage(response);
@@ -154,7 +168,7 @@ void Command::handleQuit(Client& client, const std::string& args, std::map<std::
 		response = RPL_QUIT(reason);
 	}
 	// todo: Check if this is the right approach for deletion
-	for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); it++) {
+	for (ChannelIte it = channels.begin(); it != channels.end(); it++) {
 		it->second->broadcast(client.nickname + " has quit: " + reason, &client);
 		it->second->removeMember(&client);
 	}
@@ -244,9 +258,7 @@ void Command::handleOper(Client& client, const std::string& args, std::map<std::
 }
 
 void Command::handlePrivMsg(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
-	(void)channels;
 	std::string command = "PRIVMSG";
-	// (void)args;
 
 	// Checks if the Client is already authenticated
 	if (!client.isAuthenticated() || client.nickname.empty() || client.username.empty()) {
@@ -275,14 +287,28 @@ void Command::handlePrivMsg(Client& client, const std::string& args, std::map<st
 
 	for (std::vector<std::string>::iterator itVector = tokens.begin(); itVector != tokens.end(); itVector++) {
 		bool found = false;
-		for (ClientsIte itClient = _server.getClients().begin(); itClient != _server.getClients().end(); itClient++) {
-			if (*itVector == itClient->second->nickname) {
-				itClient->second->sendMessage(client.nickname + ": " + message);
+		std::string target = *itVector;
+
+		// Check if the target is a channel
+		if (target[0] == '#') {
+			Channel* channel = channels[target];
+			if (channel) {
+				channel->broadcast(client.nickname + ": " + message, &client);
 				found = true;
-				break;
+			} else {
+				client.sendMessage(ERR_NOSUCHCHANNEL(target));
+			}
+		} else {
+			std::map<int, Client*>& clients = _server.getClients();
+			for (ClientsIte itClient = clients.begin(); itClient != clients.end(); itClient++) {
+				if (itClient->second->nickname == target) {
+					itClient->second->sendMessage(client.nickname + " :" + message);
+					found = true;
+					break;
+				}
 			}
 			if (!found) {
-				client.sendMessage(ERR_NOSUCKNICK(*itVector));
+				client.sendMessage(ERR_NOSUCKNICK(target));
 			}
 		}
 	}
