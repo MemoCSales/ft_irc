@@ -1,8 +1,9 @@
 #include "Client.hpp"
 #include <unistd.h>
 #include <cstring>
+# include "NumericMessages.hpp"
 
-Client::Client(int fd) : _clientFD(fd), _authenticated(false), nickname(""), username(""), _buffer("") {}
+Client::Client(int fd) : _clientFD(fd), _authenticated(false), _serverOperator(false), _welcomeMessage(false), nickname(""), username(""), _buffer("") {}
 
 void Client::sendMessage(const std::string &message)
 {
@@ -28,9 +29,6 @@ void Client::handleRead() {
 	buffer[nbytes] = '\0';
 	this->_buffer += buffer;
 	std::cout << "Received message: " << buffer << std::endl;
-	// printAsciiDecimal(buffer);
-	// std::cout << "Message_: " << _buffer << std::endl;
-	// printAsciiDecimal(buffer);
 
 	// Process commands
 	Server* server = Server::getInstance();
@@ -39,10 +37,7 @@ void Client::handleRead() {
 	while ((pos = this->_buffer.find_first_of("\r\n")) != std::string::npos)
 	{
 		std::string command = this->_buffer.substr(0, pos);
-		this->_buffer.erase(0, pos + 2); // check if 2 or 1
-		// if (!this->_buffer.empty() && this->_buffer[0] == '\n') {
-		// 	this->_buffer.erase(0, 1);
-		// }
+		this->_buffer.erase(0, pos + 2);
 
 		std::cout << "Processing command: " << command << std::endl;
 		commandParser.parseAndExecute(*this, command, server->getChannels());
@@ -68,4 +63,22 @@ int Client::getFd() const
 
 bool Client::getServerOperator() const {
 	return _serverOperator;
+}
+
+bool Client::hasReceiveWelcomeMessage() const {
+	return _welcomeMessage;
+}
+
+void Client::setReceivedWelcomeMessage(bool flag) {
+	_welcomeMessage = flag;
+}
+
+void Client::checkAndSendWelcomeMessage() {
+	if (isAuthenticated() && !nickname.empty() && !username.empty() && !realname.empty()) {
+		if (!hasReceiveWelcomeMessage()) {
+			std::string response = RPL_WELCOME(nickname);
+			sendMessage(response);
+			setReceivedWelcomeMessage(true);
+		}
+	}
 }

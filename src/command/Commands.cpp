@@ -40,6 +40,7 @@ void Command::handlePass(Client& client, const std::string& args, std::map<std::
 	if (password == _server.getPassword()) {
 		client.setAuthenticated(true);
 		std::cout << "Client authenticated -> fd: " << client.getFd() << std::endl;
+		client.sendMessage("You have been authenticated. Please continue your registration.");
 		if (!client.nickname.empty() && !client.username.empty()) {
 			response = RPL_WELCOME(client.nickname);
 			client.sendMessage(response);
@@ -48,7 +49,6 @@ void Command::handlePass(Client& client, const std::string& args, std::map<std::
 		response = ERR_PASSWDMISMATCH;
 		client.sendMessage(response);
 	}
-	client.sendMessage("You have been authenticated. Please continue your registration.");
 }
 
 void Command::handleNick(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
@@ -89,12 +89,6 @@ void Command::handleNick(Client& client, const std::string& args, std::map<std::
 			if (channel->isMember(&client)) {
 				channel->broadcast(message, &client);
 			}
-		}
-
-		// Check before s`ending the welcome message
-		if (!client.username.empty() && client.isAuthenticated()) {
-			std::string response = RPL_WELCOME(client.nickname);
-			client.sendMessage(response);
 		}
 	}
 	std::cout << "NICK command received. Client nickname changed from: " << oldNick << " to: " << newNick << std::endl;
@@ -146,12 +140,6 @@ void Command::handleUser(Client& client, const std::string& args, std::map<std::
 
 	client.username = userName;
 	client.realname = realName;
-
-	// Check before sending the message
-	if (!client.nickname.empty() && client.isAuthenticated()) {
-		std::string response = RPL_WELCOME(client.nickname);
-		client.sendMessage(response);
-	}
 
 	std::cout << "USER command received. Client username set to: " << userName << ", realname set to: " << realName << std::endl;
 }

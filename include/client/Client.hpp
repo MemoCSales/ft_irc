@@ -24,6 +24,7 @@ class Client
 		int _clientFD;
 		bool _authenticated;
 		bool _serverOperator;
+		bool _welcomeMessage;
 	public:
 		std::string nickname;
 		std::string username;
@@ -37,10 +38,13 @@ class Client
 		void sendMessage(const std::string &message);
 		void handleRead();
 		bool isAuthenticated() const;
+		bool hasReceiveWelcomeMessage() const;
+		void checkAndSendWelcomeMessage();
 
 		// Setter
 		void setAuthenticated(bool);
 		void setServerOperator(bool);
+		void setReceivedWelcomeMessage(bool);
 
 		// Getters
 		bool getServerOperator() const;
