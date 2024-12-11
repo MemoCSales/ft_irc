@@ -31,9 +31,11 @@ void CommandParser::parseAndExecute(Client& client, const std::string& message, 
 		for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); ++it) {
 			if (it->first == commandName) {
 				it->second->broadcast(args,clientPtr);
-				break;
+				return ;
 			}
 		}
+		std::string error = "Error: No channel with that name.\n";
+		client.sendMessage(error);
 	}
 	else {
 		CommandPtr command = commandFactory->createCommand(commandName);
@@ -45,5 +47,4 @@ void CommandParser::parseAndExecute(Client& client, const std::string& message, 
 			client.sendMessage(response);
 		}
 	}
-
 }

@@ -294,6 +294,7 @@ Channel* Server::getOrCreateChannel(const std::string& name) {
     // Create a new channel if not found
     Channel* new_channel = new Channel(name);
     channels[name] = new_channel;
+//	new_channel->setName(name);
 
     // Unlock the mutex before returning
     pthread_mutex_unlock(&channelsMutex);

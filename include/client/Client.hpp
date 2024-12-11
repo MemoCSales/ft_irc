@@ -47,14 +47,14 @@ class Client
 		void sendMessage(const std::string &message);
 		void handleRead();
 		bool isAuthenticated() const;
-//		std::string getClientNick() const {return nickname;}
+		std::string getNick() const {return nickname;}
 
 		// Setter
 		void setAuthenticated(bool);
 
 		//-------my fct
 		void handleCommunication(); // Handles communication with this client
-		void joinChannel(const std::string& channelName,Server& server);
+//		void joinChannel(const std::string& channelName,Server& server);
 		void exitChanel(std::string& channelName, Server &server);
 		int getSocket() const { return _clientFD; }
 		std::string getClientNick() const {return this->nickname;}
@@ -64,10 +64,10 @@ class Client
 		// commands
 
 		void 	chanelCommands(std::istringstream& stream);
-		void 	kickCommand(const std::string& channelName, const std::string& targetName,Server &server);
+//		void 	kickCommand(const std::string& channelName, const std::string& targetName,Server &server);
 		void 	setPass(std::string channelName, std::string passWord);
-		void	modeCommands(std::string message);
-		void	channelTopic(std::string &channelName, std::string &channelTopic);
+		void		modeCommands(std::string message);
+		void		channelTopic(std::string &channelName, std::string &channelTopic);
 		void 	sendInvitation(const std::string &channelName, const std::string &targetNick, Server &server);
 
 

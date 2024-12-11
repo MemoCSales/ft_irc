@@ -47,6 +47,11 @@ void Channel::addOperator(Client *client) {
 	operators.push_back(client);
 }
 
+void Channel::addAllowedPeople(Client *client) {
+	people.push_back(client);
+}
+
+
 void Channel::removeMember(Client *client) {
 	// std::lock_guard<std::mutex> lock(channelMutex);
 	// Use std::remove from <algorithm> to find and "move" the client to the end
@@ -74,7 +79,7 @@ void Channel::removeOperator(Client *client) {
 
 void Channel::broadcast(const std::string &message, Client *sender) {
 	// std::lock_guard<std::mutex> lock(channelMutex);
-	std::string messageWithSender = "[" + _name + "][" + std::to_string(reinterpret_cast<uintptr_t>(sender)) + "] " + message + "\n";
+	std::string messageWithSender = "[" + _name + "][" + sender->getNick() + "] " + message + "\n";
 
 	for (std::vector<Client *>::iterator it = members.begin(); it != members.end(); ++it) {
 		Client *member = *it;
