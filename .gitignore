@@ -63,3 +63,4 @@ mini_IRC/
 ircserv
 #ignore .settings .vscode
 .settings/.vscode
+testScripts/*.txt
