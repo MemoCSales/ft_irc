@@ -27,20 +27,7 @@ Server::Server(int& port, const std::string& password) : password(password)
 		{
 			throw std::runtime_error("Can't create socket");
 		}
-		/**
-		 class stores the port and password and uses them during
-		 initialization and operation. The welcome message is
-		 displayed when the server starts listening on the specified
-		 IP address and port. The `SO_REUSEADDR` option is used to
-		 allow the server to bind to the port even if it is in the
-		 `TIME_WAIT` state. Additionally, signal handlers are set up
-		 to handle interruptions and close the server socket
-		 gracefully.
-		 * 
-		 */
 		int opt = 1;
-		// | SO_REUSEPORT
-		//if (bind(listeningSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) == -1) {
 		if (setsockopt(serverFD, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 		{
 			throw std::runtime_error("setsockopt(SO_REUSEADDR) failed");
@@ -356,4 +343,61 @@ std::string const Server::getOperName() const {
 
 std::string const Server::getOperPassword() const {
 	return _operPassword;
+}
+
+//------my functions 
+
+Channel* Server::getOrCreateChannel(const std::string& name) {
+    // Lock the mutex for thread safety
+    pthread_mutex_lock(&channelsMutex);
+
+    // Check if the channel exists
+    std::map<std::string, Channel*>::iterator it = channels.find(name);
+    if (it != channels.end()) {
+        // Unlock the mutex before returning
+        pthread_mutex_unlock(&channelsMutex);
+        return it->second; // Return the existing channel
+    }
+
+    // Create a new channel if not found
+    Channel* new_channel = new Channel(name);
+    channels[name] = new_channel;
+//	new_channel->setName(name);
+
+    // Unlock the mutex before returning
+    pthread_mutex_unlock(&channelsMutex);
+    return new_channel; // Return the new channel
+}
+
+
+Channel *Server::getChannel(const std::string &name) {
+	pthread_mutex_lock(&channelsMutex);
+	// Check if the channel exists
+	std::map<std::string, Channel *>::iterator it = channels.find(name);
+	if (it != channels.end()) {
+		// Unlock the mutex before returning
+		pthread_mutex_unlock(&channelsMutex);
+		return it->second;// Return the existing channel
+	}
+	pthread_mutex_unlock(&channelsMutex);
+	return NULL;// Return the new channel
+}
+
+void Server::removeChannel(const std::string& name) {
+    // pthread_mutex_lock(&clientsMutex);
+    std::map<std::string, Channel*>::iterator it = channels.find(name);
+    if (it != channels.end()) {
+        delete it->second;
+        channels.erase(it);
+    }
+    // pthread_mutex_unlock(&clientsMutex);
+}
+
+Client* Server::getClientByNick(const std::string& nick) {
+	for (std::map<int, Client*>::iterator it = clients.begin(); it != clients.end(); ++it) {
+		if (it->second->getClientNick() == nick) {
+			return it->second;
+		}
+	}
+	return NULL;
 }

@@ -99,8 +99,13 @@ if [ "$USER_NAME" = "VictoriaLizCor" ] || [ "$USER_NAME" = "lilizarr" ]; then
 	echo $regex_pattern >> "$COMMIT_MSG_FILE"
 fi
 
+<<<<<<< HEAD
 if [ "$USER_NAME" = "MemoCSales" ] || [ "$USER_NAME" = "mcruz-sa" ]; then
 	regex_pattern="~ Autor: Manuel Guillermo Cruz(@MemoCSales / @$USER_NAME) ~"
+=======
+if [ "$USER_NAME" = "MemoCSales" ] || [ "$USER_NAME" = "@mcruz-sa" ]; then
+	regex_pattern="~ Autor: Manuel Guillermo Cruz(@MemoCSales) ~"
+>>>>>>> Marian
 	if [[ ! $message =~ $regex_pattern ]]; then
 		echo $regex_pattern >> "$COMMIT_MSG_FILE"
 	fi
@@ -108,8 +113,13 @@ if [ "$USER_NAME" = "MemoCSales" ] || [ "$USER_NAME" = "mcruz-sa" ]; then
 	echo $regex_pattern >> "$COMMIT_MSG_FILE"
 fi
 
+<<<<<<< HEAD
 if [ "$USER_NAME" = "Gaspar24" ] || [ "$USER_NAME" = "msacaliu" ]; then
 	regex_pattern="~ Autor: Marian Sacaliuc(@Gaspar24 / @$USER_NAME) ~"
+=======
+if [ "$USER_NAME" = "Gaspar24" ] || [ "$USER_NAME" = "@msacaliu" ]; then
+	regex_pattern="~ Autor: Marian Sacaliuc(@Gaspar24) ~"
+>>>>>>> Marian
 	if [[ ! $message =~ $regex_pattern ]]; then
 		echo $regex_pattern >> "$COMMIT_MSG_FILE"
 	fi

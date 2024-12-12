@@ -11,8 +11,6 @@
 # include <iostream>
 # include <cerrno>
 # include <cstring> // strerror
-#define LIGHT_GREY "\00315"
-#define ENDC "\003"
 
 # ifndef DEBUG
 #  define DEBUG 0
@@ -74,63 +72,15 @@ class Server
 		std::string const getOperPassword() const;
 		void setOperName(void);
 		void setOperPassword(void);
+		  // --------Marian s fct-----
+		Channel* getOrCreateChannel(const std::string& name);
+		Channel* getChannel(const std::string& name);
+		void removeChannel(const std::string& name);
+		void sendChannelInvitation(const std::string& channelName);
+		Client* getClientByNick(const std::string& nick);
 
 };
 
-/**
- * @class ClientHandler
- * @brief Handles client connections for the server.
- *
- * This class is responsible for managing individual client connections
- * by invoking the server's client handling function.
- */
-
-/**
- * @brief Constructs a new ClientHandler object.
- * 
- * @param srv Pointer to the server instance.
- * @param fd File descriptor for the client connection.
- */
- 
-/**
- * @brief Static method to start the client handler in a new thread.
- * 
- * This method is intended to be used as the entry point for a new thread.
- * It casts the argument to a ClientHandler pointer, invokes the handler,
- * and then deletes the handler object.
- * 
- * @param arg Pointer to the ClientHandler object.
- * @return Always returns NULL.
- */
- 
-/**
- * @brief Functor operator to handle the client connection.
- * 
- * This operator invokes the server's handleClient method with the client
- * file descriptor.
- */
-// class ClientHandler
-// {
-// 	private:
-// 		Server* server;
-// 		int clientFD;
-
-// 	public:
-// 		ClientHandler(Server* srv, int fd) : server(srv), clientFD(fd) {}
-
-// 		static void* start(void* arg)
-// 		{
-// 			ClientHandler* handler = static_cast<ClientHandler*>(arg);
-// 			(*handler)();
-// 			delete handler;
-// 			return NULL;
-// 		}
-
-// 		void operator()() const
-// 		{
-// 			server->handleClient(clientFD);
-// 		}
-// };
 
 /**
  * @class SockAddressInitializer

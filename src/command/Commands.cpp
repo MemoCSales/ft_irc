@@ -13,6 +13,12 @@ Command::Command(CommandType type, Server& server) : _type(type), _server(server
 	commands[PONG] = &Command::handlePong;
 	commands[OPER] = &Command::handleOper;
 	commands[PRIVMSG] = &Command::handlePrivMsg;
+	commands[JOIN] = &Command::handleJoin;
+	commands[TOPIC] = &Command::handleTopic;
+	commands[PART] = &Command::handlePart;
+	commands[KICK] = &Command::handleKick;
+	commands[INVITE] = &Command::handleInvite;
+	commands[MODE] = &Command::handleMode;
 }
 
 void Command::execute(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
@@ -311,3 +317,4 @@ void Command::handlePrivMsg(Client& client, const std::string& args, std::map<st
 		}
 	}
 }
+

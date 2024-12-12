@@ -7,6 +7,9 @@
 # include <cerrno>
 # include <cstring> // strerror
 # include <sys/socket.h>
+#include <vector>
+// #include <Server.hpp>
+#include <Channel.hpp>
 
 # include "CommandParser.hpp"
 
@@ -18,6 +21,10 @@
 # ifndef MAX_BUFFER
 # define MAX_BUFFER 4096
 # endif
+
+// class Server;
+class Channel;
+
 class Client 
 {
 	private:
@@ -48,6 +55,9 @@ class Client
 
 		// Getters
 		bool getServerOperator() const;
+		std::string getClientNick() const {return this->nickname;}
+		std::string getNick() const {return nickname;}
+		int getSocket() const { return _clientFD; }
 
 };
 
