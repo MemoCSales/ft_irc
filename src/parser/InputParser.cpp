@@ -1,4 +1,5 @@
 # include "InputParser.hpp"
+# include "Utils.hpp"
 
 std::string InputParser::trim(const std::string& str) {
 	size_t first = str.find_first_not_of(" \t\n\r");
@@ -13,13 +14,31 @@ std::string InputParser::trim(const std::string& str) {
 std::vector<std::string> InputParser::parseInput(const std::string& args, char delimeter) {
 	std::vector<std::string> tokens;
 	std::string trimmedArgs = InputParser::trim(args);
+	std::cout << "trimmecArgs: " << trimmedArgs << std::endl;
+	printAsciiDecimal(trimmedArgs);
 	std::stringstream stream(trimmedArgs);
 	std::string token;
 
-	while (std::getline(stream, token, delimeter)) {
-		token = InputParser::trim(token);
-		tokens.push_back(token);
+	// Check for semicolon in args
+	size_t colonPos = trimmedArgs.find(':');
+	if (colonPos != std::string::npos) {
+		std::string beforeColon = trimmedArgs.substr(0, colonPos);
+		std::string afterColon = trimmedArgs.substr(colonPos + 1);
+
+		std::stringstream beforeStream(beforeColon);
+		while(std::getline(beforeStream, token, delimeter)) {
+			token = InputParser::trim(token);
+			tokens.push_back(token);
+		}
+		tokens.push_back(afterColon);
+	} else {
+		// No semicolon found, split the entire string
+		while (std::getline(stream, token, delimeter)) {
+			token = InputParser::trim(token);
+			tokens.push_back(token);
+		}
 	}
+
 	return tokens;
 }
 

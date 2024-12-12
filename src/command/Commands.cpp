@@ -83,11 +83,11 @@ void Command::handleNick(Client& client, const std::string& args, std::map<std::
 		client.sendMessage(response);
 
 		// Inform other clients about the nickname change
-		std::string message = ":" + oldNick + "!@localhost NICK: " + newNick;
+		// std::string message = ":" + oldNick + "!@localhost NICK: " + newNick;
 		for (ChannelIte itChannel = channels.begin(); itChannel != channels.end(); itChannel++) {
 			Channel* channel = itChannel->second;
 			if (channel->isMember(&client)) {
-				channel->broadcast(message, &client);
+				channel->broadcast(response, &client);
 			}
 		}
 	}
@@ -146,12 +146,21 @@ void Command::handleUser(Client& client, const std::string& args, std::map<std::
 
 void Command::handleQuit(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	std::vector<std::string> tokens = InputParser::parseInput(args, ' ');
-	std::string reason = tokens.empty() ? "" : tokens[0];
+	std::string reason;
 	std::string response;
 
+	if (tokens.empty()) {
+		reason = "";
+	} else {
+		for (std::vector<std::string>::iterator it = tokens.begin(); it != tokens.end(); ++it) {
+			reason.append(*it);
+			if (it + 1 != tokens.end()) {
+				reason.append(" ");
+			}
+		}
+	}
 	if (reason.empty()) {
 		response = "Quit";
-		// std::cout << response << std::endl;
 	} else {
 		response = RPL_QUIT(reason);
 	}
@@ -161,7 +170,7 @@ void Command::handleQuit(Client& client, const std::string& args, std::map<std::
 		it->second->removeMember(&client);
 	}
 	
-	client.sendMessage(ERROR(response));
+	client.sendMessage(response);
 	throw std::runtime_error("Client disconnected");
 	std::cout << "QUIT command received. Client disconnected with the reason: " << response << std::endl;
 }
