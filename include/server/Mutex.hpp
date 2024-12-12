@@ -24,7 +24,8 @@ class Mutex
 		void unlock();
 
 	private:
-		pthread_mutex_t mutex;
+		pthread_mutex_t _mutex;
+		bool _status;
 };
 
 #endif // MUTEX_HPP

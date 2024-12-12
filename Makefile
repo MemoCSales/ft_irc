@@ -186,6 +186,7 @@ dclient:$(NAME)
 	ret=$$?; \
 	if [ $$ret -eq 0 ]; then \
 		echo $(GREEN)"dClient finished"  $(E_NC); \
+		exit 0; \
 	else \
 		echo $(RED)"...dClient terminated"  $(E_NC); \
 	fi;

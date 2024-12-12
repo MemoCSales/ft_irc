@@ -38,6 +38,5 @@ MESSAGE="Hello, IRC!"
 	exec 1>&-
 ) | nc $SERVER $PORT &
 wait $!
-
 # # Kill the netcat process if it is still running
 # 

@@ -61,6 +61,7 @@ class Server
 
 		void removeClient(int clientFD);
 		static void signalHandlerWrapper(int signum);
+		
 		// Disable copy constructor and assignment operator
 		Server(const Server&);
 		Server& operator=(const Server&);
@@ -77,8 +78,9 @@ class Server
 		std::string const getPassword() const;
 		std::map<std::string, Channel*>& getChannels();
 		std::map<int, Client*>& getClients();
-		void sendPingToClients();
-		void startPingTask();
+		// void sendPingToClients();
+		// void startPingTask();
+		// static void* pingTask(void* arg);
 		static void* clientHandler(void* arg);
 		std::string const getOperName() const;
 		std::string const getOperPassword() const;
