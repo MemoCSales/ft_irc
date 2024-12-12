@@ -55,9 +55,6 @@ class Client
 		int getSocket() const { return _clientFD; }
 		std::string getClientNick() const {return this->nickname;}
 
-
-
-
 };
 
 // std::ostream& operator << (std::ostream& os, Client& rhs);

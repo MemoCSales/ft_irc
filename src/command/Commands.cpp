@@ -145,7 +145,6 @@ void Command::handleQuit(Client& client, const std::string& args, std::map<std::
 		it->second->broadcast(client.nickname + " has quit: " + reason, &client);
 		it->second->removeMember(&client);
 	}
-	
 	client.sendMessage(ERROR(response));
 	throw std::runtime_error("Client disconnected");
 	std::cout << "QUIT command received. Client disconnected with the reason: " << response << std::endl;
@@ -307,7 +306,6 @@ void	Command::handleKick(Client& client, const std::string& args, std::map<std::
 }
 
 void	Command::handlePart(Client& client, const std::string& args, std::map<std::string, Channel*>& channels){
-	// check if other operators in channel , else give operator priviliges to oldest in channel
 	(void)channels;
 	std::istringstream stream(args);
 	std::string channelName;
@@ -409,7 +407,132 @@ void	Command::handleTopic(Client& client, const std::string& args, std::map<std:
 			std::string error = "Topic restriction set to true, You need to be an operator.\n";
 			client.sendMessage(error);
 			bool isOperator = false;
+			for (unsigned long int i = 0; 			client.sendMessage(error);
+			}
+
+			else {
+				std::string error = "You can only use set or remove.\n";
+				client.sendMessage(error);
+			}
+		}
+		else if(flag == "o"){ 
+			std::string name;
+			stream>>name;
+			if(name.empty()){
+				std::string error = "You need to insert the name of the client.\n";
+				client.sendMessage(error);
+				return ;
+			}
+			bool isMember = false;
+			Channel* targetChannel = NULL;
+			for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); ++it) {
+				if (it->first == channelName) {
+					targetChannel = it->second;
+					std::vector<Client*> members = targetChannel->getMembers();
+					for (std::vector<Client*>::iterator memberIt = members.begin(); memberIt != members.end(); ++memberIt) {
+						if ((*memberIt)->getNick() == name) {
+							isMember = true;
+							break;
+						}
+					}
+					break;
+				}
+			}
+			if(isMember){
+				Client *clientTarget = _server.getClientByNick(name);
+				std::string message = "You gave operator priviliges to: " + name +".\n";
+				client.sendMessage(message);
+				targetChannel->addOperator(clientTarget);
+				message = "You recived operator priviliges from: " + client.getNick()+" in "+ channelName +" channel" +".\n";
+				clientTarget->sendMessage(message);
+				std::cout << "new operator adde in the chanel : " <<  name << std::endl;
+			}
+			else{
+				std::string message = name + " not found in: " + channelName + ".\n";
+				client.sendMessage(message);
+			}
+		}
+		else if(flag == "l"){
+			std::string limit;
+			stream >> limit;
+
+			if(limit.empty()){
+				std::string error = "No limit given.\n";
+				client.sendMessage(error);
+				return;
+			}
+			int nb = std::atoi(limit.c_str());
+			if(nb >2147483647 )
+			{
+				std::string error = "you can t insert a number bigger than Max_int\n";
+				client.sendMessage(error);
+				return ;
+			}
+			else if(nb < 0)
+			{
+				std::string error = "you can t insert a negative number\n";
+				client.sendMessage(error);
+				return ;
+			}
+			if(!isNumber(limit)){
+				std::string error = "Limit must be a number.\n";
+				client.sendMessage(error);
+				return;
+			}
 			for (unsigned long int i = 0; i < targetChannel->getOperators().size(); i++){
+				if (targetChannel->getOperators()[i] == &client) {
+					isOperator = true;
+					break;
+				}
+			}
+		
+			targetChannel->setLimit(nb);
+			std::string message = "Limit clients in the " + channelName + " set to: " + limit + ".\n";
+			client.sendMessage(message);
+
+		}
+		else if(flag == "t"){
+			std::string mode;
+			stream >> mode;
+			if(mode.empty()){
+				std::string error = "No mode given.\n";
+				client.sendMessage(error);
+				return; 
+			}
+			for (unsigned long int i = 0; i < targetChannel->getOperators().size(); i++){
+				if (targetChannel->getOperators()[i] == &client) {
+					isOperator = true;
+					break;
+				}
+			}
+			if(mode == "set")
+			{
+				std::string error = "Topic restriction set.\n";
+				client.sendMessage(error);
+				targetChannel->setFlagTopic(true);
+			}
+
+			else if(mode == "remove") {
+				std::string error = "You removed topic restriction.\n";
+				client.sendMessage(error);
+				targetChannel->setFlagTopic(false);
+			}
+			else {
+				std::string error = "You can only use set or remove.\n";
+				client.sendMessage(error);
+			}
+
+		}
+		else{
+			std::string error = "You can only use one of the appropriate flags: i,t,k,o,l\n";
+			client.sendMessage(error);
+		}
+	}
+	else{
+		std::string error = "You are not an operator in " + channelName + " channel.\n";
+		client.sendMessage(error);
+	}
+}i < targetChannel->getOperators().size(); i++){
 				if (targetChannel->getOperators()[i] == &client) {
 					isOperator = true;
 					break;
@@ -428,6 +551,7 @@ void	Command::handleTopic(Client& client, const std::string& args, std::map<std:
 		}
 		else{
 			targetChannel->setTopic(topic);
+			// targetChannel->broadcast()
 			std::string message = "Channel topic set to: " + targetChannel->getTopic()+'\n';
 			client.sendMessage(message);
 			std::cout << targetChannel->getName() + " has the topic set to: " + targetChannel->getTopic() <<std::endl;
@@ -580,7 +704,7 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 			std::string name;
 			stream>>name;
 			if(name.empty()){
-				std::string error = "You need to insert the name of the clinet.\n";
+				std::string error = "You need to insert the name of the client.\n";
 				client.sendMessage(error);
 				return ;
 			}
@@ -696,6 +820,12 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 }
 
 
+/// invite -->check if already in the channel
+// clear memory when remove channel or in destructor
+// set the mutexe's after merge
+// broadcast topic update
+// chceck if the limit is smaller than the nb of members already in the channel
+// max nb over max int still works 
 
 
 
