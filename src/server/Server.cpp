@@ -74,8 +74,11 @@ Server::Server(int& port, const std::string& password) : password(password)
 		pthread_mutex_init(&channelsMutex, NULL);
 		setupSignalHandlers();
 
+		setOperName();
+		setOperPassword();
+
 		// Start the periodic PING task
-		// startPingTask();
+		startPingTask();
 	}
 	catch (const std::exception& e)
 	{
@@ -149,7 +152,7 @@ void* Server::clientHandler(void* arg)
 		pthread_mutex_unlock(&server->clientsMutex);
 		server->removeClient(client->getFd());
 	}
-	std::cerr << error("END CLIENT", 0);
+	std::cerr << error("END CLIENT\r\n", 0);
 	return NULL;
 }
 
@@ -169,8 +172,6 @@ void Server::run()
 				{
 					if (pollFDs[i].fd == serverFD)
 						handleNewConnection();
-					else
-						handleClient(pollFDs[i].fd);
 				}
 			}
 		}
@@ -302,7 +303,6 @@ void Server::removeClient(int clientFD)
 		clients.erase(it);
 	}
 	pthread_mutex_unlock(&clientsMutex);
-	pthread_exit(NULL);
 }
 
 std::string const Server::getPassword() const {
@@ -329,7 +329,7 @@ void Server::sendPingToClients() {
 void* pingTask(void* arg) {
 	Server* server = static_cast<Server*>(arg);
 	while (true) {
-		sleep(5);
+		sleep(600);
 		server->sendPingToClients();
 	}
 	return NULL;
@@ -339,4 +339,21 @@ void Server::startPingTask() {
 	pthread_t thread;
 	pthread_create(&thread, NULL, pingTask, this);
 	pthread_detach(thread);
+}
+
+
+void Server::setOperName(void) {
+	_operName = OPER_NAME;
+}
+
+void Server::setOperPassword(void) {
+	_operPassword = OPER_PASS;
+}
+
+std::string const Server::getOperName() const {
+	return _operName;
+}
+
+std::string const Server::getOperPassword() const {
+	return _operPassword;
 }

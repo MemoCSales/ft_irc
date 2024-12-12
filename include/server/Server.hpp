@@ -18,6 +18,9 @@
 #  define DEBUG 0
 # endif
 
+# define OPER_NAME "admin"
+# define OPER_PASS "123"
+
 class Client;
 class Channel;
 
@@ -37,6 +40,10 @@ class Server
 		std::string const password;
 		std::string const lockFilePath;
 		static Server* instance;
+
+		// Server operator credentials
+		std::string _operName;
+		std::string _operPassword;
 
 		void setNonBlocking(int fd);
 		void setupSignalHandlers();
@@ -63,6 +70,11 @@ class Server
 		void startPingTask();
 		static void* clientHandler(void* arg);
 		// friend class ClientHandler;
+		std::string const getOperName() const;
+		std::string const getOperPassword() const;
+		void setOperName(void);
+		void setOperPassword(void);
+
 };
 
 /**

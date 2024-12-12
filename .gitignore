@@ -54,6 +54,7 @@ dkms.conf
 # Ignored folders
 # test*/
 obj*/
+mini_IRC/
 #.vscode*/
 #.settings
 
