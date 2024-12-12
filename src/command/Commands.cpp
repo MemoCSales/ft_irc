@@ -177,6 +177,15 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
 		std::cout << channelName << " was created!.\n";
 		return;
 	} else {
+		// Check if the client is in channe;
+		for (std::vector<Client*>::const_iterator it = targetChannel->getMembers().begin();
+			it != targetChannel->getMembers().end(); ++it) {
+			if (*it == &client) {
+				std::string error = "Already in the channel.\n";
+				client.sendMessage(error);
+				return;
+			}
+		}
 		// check if chaennel is full
 		if (targetChannel->getMembers().size() >= static_cast<size_t>(targetChannel->getLimit())) {
 			std::string error = "Channel is full. Unable to join.\n";
@@ -200,44 +209,36 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
 				return;
 			}
 		}
-
-		// handle password protect
 		if (!targetChannel->getPassword().empty()) {
 			std::string response = "Private channel, requires a password.\n";
 			client.sendMessage(response);
-
 			// wait for password
 			char passBuff[4096];
 			memset(passBuff, 0, sizeof(passBuff));
-			int passBytesRecv = recv(client.getFd(), passBuff, sizeof(passBuff) - 1, 0);
-			if (passBytesRecv > 0) {
-				std::string pass(passBuff, passBytesRecv);
-				pass.erase(pass.find_last_not_of(" \n\r\t") + 1);
-				if (targetChannel->getPassword() == pass) {
-					targetChannel->addMember(&client);
-					std::cout << client.getNick() << " has joined the channel: " << targetChannel->getName() << std::endl;
-					if (!targetChannel->getTopic().empty())
-						targetChannel->broadcastTopic(&client);
-					return;
-				} else {
-					std::string error = "Incorrect password.\n";
-					client.sendMessage(error);
-					return;
+			int passBytesRecv = 0;
+			// Loop to wait for password input
+			while (true) {
+				passBytesRecv = recv(client.getFd(), passBuff, sizeof(passBuff) - 1, 0);
+				if (passBytesRecv > 0) {
+					std::string pass(passBuff, passBytesRecv);
+					pass.erase(pass.find_last_not_of(" \n\r\t") + 1);
+					if (targetChannel->getPassword() == pass) {
+						targetChannel->addMember(&client);
+						std::string message = "Joined channel: " + targetChannel->getName() + ".\n";
+						client.sendMessage(message);
+						std::cout << client.getNick() << " has joined the channel: " << targetChannel->getName() << std::endl;
+						if (!targetChannel->getTopic().empty())
+							targetChannel->broadcastTopic(&client);
+						return;
+					} else {
+						std::string error = "Incorrect password.\n";
+						client.sendMessage(error);
+						return;
+					}
 				}
 			}
 		}
 	}
-
-	// Check if the client is in channe;
-	for (std::vector<Client*>::const_iterator it = targetChannel->getMembers().begin();
-		 it != targetChannel->getMembers().end(); ++it) {
-		if (*it == &client) {
-			std::string error = "Already in the channel.\n";
-			client.sendMessage(error);
-			return;
-		}
-	}
-
 	// Join the channel
 	targetChannel->addMember(&client);
 	std::string message = "Joined channel: " + targetChannel->getName() + ".\n";
@@ -351,35 +352,80 @@ void	Command::handlePart(Client& client, const std::string& args, std::map<std::
 	}
 }
 
-
+// need to check if the client is in the channel;
 void	Command::handleTopic(Client& client, const std::string& args, std::map<std::string, Channel*>& channels){
-		(void)channels;
-		std::istringstream stream(args);
-		std::string channelName;
-		stream >> channelName;
-		std::string topic;
-		stream >> topic;
-		if (channelName.empty() || channelName[0] != '#') {
-			std::string error = "Channel name must start with '#' or channel is empty.\n";
-			client.sendMessage(error);
-			return;
+	(void)channels;
+	std::istringstream stream(args);
+	std::string channelName;
+	stream >> channelName;
+	std::string topic;
+	stream >> topic;
+	if (channelName.empty() || channelName[0] != '#') {
+		std::string error = "Channel name must start with '#' or channel is empty.\n";
+		client.sendMessage(error);
+		return;
+	}
+	if(topic.empty()){
+		std::string error = "topic can t be empty.\n";
+		client.sendMessage(error);
+		return;
+	}
+	Channel *targetChannel = _server.getChannel(channelName);
+	if (!targetChannel) {
+		std::string error = "Channel does not exist.\n";
+		client.sendMessage(error);
+		return;
+	}
+	bool isMember = false;
+	for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); ++it) {
+		if (it->first == channelName) {
+			targetChannel = it->second;
+			std::vector<Client*> members = targetChannel->getMembers(); // Get the members vector
+			for (std::vector<Client*>::iterator memberIt = members.begin(); memberIt != members.end(); ++memberIt) {
+				if (*memberIt == &client) {
+					isMember = true;
+					break;
+				}
+			}
+			break;
 		}
-		if(topic.empty()){
-			std::string error = "topic can t be empty.\n";
+	}
+	if(isMember){
+		if(targetChannel->getFlagTopic() == true){
+			std::string error = "Topic restriction set to true, You need to be an operator.\n";
 			client.sendMessage(error);
-			return;
+			bool isOperator = false;
+			for (unsigned long int i = 0; i < targetChannel->getOperators().size(); i++){
+				if (targetChannel->getOperators()[i] == &client) {
+					isOperator = true;
+					break;
+				}
+			}
+			if(isOperator){
+				targetChannel->setTopic(topic);
+				std::string message = "Channel topic set to: " + targetChannel->getTopic()+'\n';
+				client.sendMessage(message);
+				std::cout << targetChannel->getName() + " has the topic set to: " + targetChannel->getTopic() <<std::endl;
+			}
+			else{
+					std::string error = "You are not an operator\n";
+					client.sendMessage(error);
+			}
 		}
-		Channel *targetChannel = _server.getChannel(channelName);
-		if (!targetChannel) {
-			std::string error = "Channel does not exist.\n";
-			client.sendMessage(error);
-			return;
+		else{
+			targetChannel->setTopic(topic);
+			std::string message = "Channel topic set to: " + targetChannel->getTopic()+'\n';
+			client.sendMessage(message);
+			std::cout << targetChannel->getName() + " has the topic set to: " + targetChannel->getTopic() <<std::endl;
 		}
-		targetChannel->setTopic(topic);
-		std::string message = "Channel topic set to: " + targetChannel->getTopic()+'\n';
+	}
+	else{
+		std::string message = "You are not a member of this channel\n";
 		client.sendMessage(message);
-		std::cout << targetChannel->getName() + " has the topic set to: " + targetChannel->getTopic() <<std::endl;
+	}
+	
 }
+		
 
 void	Command::handleInvite(Client& client, const std::string& args, std::map<std::string, Channel*>& channels){
 	(void)channels;
@@ -454,7 +500,38 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 			std::cout << "pass statement\n";
 			std::string passWord;
 			stream >> passWord;
-			client.setPass(channelName, passWord);
+			bool isOperator = false;
+			for (unsigned long int i = 0; i < targetChannel->getOperators().size(); i++){
+				if (targetChannel->getOperators()[i] == &client) {
+					isOperator = true;
+					break;
+				}
+			}
+			if(isOperator) {
+				Channel* targetChannel = NULL;
+				bool found = false;
+				std::map<std::string, Channel*>::iterator it = channels.begin();
+				for (; it != channels.end(); ++it) {
+					if (it->first == channelName) {
+						found = true;
+						targetChannel = it->second;
+					}
+				}
+				if (found){
+					targetChannel->setPassword(passWord);
+					std::string error = "Password for the channel: " + channelName +" set to: " +passWord + "\n";
+					client.sendMessage(error);
+				}
+				else {
+					std::string error = "No channel named :"+ channelName +"\n";
+					client.sendMessage(error);
+				}
+			}
+			else {
+				std::string error = "You are not an operator\n";
+				client.sendMessage(error);
+			}
+
 		}
 		else if(flag == "i") // nee to check is st or not set after the flag
 		{
@@ -468,10 +545,22 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 				}
 			}
 			if(isOperator){
-				if(mode == "set")
+				if(mode == "set"){
 					targetChannel->setInviteStatus(true);
-				else
+					std::string error = "Channeel set to invitation only.\n";
+					client.sendMessage(error);
+				}
+				else if (mode == "remove")
+				{
 					targetChannel->setInviteStatus(false);
+					std::string error = "Invitation only removed.\n";
+					client.sendMessage(error);
+				}
+					
+				else {
+					std::string error = "You can only use set or remove.\n";
+					client.sendMessage(error);
+				}
 			}
 			else{
 				std::string error = "You are not an operator.\n";
@@ -498,25 +587,103 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 				client.sendMessage(error);
 			}
 		}
-		else if(flag == "l"){  // check if negative and check if bigger than max_int
+		else if(flag == "l"){
 			std::string limit;
 			stream >> limit;
-			int nb = std::atoi(limit.c_str());
-			if(nb >2147483647 )
-			{
-				std::string error = " you can t insert a number bigger than Max_int\n";
-				client.sendMessage(error);
-				return ;
+			bool isOperator = false;
+			for (unsigned long int i = 0; i < targetChannel->getOperators().size(); i++){
+				if (targetChannel->getOperators()[i] == &client) {
+					isOperator = true;
+					break;
+				}
 			}
-			else if(nb < 0)
+			if(isOperator)
 			{
-				std::string error = " you can t insert a negative number\n";
-				client.sendMessage(error);
-				return ;
+				int nb = std::atoi(limit.c_str());
+				if(nb >2147483647 )
+				{
+					std::string error = " you can t insert a number bigger than Max_int\n";
+					client.sendMessage(error);
+					return ;
+				}
+				else if(nb < 0)
+				{
+					std::string error = " you can t insert a negative number\n";
+					client.sendMessage(error);
+					return ;
+				}
+				targetChannel->setLimit(nb);
 			}
-			targetChannel->setLimit(nb);
+			else{
+				std::string error = "You are not an operator.\n";
+				client.sendMessage(error);
+			}
+			
+		}
+		else if(flag == "t"){
+			std::string mode;
+			stream >> mode;
+			bool isOperator = false;
+			for (unsigned long int i = 0; i < targetChannel->getOperators().size(); i++){
+				if (targetChannel->getOperators()[i] == &client) {
+					isOperator = true;
+					break;
+				}
+			}
+			if(isOperator){
+				if(mode == "set")
+				{
+					std::string error = "Topic restriction set.\n";
+					client.sendMessage(error);
+					targetChannel->setFlagTopic(true);
+				}
+					
+				else if(mode == "remove") {
+					std::string error = "You removed topic restriction.\n";
+					client.sendMessage(error);
+					targetChannel->setFlagTopic(false);
+				}
+				else {
+					std::string error = "You can only use set or remove.\n";
+					client.sendMessage(error);
+				}
+					
+			}
+			else{
+				std::string error = "You are not an operator.\n";
+				client.sendMessage(error);
+			}
+
 		}
 }
 
 
 
+
+
+
+// handle password protect
+		// if (!targetChannel->getPassword().empty()) {
+		// 	std::string response = "Private channel, requires a password.\n";
+		// 	client.sendMessage(response);
+
+		// 	// wait for password
+		// 	char passBuff[4096];
+		// 	memset(passBuff, 0, sizeof(passBuff));
+		// 	int passBytesRecv = recv(client.getFd(), passBuff, sizeof(passBuff) - 1, 0);
+		// 	if (passBytesRecv > 0) {
+		// 		std::string pass(passBuff, passBytesRecv);
+		// 		pass.erase(pass.find_last_not_of(" \n\r\t") + 1);
+		// 		if (targetChannel->getPassword() == pass) {
+		// 			targetChannel->addMember(&client);
+		// 			std::cout << client.getNick() << " has joined the channel: " << targetChannel->getName() << std::endl;
+		// 			if (!targetChannel->getTopic().empty())
+		// 				targetChannel->broadcastTopic(&client);
+		// 			return;
+		// 		} else {
+		// 			std::string error = "Incorrect password.\n";
+		// 			client.sendMessage(error);
+		// 			return;
+		// 		}
+		// 	}
+		// }

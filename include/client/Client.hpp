@@ -29,8 +29,7 @@ class Client
 		int _clientFD;
 		bool _authenticated;
 		Server* server;
-		Channel* currentChannel; // Pointer to the current channel
-		bool _isOperator;
+		bool _isOperator;   //need to delete
 		std::vector<Channel *> channels;
 	public:
 		std::string nickname;
@@ -53,22 +52,9 @@ class Client
 		void setAuthenticated(bool);
 
 		//-------my fct
-		void handleCommunication(); // Handles communication with this client
-//		void joinChannel(const std::string& channelName,Server& server);
-		void exitChanel(std::string& channelName, Server &server);
 		int getSocket() const { return _clientFD; }
 		std::string getClientNick() const {return this->nickname;}
 
-		////just for  testing/debuging ///
-		void	setCurrentChannel(Channel *chanel);
-		// commands
-
-		void 	chanelCommands(std::istringstream& stream);
-//		void 	kickCommand(const std::string& channelName, const std::string& targetName,Server &server);
-		void 	setPass(std::string channelName, std::string passWord);
-		void		modeCommands(std::string message);
-		void		channelTopic(std::string &channelName, std::string &channelTopic);
-		void 	sendInvitation(const std::string &channelName, const std::string &targetNick, Server &server);
 
 
 
