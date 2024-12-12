@@ -258,6 +258,7 @@ void Command::handlePrivMsg(Client& client, const std::string& args, std::map<st
 	std::string command = "PRIVMSG";
 
 	// Checks if the Client is already authenticated
+	// todo: receive messages until registration is complete
 	if (!client.isAuthenticated() || client.nickname.empty() || client.username.empty()) {
 		client.sendMessage(ERR_NOTREGISTERED);
 		return;
