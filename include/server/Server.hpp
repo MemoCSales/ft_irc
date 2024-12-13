@@ -33,11 +33,10 @@ class Server
 		std::vector<struct pollfd> pollFDs;
 		std::map<int, Client*> clients;
 		std::map<std::string, Channel*> channels;
-		pthread_mutex_t clientsMutex;
-		pthread_mutex_t channelsMutex;
 		std::string const password;
 		std::string const lockFilePath;
 		static Server* instance;
+		pthread_t pingThread;
 
 		// Server operator credentials
 		std::string _operName;

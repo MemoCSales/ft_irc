@@ -53,6 +53,7 @@ class Command : public ICommand {
 
 	public:
 		Command(CommandType type, Server& server);
+		~Command();
 		void execute(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
 };
 

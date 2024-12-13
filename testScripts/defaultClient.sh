@@ -26,7 +26,7 @@ MESSAGE="Hello, IRC!"
 	# echo "QUIT"
 	# Connect to the IRC server
 	while true; do
-		read -p "" input
+		trap 'echo $(RED)"...Process interrupted" $(E_NC); exit 1' INT; read -p "" input
 		echo "$input"
 		# Break the loop if the input is "QUIT"
 		if [ "$input" == "QUIT" ]; then
