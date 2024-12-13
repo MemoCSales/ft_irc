@@ -167,7 +167,7 @@ void* Server::clientHandler(void* arg)
 		// LockGuard lock(server->clientsMutex);
 		// server->removeClient(client->getFd());
 	}
-	// close(client->getFd());
+	close(client->getFd());
 	pthread_exit(NULL);
 	// return NULL;
 }
