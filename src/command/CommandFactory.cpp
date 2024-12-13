@@ -25,7 +25,7 @@ CommandFactory::~CommandFactory() {
 	for (itBegin it = commands.begin(); it != commands.end(); it++)	{
 		delete it->second;
 	}
-	
+	commands.clear();
 }
 
 CommandPtr CommandFactory::createCommand(const std::string& commandName) {
