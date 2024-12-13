@@ -142,8 +142,8 @@ void* Server::clientHandler(void* arg)
 				// LockGuard lock(server->shutdownMutex);
 				// if (server->shutdownFlag)
 				// {
-				// 	close(client->getFd());
-				// // 	pthread_exit(NULL);
+				// // 	close(client->getFd());
+				// // // 	pthread_exit(NULL);
 				// 	break;
 				// }
 			}
@@ -163,11 +163,10 @@ void* Server::clientHandler(void* arg)
 	}
 	{
 		// LockGuard lock(server->clientsMutex);
-		// client->sendMessage("Server is shutting down.\n\n");
-		// close(client->getFd());
+		client->sendMessage("Server is shutting down.\n\n");
+		close(client->getFd());
 		// server->removeClient(client->getFd());
 	}
-	close(client->getFd());
 	pthread_exit(NULL);
 	// return NULL;
 }
