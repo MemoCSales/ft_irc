@@ -150,14 +150,14 @@ server: $(NAME)
 	pass="42";\
 	echo $(BOLD) $(CYAN) ./$(NAME) $$port $$pass $(E_NC) "\n"; \
 	if [ "$(S)" = "0" ]; then \
-		echo $(E_NC); $(MAKE) -C . val port=$$port pass=$$pass; \
+		echo $(E_NC); $(MAKE) -C . hel; \
 	else \
-		if [ -z "$(i)" ]; then \
+		if [ "$(S)" = "1" ]; then \
 			echo $(E_NC); ./$(NAME) $$port $$pass; \
 		else \
-			echo $(E_NC); ./$(NAME) $(i); \
+			echo $(E_NC); ./$(NAME) $$port $$pass; \
 		fi; \
-	fi;
+	fi; \
 	ret=$$?; \
 	if [ $$ret -eq 0 ]; then \
 		echo $(GREEN)"server finished"  $(E_NC); \
