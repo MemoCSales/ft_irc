@@ -61,5 +61,6 @@ mini_IRC/
 *.DS_Store
 
 ircserv
+testScripts/users_created.txt
 #ignore .settings .vscode
 .settings/.vscode

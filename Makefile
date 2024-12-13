@@ -144,7 +144,7 @@ hel:$(NAME)
 		echo $(RED) $(HELGRIND) ./$(NAME) $$port $$pass $(E_NC) "\n"; \
 		$(HELGRIND) ./$(NAME) $$port $$pass; \
 	fi;
-
+#trap 'echo $(RED)"...Process interrupted" $(E_NC); exit 1' INT;
 server: $(NAME)
 	@port="6667"; \
 	pass="42";\
@@ -182,7 +182,8 @@ test:$(NAME)
 	./testScripts/runClients.sh
 dclient:$(NAME)
 	@chmod +x testScripts/defaultClient.sh
-	@./testScripts/defaultClient.sh; \
+	@trap 'echo $(RED)"...Process interrupted" $(E_NC); exit 1' INT;\
+	./testScripts/defaultClient.sh; \
 	ret=$$?; \
 	if [ $$ret -eq 0 ]; then \
 		echo $(GREEN)"dClient finished"  $(E_NC); \

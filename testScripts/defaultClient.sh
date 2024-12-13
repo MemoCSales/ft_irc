@@ -10,6 +10,18 @@ REALNAME="VictoriaLizarraga"
 CHANNEL="#YourChannel"
 MESSAGE="Hello, IRC!"
 
+# Function to handle signal interruptions
+cleanup()
+{
+	clear
+	echo "Signal received. Cleaning up..."
+	pkill -P $$ nc
+	exit 0
+}
+
+# Set the trap to catch SIGINT (Ctrl+C)
+trap cleanup SIGINT
+
 # Connect to the IRC server
 (
 	sleep 1
@@ -26,7 +38,12 @@ MESSAGE="Hello, IRC!"
 	# echo "QUIT"
 	# Connect to the IRC server
 	while true; do
-		read -p "" input
+		if ! read -t 1 -p "" input <&0; then
+			if [ $? -eq 1 ]; then
+				pkill -P $$ nc
+			fi
+			break
+		fi
 		echo "$input"
 		# Break the loop if the input is "QUIT"
 		if [ "$input" == "QUIT" ]; then
@@ -38,5 +55,3 @@ MESSAGE="Hello, IRC!"
 	exec 1>&-
 ) | nc $SERVER $PORT &
 wait $!
-# # Kill the netcat process if it is still running
-# 
