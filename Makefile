@@ -144,20 +144,26 @@ hel:$(NAME)
 		echo $(RED) $(HELGRIND) ./$(NAME) $$port $$pass $(E_NC) "\n"; \
 		$(HELGRIND) ./$(NAME) $$port $$pass; \
 	fi;
-
+#trap 'echo $(RED)"...Process interrupted" $(E_NC); exit 1' INT;
 server: $(NAME)
 	@port="6667"; \
 	pass="42";\
 	echo $(BOLD) $(CYAN) ./$(NAME) $$port $$pass $(E_NC) "\n"; \
 	if [ "$(S)" = "0" ]; then \
-		echo $(E_NC); $(MAKE) -C . val port=$$port pass=$$pass; \
+		echo $(E_NC); $(MAKE) -C . hel; \
 	else \
-		if [ -z "$(i)" ]; then \
+		if [ "$(S)" = "1" ]; then \
 			echo $(E_NC); ./$(NAME) $$port $$pass; \
 		else \
-			echo $(E_NC); ./$(NAME) $(i); \
+			echo $(E_NC); ./$(NAME) $$port $$pass; \
 		fi; \
-	fi
+	fi; \
+	ret=$$?; \
+	if [ $$ret -eq 0 ]; then \
+		echo $(GREEN)"server finished"  $(E_NC); \
+	else \
+		echo $(RED)"...server terminated"  $(E_NC); \
+	fi;
 
 client: $(NAME)
 	@address="localhost"; \
@@ -174,6 +180,17 @@ client: $(NAME)
 	fi
 test:$(NAME)
 	./testScripts/runClients.sh
+dclient:$(NAME)
+	@chmod +x testScripts/defaultClient.sh
+	@trap 'echo $(RED)"...Process interrupted" $(E_NC); exit 1' INT;\
+	./testScripts/defaultClient.sh; \
+	ret=$$?; \
+	if [ $$ret -eq 0 ]; then \
+		echo $(GREEN)"dClient finished"  $(E_NC); \
+		exit 0; \
+	else \
+		echo $(RED)"...dClient terminated"  $(E_NC); \
+	fi;
 delUsers:
 	@pgrep -x "hexchat" > /dev/null; \
 	ret=$$?; \

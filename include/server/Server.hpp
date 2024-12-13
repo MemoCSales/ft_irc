@@ -12,6 +12,7 @@
 # include <cerrno>
 # include <cstring> // strerror
 #include "Mutex.hpp"
+#include <csignal>
 #include "LockGuard.hpp"
 
 # ifndef DEBUG
@@ -32,13 +33,18 @@ class Server
 {
 	private:
 		int serverFD;
+		std::string const password;
+		// bool _shutdownFlag;
+		static volatile sig_atomic_t _shutdownFlag;
+		// std::vector<pthread_t> workerThreads;
+		// pthread_cond_t shutdownCond;
 		std::vector<struct pollfd> pollFDs;
 		std::map<int, Client*> clients;
 		std::map<std::string, Channel*> channels;
 		Mutex clientsMutex;
 		Mutex channelsMutex;
 		Mutex printMutex;
-		std::string const password;
+		Mutex shutdownMutex;
 		std::string const lockFilePath;
 		static Server* instance;
 
@@ -48,9 +54,14 @@ class Server
 
 		void setNonBlocking(int fd);
 		void setupSignalHandlers();
+		// To delete
 		void createLockFile();
 		void removeLockFile();
+		// End to delete
+
 		void removeClient(int clientFD);
+		static void signalHandlerWrapper(int signum);
+		
 		// Disable copy constructor and assignment operator
 		Server(const Server&);
 		Server& operator=(const Server&);
@@ -67,8 +78,9 @@ class Server
 		std::string const getPassword() const;
 		std::map<std::string, Channel*>& getChannels();
 		std::map<int, Client*>& getClients();
-		void sendPingToClients();
-		void startPingTask();
+		// void sendPingToClients();
+		// void startPingTask();
+		// static void* pingTask(void* arg);
 		static void* clientHandler(void* arg);
 		std::string const getOperName() const;
 		std::string const getOperPassword() const;

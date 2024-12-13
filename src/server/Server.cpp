@@ -12,13 +12,13 @@
 #include <netdb.h>
 #include <utility>
 #include <stdexcept>
-#include <csignal>
+
 #include <fstream>
 
 Server* Server::instance = NULL;
-
+volatile sig_atomic_t Server::_shutdownFlag = 0;
 Server::Server(int& port, const std::string& password) : 
-password(password)
+password(password)//, _shutdownFlag(0)
 {
 	instance = this;
 	try
@@ -64,7 +64,7 @@ password(password)
 		setOperPassword();
 
 		// Start the periodic PING task
-		startPingTask();
+		// startPingTask();
 	}
 	catch (const std::exception& e)
 	{
@@ -107,11 +107,15 @@ void Server::handleNewConnection()
 
 			// Send welcome message
 			newClient->sendMessage(welcomeMsg());
+			pthread_create(&newClient->thread, NULL, Server::clientHandler, newClient);
+			// if (pthread_detach(newClient->thread) != 0)
+			if (pthread_join(newClient->thread, NULL) != 0)
+			{
+				std::cerr << "Failed to join thread" << std::endl;
+			}
+			// pthread_detach(newClient->thread);
+			// workerThreads.push_back();
 		}
-
-		pthread_t thread;
-		pthread_create(&thread, NULL, Server::clientHandler, newClient);
-		pthread_detach(thread);
 	}
 	catch (const std::exception& e)
 	{
@@ -122,7 +126,8 @@ void Server::handleNewConnection()
 
 void Server::handleClient(int clientFD)
 {
-	LockGuard lock(clientsMutex);
+	// Server* server = Server::getInstance();
+	// LockGuard clientlock(server->clientsMutex);
 	ClientsIte it = clients.find(clientFD);
 	if (it != clients.end())
 		it->second->handleRead();
@@ -135,29 +140,51 @@ void* Server::clientHandler(void* arg)
 	try
 	{
 		while (true)
+		{
+			{
+				// LockGuard lock(server->shutdownMutex);
+				if (server->_shutdownFlag)
+				{
+					// close(client->getFd());
+					// pthread_exit(NULL);
+					break;
+				}
+			}
+			// LockGuard clientlock(server->clientsMutex);
 			server->handleClient(client->getFd());
+		}
 	}
 	catch (const std::exception& e)
 	{
-		{
-			LockGuard printLock(server->printMutex);
-			std::cerr << "Error handling client: " << e.what() << std::endl;
-		}
-		server->removeClient(client->getFd());
+		LockGuard printLock(server->printMutex);
+		std::cerr << "Error handling client: " << e.what() << std::endl;
 	}
 	{
 		LockGuard printLock(server->printMutex);
 		std::cerr << error("END CLIENT\r\n", 0);
 	}
-	return NULL;
+	{
+		// LockGuard lock(server->clientsMutex);
+		// server->removeClient(client->getFd());
+	}
+	// close(client->getFd());
+	pthread_exit(NULL);
+	// return NULL;
 }
 
 void Server::run()
 {
+	Server* server = Server::getInstance();
 	while (true)
 	{
 		try
 		{
+			{
+				// LockGuard lock(server->shutdownMutex);
+				if (server->_shutdownFlag)
+				// if (_shutdownFlag)
+					break;
+			}
 			int pollCount = poll(pollFDs.data(), pollFDs.size(), -1);
 			if (pollCount < 0)
 				throw std::runtime_error("Poll failed: " + std::string(strerror(errno)));
@@ -177,49 +204,84 @@ void Server::run()
 			std::cerr << "Error in server run loop: " << e.what() << std::endl;
 		}
 	}
+	{
+		// server->shutdownMutex.unlock();
+		LockGuard lock(server->shutdownMutex);
+		if (server->_shutdownFlag)
+		{
+			// server->clientsMutex.unlock();
+			for (ClientsIte it = clients.begin(); it != clients.end(); ++it)
+			{
+				// LockGuard lockClients(clientsMutex);
+				it->second->sendMessage("Server is shutting down.\n\n");
+				close(it->first);
+			}
+		}
+	}
+	// Close the server socket
+	{
+		LockGuard lockClients(clientsMutex);
+		for (ClientsIte it = clients.begin(); it != clients.end(); ++it)
+		{
+			close(it->first);
+			delete it->second;
+			clients.erase(it);
+		}
+	}
+	{
+		LockGuard lock(server->shutdownMutex);
+		close(serverFD);
+	}
+}
+
+void Server::removeClient(int clientFD)
+{
+	LockGuard lock(clientsMutex);
+	ClientsIte it = clients.find(clientFD);
+	if (it != clients.end())
+	{
+		close(it->first);
+		delete it->second;
+		clients.erase(it);
+	}
 }
 
 void Server::setupSignalHandlers()
 {
-	signal(SIGINT, Server::signalHandler);
-	signal(SIGTERM, Server::signalHandler);
+	signal(SIGINT, Server::signalHandlerWrapper);
+	signal(SIGTERM, Server::signalHandlerWrapper);
+}
+
+void Server::signalHandlerWrapper(int signum)
+{
+	Server* server = Server::getInstance();
+	if (server->instance) {
+		server->signalHandler(signum);
+	}
 }
 
 void Server::signalHandler(int signum)
 {
+	const char* msg = "Interrupt signal received. Shutting down server.\n";
+	write(STDERR_FILENO, msg, strlen(msg));
 	{
-		LockGuard lock(instance->printMutex);
-		std::cout << "Interrupt signal (" << signum << ") received. Closing server socket." << std::endl;
+		Server* server = Server::getInstance();
+		// LockGuard lock(server->shutdownMutex);
+		server->_shutdownFlag = 1;
 	}
-
-	// Access the server instance
-	Server* server = Server::getInstance();
-
-	// Send a message to each client
-	{
-		LockGuard lock(server->clientsMutex);
-		ClientsIte it = server->clients.begin();
-		for (; it != server->clients.end(); ++it)
-		{
-			it->second->sendMessage("Server is shutting down.\n\n");
-		}
-	}
-
-	// Close the server socket
-	close(server->serverFD);
-
-	// Exit the program
-	exit(signum);
+	(void)signum;
 }
+
 
 Server::~Server()
 {
-	for (ClientsIte it = clients.begin(); it != clients.end(); ++it)
-	{
-		delete it->second;
-		close(it->first);
-		clients.erase(it);
-	}
+	// LockGuard lock(clientsMutex);
+	// for (ClientsIte it = clients.begin(); it != clients.end(); ++it)
+	// {
+	// 	close(it->first);
+	// 	delete it->second;
+	// 	clients.erase(it);
+	// }
 	for (ChannelIte it = channels.begin(); it != channels.end(); ++it)
 	{
 		delete it->second;
@@ -285,17 +347,7 @@ void Server::removeLockFile()
 	std::remove(lockFilePath.c_str());
 }
 
-void Server::removeClient(int clientFD)
-{
-	LockGuard lock(clientsMutex);
-	ClientsIte it = clients.find(clientFD);
-	if (it != clients.end())
-	{
-		delete it->second;
-		close(it->first);
-		clients.erase(it);
-	}
-}
+
 
 std::string const Server::getPassword() const {
 	return password;
@@ -309,29 +361,38 @@ std::map<int, Client*>& Server::getClients() {
 	return clients;
 }
 
-void Server::sendPingToClients() {
-	LockGuard lock(clientsMutex);
-	for (ClientsIte it = clients.begin(); it != clients.end(); it++)
-	{
-		std::cout << "Sending PING to client: " << it->first << std::endl;
-		it->second->sendMessage("PING ping\r\n");
-	}
-}
+// void Server::sendPingToClients() {
+// 	LockGuard lock(clientsMutex);
+// 	for (ClientsIte it = clients.begin(); it != clients.end(); it++)
+// 	{
+// 		{
+// 			Server* server = getInstance();
+// 			LockGuard lock(server->shutdownMutex);
+// 			if (server->_shutdownFlag)
+// 			{
+// 				break;
+// 			}
+// 		}
+// 		std::cout << "Sending PING to client: " << it->first << std::endl;
+// 		it->second->sendMessage("PING ping\r\n");
+// 	}
 
-void* pingTask(void* arg) {
-	Server* server = static_cast<Server*>(arg);
-	while (true) {
-		sleep(600);
-		server->sendPingToClients();
-	}
-	return NULL;
-}
+// }
 
-void Server::startPingTask() {
-	pthread_t thread;
-	pthread_create(&thread, NULL, pingTask, this);
-	pthread_detach(thread);
-}
+// void*  Server::pingTask(void* arg) {
+// 	Server* server = static_cast<Server*>(arg);
+// 	while (true) {
+// 		sleep(600);
+// 		server->sendPingToClients();
+// 	}
+// 	return NULL;
+// }
+
+// void Server::startPingTask() {
+// 	pthread_t thread;
+// 	pthread_create(&thread, NULL, pingTask, this);
+// 	pthread_detach(thread);
+// }
 
 
 void Server::setOperName(void) {

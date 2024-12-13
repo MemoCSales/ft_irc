@@ -2,7 +2,7 @@
 
 Mutex::Mutex()
 {
-	if (pthread_mutex_init(&mutex, NULL) != 0)
+	if (pthread_mutex_init(&_mutex, NULL) != 0)
 	{
 		throw std::runtime_error("Failed to initialize mutex");
 	}
@@ -10,15 +10,17 @@ Mutex::Mutex()
 
 Mutex::~Mutex()
 {
-	pthread_mutex_destroy(&mutex);
+	pthread_mutex_destroy(&_mutex);
 }
 
 void Mutex::lock()
 {
-	pthread_mutex_lock(&mutex);
+	pthread_mutex_lock(&_mutex);
 }
 
 void Mutex::unlock()
 {
-	pthread_mutex_unlock(&mutex);
+	{
+		pthread_mutex_unlock(&_mutex);
+	}
 }
