@@ -33,10 +33,11 @@ class Server
 {
 	private:
 		int serverFD;
-		static volatile sig_atomic_t shutdownFlag;
+		std::string const password;
+		// bool _shutdownFlag;
+		static volatile sig_atomic_t _shutdownFlag;
 		// std::vector<pthread_t> workerThreads;
 		// pthread_cond_t shutdownCond;
-		// pthread_mutex_t shutdownMutex;
 		std::vector<struct pollfd> pollFDs;
 		std::map<int, Client*> clients;
 		std::map<std::string, Channel*> channels;
@@ -44,7 +45,6 @@ class Server
 		Mutex channelsMutex;
 		Mutex printMutex;
 		Mutex shutdownMutex;
-		std::string const password;
 		std::string const lockFilePath;
 		static Server* instance;
 

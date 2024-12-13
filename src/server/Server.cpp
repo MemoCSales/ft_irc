@@ -16,10 +16,9 @@
 #include <fstream>
 
 Server* Server::instance = NULL;
-volatile sig_atomic_t Server::shutdownFlag = 0;
-
+volatile sig_atomic_t Server::_shutdownFlag = 0;
 Server::Server(int& port, const std::string& password) : 
-password(password)
+password(password)//, _shutdownFlag(0)
 {
 	instance = this;
 	try
@@ -108,11 +107,15 @@ void Server::handleNewConnection()
 
 			// Send welcome message
 			newClient->sendMessage(welcomeMsg());
+			pthread_create(&newClient->thread, NULL, Server::clientHandler, newClient);
+			// if (pthread_detach(newClient->thread) != 0)
+			if (pthread_join(newClient->thread, NULL) != 0)
+			{
+				std::cerr << "Failed to join thread" << std::endl;
+			}
+			// pthread_detach(newClient->thread);
+			// workerThreads.push_back();
 		}
-
-		pthread_t thread;
-		pthread_create(&thread, NULL, Server::clientHandler, newClient);
-		pthread_detach(thread);
 	}
 	catch (const std::exception& e)
 	{
@@ -123,8 +126,8 @@ void Server::handleNewConnection()
 
 void Server::handleClient(int clientFD)
 {
-	Server* server = Server::getInstance();
-	LockGuard lock(server->clientsMutex);
+	// Server* server = Server::getInstance();
+	// LockGuard clientlock(server->clientsMutex);
 	ClientsIte it = clients.find(clientFD);
 	if (it != clients.end())
 		it->second->handleRead();
@@ -140,22 +143,21 @@ void* Server::clientHandler(void* arg)
 		{
 			{
 				// LockGuard lock(server->shutdownMutex);
-				// if (server->shutdownFlag)
-				// {
-				// // 	close(client->getFd());
-				// // // 	pthread_exit(NULL);
-				// 	break;
-				// }
+				if (server->_shutdownFlag)
+				{
+					// close(client->getFd());
+					// pthread_exit(NULL);
+					break;
+				}
 			}
+			// LockGuard clientlock(server->clientsMutex);
 			server->handleClient(client->getFd());
 		}
 	}
 	catch (const std::exception& e)
 	{
-		{
-			LockGuard printLock(server->printMutex);
-			std::cerr << "Error handling client: " << e.what() << std::endl;
-		}
+		LockGuard printLock(server->printMutex);
+		std::cerr << "Error handling client: " << e.what() << std::endl;
 	}
 	{
 		LockGuard printLock(server->printMutex);
@@ -163,10 +165,9 @@ void* Server::clientHandler(void* arg)
 	}
 	{
 		// LockGuard lock(server->clientsMutex);
-		client->sendMessage("Server is shutting down.\n\n");
-		close(client->getFd());
 		// server->removeClient(client->getFd());
 	}
+	// close(client->getFd());
 	pthread_exit(NULL);
 	// return NULL;
 }
@@ -179,8 +180,9 @@ void Server::run()
 		try
 		{
 			{
-				LockGuard lock(server->shutdownMutex);
-				if (server->shutdownFlag)
+				// LockGuard lock(server->shutdownMutex);
+				if (server->_shutdownFlag)
+				// if (_shutdownFlag)
 					break;
 			}
 			int pollCount = poll(pollFDs.data(), pollFDs.size(), -1);
@@ -202,21 +204,45 @@ void Server::run()
 			std::cerr << "Error in server run loop: " << e.what() << std::endl;
 		}
 	}
-
+	{
+		// server->shutdownMutex.unlock();
+		LockGuard lock(server->shutdownMutex);
+		if (server->_shutdownFlag)
+		{
+			// server->clientsMutex.unlock();
+			for (ClientsIte it = clients.begin(); it != clients.end(); ++it)
+			{
+				// LockGuard lockClients(clientsMutex);
+				it->second->sendMessage("Server is shutting down.\n\n");
+				close(it->first);
+			}
+		}
+	}
 	// Close the server socket
 	{
 		LockGuard lockClients(clientsMutex);
 		for (ClientsIte it = clients.begin(); it != clients.end(); ++it)
 		{
-			it->second->sendMessage("Server is shutting down.\n\n");
 			close(it->first);
-			// delete it->second;
-			// clients.erase(it);
+			delete it->second;
+			clients.erase(it);
 		}
 	}
 	{
 		LockGuard lock(server->shutdownMutex);
 		close(serverFD);
+	}
+}
+
+void Server::removeClient(int clientFD)
+{
+	LockGuard lock(clientsMutex);
+	ClientsIte it = clients.find(clientFD);
+	if (it != clients.end())
+	{
+		close(it->first);
+		delete it->second;
+		clients.erase(it);
 	}
 }
 
@@ -240,8 +266,8 @@ void Server::signalHandler(int signum)
 	write(STDERR_FILENO, msg, strlen(msg));
 	{
 		Server* server = Server::getInstance();
-		LockGuard lock(server->shutdownMutex);
-		server->shutdownFlag = 1;
+		// LockGuard lock(server->shutdownMutex);
+		server->_shutdownFlag = 1;
 	}
 	(void)signum;
 }
@@ -249,13 +275,13 @@ void Server::signalHandler(int signum)
 
 Server::~Server()
 {
-	LockGuard lock(clientsMutex);
-	for (ClientsIte it = clients.begin(); it != clients.end(); ++it)
-	{
-		close(it->first);
-		delete it->second;
-		clients.erase(it);
-	}
+	// LockGuard lock(clientsMutex);
+	// for (ClientsIte it = clients.begin(); it != clients.end(); ++it)
+	// {
+	// 	close(it->first);
+	// 	delete it->second;
+	// 	clients.erase(it);
+	// }
 	for (ChannelIte it = channels.begin(); it != channels.end(); ++it)
 	{
 		delete it->second;
@@ -320,17 +346,7 @@ void Server::removeLockFile()
 	std::remove(lockFilePath.c_str());
 }
 
-void Server::removeClient(int clientFD)
-{
-	LockGuard lock(clientsMutex);
-	ClientsIte it = clients.find(clientFD);
-	if (it != clients.end())
-	{
-		close(it->first);
-		delete it->second;
-		clients.erase(it);
-	}
-}
+
 
 std::string const Server::getPassword() const {
 	return password;
@@ -351,7 +367,7 @@ std::map<int, Client*>& Server::getClients() {
 // 		{
 // 			Server* server = getInstance();
 // 			LockGuard lock(server->shutdownMutex);
-// 			if (server->shutdownFlag)
+// 			if (server->_shutdownFlag)
 // 			{
 // 				break;
 // 			}
