@@ -565,10 +565,46 @@ std::string trim(const std::string& str) {
 }
 
 bool isNumber(const std::string& str) {
-    for (std::string::const_iterator it = str.begin(); it != str.end(); ++it) {
-        if (!std::isdigit(*it)) {
+	
+    if (str.empty()) {
+        return false;
+    }
+    unsigned long int i = 0;
+    if (str[0] == '-' || str[0] == '+') {
+        i++;
+        if (i == str.size()) {
+            return false;
+        }
+    }
+
+    for (; i < str.size(); i++) {
+        if (!std::isdigit(str[i])) {
             return false;
         }
     }
     return true;
+}
+
+long int modAtoi(std::string nb){
+
+	long int result = 0;
+    int flag = 1;
+    unsigned long int i = 0;
+
+    if (nb[0] == '-') {
+        flag = -1;
+        i++;
+    } else if (nb[0] == '+') {
+        i++;
+    }
+
+    for (; i < nb.size(); i++) {
+        if (nb[i] >= '0' && nb[i] <= '9') {
+            result = result * 10 + (nb[i] - '0');
+        } else {
+            return -1;
+        }
+    }
+
+    return result * flag;
 }

@@ -1,27 +1,39 @@
 # include "Commands.hpp"
 # include "NumericMessages.hpp"
 # include "Utils.hpp"
-//#include "Client.hpp"
+# include "InputParser.hpp"
 
 Command::Command(CommandType type, Server& server) : _type(type), _server(server) {
+	commands[CAP] = &Command::handleCap;
 	commands[PASS] = &Command::handlePass;
 	commands[NICK] = &Command::handleNick;
 	commands[USER] = &Command::handleUser;
 	commands[QUIT] = &Command::handleQuit;
+	commands[PING] = &Command::handlePing;
+	commands[PONG] = &Command::handlePong;
+	commands[OPER] = &Command::handleOper;
+	commands[PRIVMSG] = &Command::handlePrivMsg;
 	commands[JOIN] = &Command::handleJoin;
 	commands[TOPIC] = &Command::handleTopic;
 	commands[PART] = &Command::handlePart;
 	commands[KICK] = &Command::handleKick;
 	commands[INVITE] = &Command::handleInvite;
 	commands[MODE] = &Command::handleMode;
-
-
 }
+
+Command::~Command() {}
 
 void Command::execute(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	if (commands.find(_type) != commands.end()) {
 		(this->*commands[_type])(client, args, channels);
 	}
+}
+
+void Command::handleCap(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
+	(void) client;
+	(void) args;
+	(void) channels;
+	return ;
 }
 
 void Command::handlePass(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
@@ -36,26 +48,31 @@ void Command::handlePass(Client& client, const std::string& args, std::map<std::
 	if (password == _server.getPassword()) {
 		client.setAuthenticated(true);
 		std::cout << "Client authenticated -> fd: " << client.getFd() << std::endl;
+		client.sendMessage("You have been authenticated. Please continue your registration.");
+		if (!client.nickname.empty() && !client.username.empty()) {
+			response = RPL_WELCOME(client.nickname);
+			client.sendMessage(response);
+		}
 	} else {
 		response = ERR_PASSWDMISMATCH;
 		client.sendMessage(response);
 	}
-	if (!client.nickname.empty() && !client.username.empty()) {
-		std::string response = RPL_WELCOME(client.nickname);
-		client.sendMessage(response);
-	}
 }
 
-void Command::handleNick(Client &client, const std::string &args, std::map<std::string, Channel *> &channels) {
-	(void) channels;
+void Command::handleNick(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	std::string newNick = trim(args);
 	std::string oldNick = client.nickname;
 	bool nickExists = false;
 
+	// Checks if the Client is already authenticated
+	if (!client.isAuthenticated()) {
+		client.sendMessage(ERR_NOTREGISTERED);
+		return;
+	}
+
 	//check for a valid newNickname : ERR_ERRONEUSNICKNAME 432
-	std::map<int, Client *> &clients = _server.getClients();
-	std::map<int, Client *>::iterator it = clients.begin();
-	for (; it != clients.end(); it++) {
+	std::map<int, Client*>& clients = _server.getClients();
+	for (ClientsIte it = clients.begin(); it != clients.end(); it++) {
 		if (it->second->nickname == newNick) {
 			nickExists = true;
 			break;
@@ -73,12 +90,13 @@ void Command::handleNick(Client &client, const std::string &args, std::map<std::
 		std::string response = RPL_NICKCHANGE(oldNick, user, host, newNick);
 		client.sendMessage(response);
 
-		// todo: Inform other clients about the nickname change
-
-		// Check before sending the welcome message
-		if (!client.username.empty() && client.isAuthenticated()) {
-			std::string response = RPL_WELCOME(client.nickname);
-			client.sendMessage(response);
+		// Inform other clients about the nickname change
+		// std::string message = ":" + oldNick + "!@localhost NICK: " + newNick;
+		for (ChannelIte itChannel = channels.begin(); itChannel != channels.end(); itChannel++) {
+			Channel* channel = itChannel->second;
+			if (channel->isMember(&client)) {
+				channel->broadcast(response, &client);
+			}
 		}
 	}
 	std::cout << "NICK command received. Client nickname changed from: " << oldNick << " to: " << newNick << std::endl;
@@ -87,29 +105,40 @@ void Command::handleNick(Client &client, const std::string &args, std::map<std::
 
 void Command::handleUser(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	(void)channels;
-	std::istringstream stream(args);
-	std::string userName, mode, unused, realName;
 
-	stream >> userName >> mode >> unused;
-	std::getline(stream, realName);
+	// Checks if the Client is already authenticated
+	if (!client.isAuthenticated()) {
+		client.sendMessage(ERR_NOTREGISTERED);
+		return;
+	}
+	std::vector<std::string> tokens = InputParser::parseInput(args, ' ');
 
-	userName = trim(userName);
-	mode = trim(mode);
-	unused = trim(unused);
-	realName = trim(realName);
+	if (tokens.size() < 4) {
+		std::string command = "USER";
+		std::string response = ERR_NEEDMOREPARAMS(command);
+		client.sendMessage(response);
+		client.sendMessage("Usage: Command <username> 0 * <realname>\r\n");
+		return ;
+	}
+
+	std::string userName = trim(tokens[0]);
+	std::string mode = trim(tokens[1]);
+	std::string unused = trim(tokens[2]);
+	std::string realName = trim(tokens[3]);
 
 	if (!realName.empty() && realName[0] == ':') {
 		realName = realName.substr(1);
 	}
 
 	if (userName.empty() || userName.length() > USERLEN) {
-		std::string response = ERR_NEEDMOREPARAMS;
+		std::string command = "USER";
+		std::string response = ERR_NEEDMOREPARAMS(command);
 		client.sendMessage(response);
 		return ;
 	}
 
 	std::map<int, Client*>& clients = _server.getClients();
-	for (std::map<int, Client*>::iterator it = clients.begin(); it != clients.end(); it++) {
+	for (ClientsIte it = clients.begin(); it != clients.end(); it++) {
 		if (client.username == userName) {
 			std::string response = ERR_ALREADYREGISTERED;
 			client.sendMessage(response);
@@ -120,739 +149,174 @@ void Command::handleUser(Client& client, const std::string& args, std::map<std::
 	client.username = userName;
 	client.realname = realName;
 
-	// Check before sending the message
-	if (!client.nickname.empty() && client.isAuthenticated()) {
-		std::string response = RPL_WELCOME(client.nickname);
-		client.sendMessage(response);
-	}
-
 	std::cout << "USER command received. Client username set to: " << userName << ", realname set to: " << realName << std::endl;
 }
 
 void Command::handleQuit(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
-	std::istringstream stream(args);
-	std::string reason, response;
+	std::vector<std::string> tokens = InputParser::parseInput(args, ' ');
+	std::string reason;
+	std::string response;
 
-	getline(stream, reason);
+	if (tokens.empty()) {
+		reason = "";
+	} else {
+		for (std::vector<std::string>::iterator it = tokens.begin(); it != tokens.end(); ++it) {
+			reason.append(*it);
+			if (it + 1 != tokens.end()) {
+				reason.append(" ");
+			}
+		}
+	}
 	if (reason.empty()) {
 		response = "Quit";
-		std::cout << response << std::endl;
 	} else {
 		response = RPL_QUIT(reason);
 	}
 	// todo: Check if this is the right approach for deletion
-	for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); it++) {
+	for (ChannelIte it = channels.begin(); it != channels.end(); it++) {
 		it->second->broadcast(client.nickname + " has quit: " + reason, &client);
 		it->second->removeMember(&client);
 	}
-	client.sendMessage(ERROR(response));
+	
+	client.sendMessage(response);
 	throw std::runtime_error("Client disconnected");
 	std::cout << "QUIT command received. Client disconnected with the reason: " << response << std::endl;
 }
 
+/* PING command is sent by either clients or servers to check the other
+ side of the connection is still connected. */
+void Command::handlePing(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
+	(void)channels;
 
-//-------------marian---------------
+	std::vector<std::string> tokens = InputParser::parseInput(args, ' ');
+	std::string reason = tokens.empty() ? "" : trim(tokens[0]);
 
-void Command::handleJoin(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
-	std::string channelName = trim(args);
-	if (channelName.empty()) {
-		std::string error = "Error: No channel name provided.\n";
-		client.sendMessage(error);
+	InputParser::printTokens(tokens);
+
+	if (reason.empty()) {
+		std::string command = "PING";
+		std::string response = ERR_NEEDMOREPARAMS(command);
+		client.sendMessage(response);
 		return;
 	}
-	Channel* targetChannel = NULL;
-	bool found = false;
-	std::map<std::string, Channel*>::iterator it = channels.begin();
-	for (; it != channels.end(); ++it) {
-		if (it->first == channelName) {
-			found = true;
-			targetChannel = it->second;
-		}
-	}
-
-	if (!found) {
-		targetChannel = _server.getOrCreateChannel(channelName);
-		targetChannel->addMember(&client);
-		targetChannel->addOperator(&client);
-		std::cout << channelName << " was created!.\n";
-		return;
-	} else {
-		// Check if the client is in channel;
-		for (std::vector<Client*>::const_iterator it = targetChannel->getMembers().begin();
-			it != targetChannel->getMembers().end(); ++it) {
-			if (*it == &client) {
-				std::string error = "Already in the channel.\n";
-				client.sendMessage(error);
-				return;
-			}
-		}
-		// check if chaennel is full
-		if (targetChannel->getMembers().size() >= static_cast<size_t>(targetChannel->getLimit())) {
-			std::string error = "Channel is full. Unable to join.\n";
-			client.sendMessage(error);
-			return;
-		}
-
-		// check if invitation required
-		if (targetChannel->getInviteStatus()) {
-			bool invited = false;
-			for (std::vector<Client*>::const_iterator it = targetChannel->getAllowedPeople().begin();
-				 it != targetChannel->getAllowedPeople().end(); ++it) {
-				if (*it == &client) {
-					invited = true;
-					break;
-				}
-			}
-			if (!invited) {
-				std::string error = "This is a private channel, you need an invitation.\n";
-				client.sendMessage(error);
-				return;
-			}
-		}
-		if (!targetChannel->getPassword().empty()) {
-			std::string response = "Private channel, requires a password.\n";
-			client.sendMessage(response);
-			// wait for password
-			char passBuff[4096];
-			memset(passBuff, 0, sizeof(passBuff));
-			int passBytesRecv = 0;
-			// Loop to wait for password input
-			while (true) {
-				passBytesRecv = recv(client.getFd(), passBuff, sizeof(passBuff) - 1, 0);
-				if (passBytesRecv > 0) {
-					std::string pass(passBuff, passBytesRecv);
-					pass.erase(pass.find_last_not_of(" \n\r\t") + 1);
-					if (targetChannel->getPassword() == pass) {
-						targetChannel->addMember(&client);
-						std::string message = "Joined channel: " + targetChannel->getName() + ".\n";
-						client.sendMessage(message);
-						std::cout << client.getNick() << " has joined the channel: " << targetChannel->getName() << std::endl;
-						if (!targetChannel->getTopic().empty())
-							targetChannel->broadcastTopic(&client);
-						return;
-					} else {
-						std::string error = "Incorrect password.\n";
-						client.sendMessage(error);
-						return;
-					}
-				}
-			}
-		}
-	}
-	// Join the channel
-	targetChannel->addMember(&client);
-	std::string message = "Joined channel: " + targetChannel->getName() + ".\n";
-	client.sendMessage(message);
-	std::cout << client.getNick() << " has joined the channel: " << targetChannel->getName() << std::endl;
-	if (!targetChannel->getTopic().empty()) {
-		targetChannel->broadcastTopic(&client);
-	}
+	client.sendMessage("PONG " + reason + "\r\n");
 }
 
 
-void	Command::handleKick(Client& client, const std::string& args, std::map<std::string, Channel*>& channels){
+void Command::handlePong(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	(void)channels;
-	std::istringstream stream(args);
-	std::string channelName;
-	stream >> channelName;
-	std::string target;
-	stream >> target;
 
-	if (channelName.empty() || channelName[0] != '#') {
-		std::string error = "Channel name must start with '#' or channel is empty.\n";
-		client.sendMessage(error);
-		return;
-	}
-	if (target.empty()) {
-		std::string error = "You need to choose a client to kick.\n";
-		client.sendMessage(error);
-		return;
-	}
+	std::vector<std::string> tokens = InputParser::parseInput(args, ' ');
+	std::string reason = tokens.empty() ? "" : trim(tokens[0]);
 
-	Channel *targetChannel = _server.getChannel(channelName);
-	if (!targetChannel) {
-		std::string error = "Channel does not exist.\n";
-		client.sendMessage(error);
+	if (reason.empty()) {
+		std::string command = "PING";
+		std::string response = ERR_NEEDMOREPARAMS(command);
+		client.sendMessage(response);
 		return;
 	}
-	bool isOperator = false;
-	for (unsigned long int i = 0; i < targetChannel->getOperators().size(); i++){
-		if (targetChannel->getOperators()[i] == &client) {
-				isOperator = true;
-				break;
-		}
-	}
-	if (isOperator){
-		bool found = false;
-		for (unsigned long int i = 0; i < targetChannel->getMembers().size(); i++){
-			if (targetChannel->getMembers()[i]->getNick() == target) {
-				found = true;
-				std::string response = "You got kicked from the channel:" + channelName + "\n";
-				send(targetChannel->getMembers()[i]->getFd(), response.c_str(), response.size() + 1, 0);
-				std::cout << targetChannel->getMembers()[i]->getNick() << " got kicked from: " << targetChannel->getName()<<std::endl;
-				targetChannel->removeMember(targetChannel->getMembers()[i]);
-				break;
-			}
-		}
-		if (!found){
-			std::string error = "User not found in the channel " + channelName + ".\n";
-			client.sendMessage(error);
-		}
-	}
-	else {
-		std::string error = "You 're not an operator in " + channelName +  "\n";
-		client.sendMessage(error);
-	}
+	std::cout << "PONG command received with the token: " << reason  << std::endl;
 }
 
-void	Command::handlePart(Client& client, const std::string& args, std::map<std::string, Channel*>& channels){
+void Command::handleOper(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	(void)channels;
-	std::istringstream stream(args);
-	std::string channelName;
-	stream >> channelName;
-	if (channelName.empty() || channelName[0] != '#') {
-		std::string error = "Channel name must start with '#' or channel is empty.\n";
-		client.sendMessage(error);
-		return;
-	}
-	Channel *targetChannel = _server.getChannel(channelName);
-	if (!targetChannel) {
-		std::string error = "Channel does not exist.\n";
-		client.sendMessage(error);
-		return;
-	}
-	bool isOperator = false;
-	for (unsigned long int i = 0; i < targetChannel->getOperators().size(); i++){
-		if (targetChannel->getOperators()[i] == &client) {
-			isOperator = true;
-			break;
-		}
-	}
-	bool found = false;
-	for (unsigned long int i = 0; i < targetChannel->getMembers().size(); i++){
-		if (targetChannel->getMembers()[i] == &client) {
-			found = true;
-			targetChannel->removeMember(&client);
-			if(isOperator)
-			{
-				targetChannel->removeOperator(&client);
 
-			}
-			std::string response = "Exited channel:" +targetChannel->getName() + "\n";
-			client.sendMessage(response);
-			std::cout << client.getNick() << " exited from: " << targetChannel->getName()<<std::endl;
-			break;
-		}
+	// Checks if the Client is already authenticated
+	if (!client.isAuthenticated() || client.nickname.empty() || client.username.empty()) {
+		client.sendMessage(ERR_NOTREGISTERED);
+		return;
 	}
-	if (!found){
-		std::string error = "User are not part of that channell.\n";
-		client.sendMessage(error);
+
+	std::string command = "OPER";
+	std::string response;
+	std::vector<std::string> tokens = InputParser::parseInput(args, ' ');
+
+	if (tokens.size() < 2) {
+		client.sendMessage(ERR_NEEDMOREPARAMS(command));
+		client.sendMessage("Usage: Command <name> <password>\r\n");
 		return ;
 	}
-	if(targetChannel->getMembers().size() == 0){
-		std::cout << targetChannel->getName() << " was removed!\n";
-		_server.removeChannel(targetChannel->getName());
-		return;
-	}
-	if (targetChannel->getOperators().size() == 0 && targetChannel->getMembers().size() > 0) {
-        Client* oldestMember = targetChannel->getMembers().front();
-        targetChannel->addOperator(oldestMember);
-        std::string promotionMessage = "You have been promoted to operator in channel: " + targetChannel->getName() + "\n";
-        oldestMember->sendMessage(promotionMessage);
-        std::cout << oldestMember->getNick() << " promoted to operator in channel: " << targetChannel->getName() << std::endl;
-    }
 
+	std::string name = trim(tokens[0]);
+	std::string password = trim(tokens[1]);
+
+	if (name.empty() || password.empty()) {
+		response = ERR_NEEDMOREPARAMS(command);
+		client.sendMessage(response);
+		return ;
+	}
+	if (name != _server.getOperName()) {
+		response = ERR_NOOPERHOST;
+		client.sendMessage(response);
+		return ;
+	}
+	if (password != _server.getOperPassword()) {
+		response = ERR_PASSWDMISMATCH;
+		client.sendMessage(response);
+		return ;
+	}
+
+	client.setServerOperator(true);
+	response = RPL_YOUREOPER;
+	client.sendMessage(response);
+	std::cout << "Client " << client.nickname << " is now a server operator." << std::endl;
 }
 
+void Command::handlePrivMsg(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
+	std::string command = "PRIVMSG";
 
-void	Command::handleTopic(Client& client, const std::string& args, std::map<std::string, Channel*>& channels){
-	(void)channels;
-	std::istringstream stream(args);
-	std::string channelName;
-	stream >> channelName;
-	std::string topic;
-	stream >> topic;
-	if (channelName.empty() || channelName[0] != '#') {
-		std::string error = "Channel name must start with '#' or channel is empty.\n";
-		client.sendMessage(error);
-		return;
-	}
-	if(topic.empty()){
-		std::string error = "topic can t be empty.\n";
-		client.sendMessage(error);
-		return;
-	}
-	Channel *targetChannel = _server.getChannel(channelName);
-	if (!targetChannel) {
-		std::string error = "Channel does not exist.\n";
-		client.sendMessage(error);
-		return;
-	}
-	bool isMember = false;
-	for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); ++it) {
-		if (it->first == channelName) {
-			targetChannel = it->second;
-			std::vector<Client*> members = targetChannel->getMembers(); // Get the members vector
-			for (std::vector<Client*>::iterator memberIt = members.begin(); memberIt != members.end(); ++memberIt) {
-				if (*memberIt == &client) {
-					isMember = true;
-					break;
-				}
-			}
-			break;
-		}
-	}
-	if(isMember){
-		if(targetChannel->getFlagTopic() == true){
-			std::string error = "Topic restriction set to true, You need to be an operator.\n";
-			client.sendMessage(error);
-			bool isOperator = false;
-			for (unsigned long int i = 0; 			client.sendMessage(error);
-			}
-
-			else {
-				std::string error = "You can only use set or remove.\n";
-				client.sendMessage(error);
-			}
-		}
-		else if(flag == "o"){ 
-			std::string name;
-			stream>>name;
-			if(name.empty()){
-				std::string error = "You need to insert the name of the client.\n";
-				client.sendMessage(error);
-				return ;
-			}
-			bool isMember = false;
-			Channel* targetChannel = NULL;
-			for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); ++it) {
-				if (it->first == channelName) {
-					targetChannel = it->second;
-					std::vector<Client*> members = targetChannel->getMembers();
-					for (std::vector<Client*>::iterator memberIt = members.begin(); memberIt != members.end(); ++memberIt) {
-						if ((*memberIt)->getNick() == name) {
-							isMember = true;
-							break;
-						}
-					}
-					break;
-				}
-			}
-			if(isMember){
-				Client *clientTarget = _server.getClientByNick(name);
-				std::string message = "You gave operator priviliges to: " + name +".\n";
-				client.sendMessage(message);
-				targetChannel->addOperator(clientTarget);
-				message = "You recived operator priviliges from: " + client.getNick()+" in "+ channelName +" channel" +".\n";
-				clientTarget->sendMessage(message);
-				std::cout << "new operator adde in the chanel : " <<  name << std::endl;
-			}
-			else{
-				std::string message = name + " not found in: " + channelName + ".\n";
-				client.sendMessage(message);
-			}
-		}
-		else if(flag == "l"){
-			std::string limit;
-			stream >> limit;
-
-			if(limit.empty()){
-				std::string error = "No limit given.\n";
-				client.sendMessage(error);
-				return;
-			}
-			int nb = std::atoi(limit.c_str());
-			if(nb >2147483647 )
-			{
-				std::string error = "you can t insert a number bigger than Max_int\n";
-				client.sendMessage(error);
-				return ;
-			}
-			else if(nb < 0)
-			{
-				std::string error = "you can t insert a negative number\n";
-				client.sendMessage(error);
-				return ;
-			}
-			if(!isNumber(limit)){
-				std::string error = "Limit must be a number.\n";
-				client.sendMessage(error);
-				return;
-			}
-			for (unsigned long int i = 0; i < targetChannel->getOperators().size(); i++){
-				if (targetChannel->getOperators()[i] == &client) {
-					isOperator = true;
-					break;
-				}
-			}
-		
-			targetChannel->setLimit(nb);
-			std::string message = "Limit clients in the " + channelName + " set to: " + limit + ".\n";
-			client.sendMessage(message);
-
-		}
-		else if(flag == "t"){
-			std::string mode;
-			stream >> mode;
-			if(mode.empty()){
-				std::string error = "No mode given.\n";
-				client.sendMessage(error);
-				return; 
-			}
-			for (unsigned long int i = 0; i < targetChannel->getOperators().size(); i++){
-				if (targetChannel->getOperators()[i] == &client) {
-					isOperator = true;
-					break;
-				}
-			}
-			if(mode == "set")
-			{
-				std::string error = "Topic restriction set.\n";
-				client.sendMessage(error);
-				targetChannel->setFlagTopic(true);
-			}
-
-			else if(mode == "remove") {
-				std::string error = "You removed topic restriction.\n";
-				client.sendMessage(error);
-				targetChannel->setFlagTopic(false);
-			}
-			else {
-				std::string error = "You can only use set or remove.\n";
-				client.sendMessage(error);
-			}
-
-		}
-		else{
-			std::string error = "You can only use one of the appropriate flags: i,t,k,o,l\n";
-			client.sendMessage(error);
-		}
-	}
-	else{
-		std::string error = "You are not an operator in " + channelName + " channel.\n";
-		client.sendMessage(error);
-	}
-}i < targetChannel->getOperators().size(); i++){
-				if (targetChannel->getOperators()[i] == &client) {
-					isOperator = true;
-					break;
-				}
-			}
-			if(isOperator){
-				targetChannel->setTopic(topic);
-				std::string message = "Channel topic set to: " + targetChannel->getTopic()+'\n';
-				client.sendMessage(message);
-				std::cout << targetChannel->getName() + " has the topic set to: " + targetChannel->getTopic() <<std::endl;
-			}
-			else{
-					std::string error = "You 're not an operator in " + channelName +  "\n";
-					client.sendMessage(error);
-			}
-		}
-		else{
-			targetChannel->setTopic(topic);
-			// targetChannel->broadcast()
-			std::string message = "Channel topic set to: " + targetChannel->getTopic()+'\n';
-			client.sendMessage(message);
-			std::cout << targetChannel->getName() + " has the topic set to: " + targetChannel->getTopic() <<std::endl;
-		}
-	}
-	else{
-		std::string message = "You are not a member of this channel\n";
-		client.sendMessage(message);
-	}
-	
-}
-		
-
-void	Command::handleInvite(Client& client, const std::string& args, std::map<std::string, Channel*>& channels){
-	(void)channels;
-	std::istringstream stream(args);
-	std::string channelName;
-	stream >> channelName;
-	std::string targetNick;
-	stream >> targetNick;
-
-	Channel *targetChannel = _server.getChannel(channelName);
-	if (!targetChannel) {
-		std::string error = "Channel does not exist.\n";
-		client.sendMessage(error);
+	// Checks if the Client is already authenticated
+	// todo: receive messages until registration is complete
+	if (!client.isAuthenticated() || client.nickname.empty() || client.username.empty()) {
+		client.sendMessage(ERR_NOTREGISTERED);
 		return;
 	}
 
-	bool isOperator = false;
-	for (unsigned long int i = 0; i < targetChannel->getOperators().size(); i++){
-		if (targetChannel->getOperators()[i] == &client) {
-			isOperator = true;
-			break;
-		}
+	// Find the position of the colon that tells me the start of the message
+	size_t colonPos = args.find(" :");
+	if (colonPos == std::string::npos) {
+		client.sendMessage(ERR_NEEDMOREPARAMS(command));
+		client.sendMessage("Usage: Command <target>{,<target>} :<text to be sent>\r\n");
+		return;
 	}
-	bool found = false;
-	for (unsigned long int i = 0; i < targetChannel->getMembers().size(); i++){
-		if (targetChannel->getMembers()[i] == &client) {
-			found = true;
-			if(isOperator){
-				Client *targetClient = _server.getClientByNick(targetNick);
-				if (targetClient) {
-					targetChannel->addAllowedPeople(targetClient);
-					std::string response = "You have been invited to join channel: " + channelName + "\n";
-					targetClient->sendMessage(response);
-				} else {
-					std::string error = "User with nickname " + targetNick + " not found.\n";
-					client.sendMessage(error);
-				}
+
+	// Extract the targets and the message
+	std::string targetsStr = args.substr(0, colonPos);
+	std::string message = args.substr(colonPos + 2); // Skipping the " :"
+
+	// Split the target by comma
+	std::vector<std::string> tokens = InputParser::parseInput(targetsStr, ',');
+
+	// Debug printing
+	InputParser::printTokens(tokens);
+	std::cout << "Message: " << message << std::endl;
+
+	for (std::vector<std::string>::iterator itVector = tokens.begin(); itVector != tokens.end(); itVector++) {
+		bool found = false;
+		std::string target = *itVector;
+
+		// Check if the target is a channel
+		if (target[0] == '#') {
+			Channel* channel = channels[target];
+			if (channel) {
+				channel->broadcast(client.nickname + ": " + message, &client);
+				found = true;
 			} else {
-				std::string error = "You are not an operator in :"  + targetChannel->getName() + " \n";
-				client.sendMessage(error);
+				client.sendMessage(ERR_NOSUCHCHANNEL(target));
 			}
-			break;
-		}
-	}
-	if (!found){
-		std::string error = "You are not part of " + targetChannel->getName() +  " channel.\n";
-		client.sendMessage(error);
-	}
-}
-
-void	Command::handleMode(Client& client, const std::string& args, std::map<std::string, Channel*>& channels){
-	std::istringstream stream(args);
-	std::string channelName;
-	stream >> channelName;
-	std:: string flag;
-	stream >> flag;
-	if (channelName.empty() || channelName[0] != '#') {
-		std::string error = "Channel name must start with '#' or no channel name given.\n";
-		client.sendMessage(error);
-		return;
-	}
-	if(flag.empty()){
-		std::string error = "You need to insert one of the appropriate flag, i, t, k, o, l.\n";
-		client.sendMessage(error);
-		return;
-	}
-	Channel *targetChannel = _server.getChannel(channelName);
-	if (!targetChannel) {
-		std::string error = "Channel does not exist.\n";
-		client.sendMessage(error);
-		return;
-	}
-
-	bool isOperator = false;
-	for (unsigned long int i = 0; i < targetChannel->getOperators().size(); i++){
-		if (targetChannel->getOperators()[i] == &client) {
-			isOperator = true;
-			break;
-		}
-	}
-	if(isOperator){
-		if(flag == "k"){
-			std::string passWord;
-			stream >> passWord;
-			if(passWord.empty()){
-				std::string error = "you need to add a password after the flag.\n";
-				client.sendMessage(error);
-				return;
-			}
-			Channel* targetChannel = NULL;
-			bool found = false;
-			std::map<std::string, Channel*>::iterator it = channels.begin();
-			for (; it != channels.end(); ++it) {
-				if (it->first == channelName) {
+		} else {
+			std::map<int, Client*>& clients = _server.getClients();
+			for (ClientsIte itClient = clients.begin(); itClient != clients.end(); itClient++) {
+				if (itClient->second->nickname == target) {
+					itClient->second->sendMessage(client.nickname + " :" + message);
 					found = true;
-					targetChannel = it->second;
-				}
-			}
-			if (found){
-				targetChannel->setPassword(passWord);
-				std::string error = "Password for the channel: " + channelName +" set to: " +passWord + "\n";
-				client.sendMessage(error);
-			}
-			else {
-				std::string error = "No channel named :"+ channelName +"\n";
-				client.sendMessage(error);
-			}
-
-		}
-		else if(flag == "i")
-		{
-			std::string mode;
-			stream >> mode;
-			if(mode.empty()){
-				std::string error = "you need to add a mode after the flag.\n";
-				client.sendMessage(error);
-				return;
-			}
-
-			if(mode == "set"){
-				targetChannel->setInviteStatus(true);
-				std::string error = "Channel: " + channelName + " set to invitation only.\n";
-				client.sendMessage(error);
-			}
-			else if (mode == "remove")
-			{
-				targetChannel->setInviteStatus(false);
-				std::string error = "Invitation only in channel: " + channelName +" removed.\n";
-				client.sendMessage(error);
-			}
-
-			else {
-				std::string error = "You can only use set or remove.\n";
-				client.sendMessage(error);
-			}
-		}
-		else if(flag == "o"){ 
-			std::string name;
-			stream>>name;
-			if(name.empty()){
-				std::string error = "You need to insert the name of the client.\n";
-				client.sendMessage(error);
-				return ;
-			}
-			bool isMember = false;
-			Channel* targetChannel = NULL;
-			for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); ++it) {
-				if (it->first == channelName) {
-					targetChannel = it->second;
-					std::vector<Client*> members = targetChannel->getMembers();
-					for (std::vector<Client*>::iterator memberIt = members.begin(); memberIt != members.end(); ++memberIt) {
-						if ((*memberIt)->getNick() == name) {
-							isMember = true;
-							break;
-						}
-					}
 					break;
 				}
 			}
-			if(isMember){
-				Client *clientTarget = _server.getClientByNick(name);
-				std::string message = "You gave operator priviliges to: " + name +".\n";
-				client.sendMessage(message);
-				targetChannel->addOperator(clientTarget);
-				message = "You recived operator priviliges from: " + client.getNick()+" in "+ channelName +" channel" +".\n";
-				clientTarget->sendMessage(message);
-				std::cout << "new operator adde in the chanel : " <<  name << std::endl;
-			}
-			else{
-				std::string message = name + " not found in: " + channelName + ".\n";
-				client.sendMessage(message);
+			if (!found) {
+				client.sendMessage(ERR_NOSUCKNICK(target));
 			}
 		}
-		else if(flag == "l"){
-			std::string limit;
-			stream >> limit;
-
-			if(limit.empty()){
-				std::string error = "No limit given.\n";
-				client.sendMessage(error);
-				return;
-			}
-			int nb = std::atoi(limit.c_str());
-			if(nb >2147483647 )
-			{
-				std::string error = "you can t insert a number bigger than Max_int\n";
-				client.sendMessage(error);
-				return ;
-			}
-			else if(nb < 0)
-			{
-				std::string error = "you can t insert a negative number\n";
-				client.sendMessage(error);
-				return ;
-			}
-			if(!isNumber(limit)){
-				std::string error = "Limit must be a number.\n";
-				client.sendMessage(error);
-				return;
-			}
-			for (unsigned long int i = 0; i < targetChannel->getOperators().size(); i++){
-				if (targetChannel->getOperators()[i] == &client) {
-					isOperator = true;
-					break;
-				}
-			}
-		
-			targetChannel->setLimit(nb);
-			std::string message = "Limit clients in the " + channelName + " set to: " + limit + ".\n";
-			client.sendMessage(message);
-
-		}
-		else if(flag == "t"){
-			std::string mode;
-			stream >> mode;
-			if(mode.empty()){
-				std::string error = "No mode given.\n";
-				client.sendMessage(error);
-				return; 
-			}
-			for (unsigned long int i = 0; i < targetChannel->getOperators().size(); i++){
-				if (targetChannel->getOperators()[i] == &client) {
-					isOperator = true;
-					break;
-				}
-			}
-			if(mode == "set")
-			{
-				std::string error = "Topic restriction set.\n";
-				client.sendMessage(error);
-				targetChannel->setFlagTopic(true);
-			}
-
-			else if(mode == "remove") {
-				std::string error = "You removed topic restriction.\n";
-				client.sendMessage(error);
-				targetChannel->setFlagTopic(false);
-			}
-			else {
-				std::string error = "You can only use set or remove.\n";
-				client.sendMessage(error);
-			}
-
-		}
-		else{
-			std::string error = "You can only use one of the appropriate flags: i,t,k,o,l\n";
-			client.sendMessage(error);
-		}
-	}
-	else{
-		std::string error = "You are not an operator in " + channelName + " channel.\n";
-		client.sendMessage(error);
 	}
 }
 
-
-/// invite -->check if already in the channel
-// clear memory when remove channel or in destructor
-// set the mutexe's after merge
-// broadcast topic update
-// chceck if the limit is smaller than the nb of members already in the channel
-// max nb over max int still works 
-
-
-
-
-
-// handle password protect
-		// if (!targetChannel->getPassword().empty()) {
-		// 	std::string response = "Private channel, requires a password.\n";
-		// 	client.sendMessage(response);
-
-		// 	// wait for password
-		// 	char passBuff[4096];
-		// 	memset(passBuff, 0, sizeof(passBuff));
-		// 	int passBytesRecv = recv(client.getFd(), passBuff, sizeof(passBuff) - 1, 0);
-		// 	if (passBytesRecv > 0) {
-		// 		std::string pass(passBuff, passBytesRecv);
-		// 		pass.erase(pass.find_last_not_of(" \n\r\t") + 1);
-		// 		if (targetChannel->getPassword() == pass) {
-		// 			targetChannel->addMember(&client);
-		// 			std::cout << client.getNick() << " has joined the channel: " << targetChannel->getName() << std::endl;
-		// 			if (!targetChannel->getTopic().empty())
-		// 				targetChannel->broadcastTopic(&client);
-		// 			return;
-		// 		} else {
-		// 			std::string error = "Incorrect password.\n";
-		// 			client.sendMessage(error);
-		// 			return;
-		// 		}
-		// 	}
-		// }

@@ -18,6 +18,7 @@ int main(int argc, char* argv[])
 		if (!(ss >> port) || !(ss.eof()) || port <= 0 || port > 65535)
 			throw std::invalid_argument("Invalid port number");
 		std::string password(argv[2]);
+
 		Server server(port, password);
 		server.run();
 	} catch (const std::invalid_argument& e)

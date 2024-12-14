@@ -22,10 +22,6 @@ void CommandParser::parseAndExecute(Client& client, const std::string& message, 
 	
 	std::cout << "cmdName: " << commandName << std::endl;
 	std::cout << "Args: " << args << std::endl;
-	// std::cout << "Args in ascii: ";
-	// printAsciiDecimal(args);
-	// std::cout << "Client AUTH: " << client.isAuthenticated() << std::endl;
-	// std::cout << "Cap Negotiation: " << client.isCapNegotiation() << std::endl;
 	if (commandName[0] == '#') {
 		Client *clientPtr = &client;
 		bool isMember = false;
@@ -56,6 +52,9 @@ void CommandParser::parseAndExecute(Client& client, const std::string& message, 
 		if (command) {
 			command->execute(client, args, channels);
 			delete command;
+
+			// Check if client has completed the registration
+			client.checkAndSendWelcomeMessage();
 		} else {
 			std::string response = ERR_UNKNOWNCOMMAND(commandName);
 			client.sendMessage(response);

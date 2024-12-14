@@ -65,7 +65,6 @@ std::string error(std::string str, bool bold);
 void nl(size_t newLines);
 void		out(std::ostream& os);
 void		debug(int eColor, std::string str);
-std::string	toStr(int value);
 std::string	getColorFmt(int eColor);
 // std::string	getColorStr(t_Name const& name);
 std::string	getColorStr(std::string const& eColor, std::string const& str);
@@ -92,7 +91,8 @@ void		initSeed();
 void		osPrint(std::ostream& os, int const& val);
 void		printAsciiDecimal(const std::string& str);
 std::string trim(const std::string& str);
-bool isNumber(const std::string& str);
+bool 		isNumber(const std::string& str);
+long int 	modAtoi(std::string nb);
 
 #include <Utils.tpp>
 #endif

@@ -4,7 +4,7 @@ endif
 #------ TARGET ------#
 NAME		:= ircserv
 #------ WFLAGS ------#
-D_FLAGS		= -Wall -Wextra -Werror -std=c++98 #-Wshadow #-pg #-Wno-unused-function -Wunused
+D_FLAGS		= -Wall -Wextra -std=c++98 -Werror #-Wshadow #-pg #-Wno-unused-function -Wunused
 INCLUDE_DIRS := $(shell find include -type d 2>/dev/null)
 INC := $(addprefix -I,$(INCLUDE_DIRS))
 #------ SRC FILES & DIRECTORIES ------#
@@ -24,7 +24,7 @@ S			= -1
 #------ DEBUG UTILS ------#
 CXX			:= c++
 MAKEFLAGS	+= --no-print-directory #--jobs
-VALGRIND	:= valgrind -s --leak-check=yes --show-leak-kinds=all -q 
+VALGRIND	:= valgrind -s --leak-check=yes --show-leak-kinds=all -q
 HELGRIND	:= valgrind -s --tool=helgrind
 MAC_LEAKS	:= leaks -atExit --
 
@@ -55,7 +55,7 @@ endif
 # MAKEFLAGS	+= -j4 #--debug #// -j for multinodes
 ifeq ($(S), 1)
 #------ INCLUDE SANATIZER FLAGS ------#
-D_FLAGS		+= -fsanitize=address,undefined,vptr
+D_FLAGS		+= -pthread -fsanitize=thread,undefined,vptr  -fno-optimize-sibling-calls
 endif
 # To enable verbose output during compilation Make V=1
 V ?= 0
@@ -92,7 +92,7 @@ $(BUILD_DIR):
 	@mkdir -p $@
 endif
 
-.PHONY: clean fclean re test val leaks
+.PHONY: clean fclean re val leaks test hexChat
 
 clean:
 	@echo;
@@ -121,8 +121,8 @@ re: fclean all
 # ATTENTION !!!!!!!!!!!!!!  USE WITH S=0 !
 ## do not use yet as it does not handle 
 val: $(NAME)
-	@echo $(RED) $(VALGRIND) ./$(NAME) $(shell echo $(num)) $(E_NC) "\n"
-	@$(VALGRIND) ./$(NAME) $(shell echo "$(num)"); echo
+	@echo $(RED) $(VALGRIND) ./$(NAME) $$port $$pass $(E_NC) "\n"
+	@$(VALGRIND) ./$(NAME) $$port $$pass ; echo
 leaks: $(NAME)
 	@echo $(RED)$(MAC_LEAKS) ./$(NAME) "$i" $(E_NC)  "\n"
 	@$(MAC_LEAKS) ./$(NAME)
@@ -137,19 +137,33 @@ check:
 		echo  $(f) [$(GREEN) OK $(E_NC)]; \
 	fi
 
+hel:$(NAME)
+	@port="6667"; \
+	pass="42";\
+	if [ "$(S)" -lt 1 ]; then \
+		echo $(RED) $(HELGRIND) ./$(NAME) $$port $$pass $(E_NC) "\n"; \
+		$(HELGRIND) ./$(NAME) $$port $$pass; \
+	fi;
+#trap 'echo $(RED)"...Process interrupted" $(E_NC); exit 1' INT;
 server: $(NAME)
 	@port="6667"; \
 	pass="42";\
 	echo $(BOLD) $(CYAN) ./$(NAME) $$port $$pass $(E_NC) "\n"; \
 	if [ "$(S)" = "0" ]; then \
-		echo $(E_NC); $(MAKE) -C . val; \
+		echo $(E_NC); $(MAKE) -C . hel; \
 	else \
-		if [ -z "$(i)" ]; then \
+		if [ "$(S)" = "1" ]; then \
 			echo $(E_NC); ./$(NAME) $$port $$pass; \
 		else \
-			echo $(E_NC); ./$(NAME) $(i); \
+			echo $(E_NC); ./$(NAME) $$port $$pass; \
 		fi; \
-	fi
+	fi; \
+	ret=$$?; \
+	if [ $$ret -eq 0 ]; then \
+		echo $(GREEN)"server finished"  $(E_NC); \
+	else \
+		echo $(RED)"...server terminated"  $(E_NC); \
+	fi;
 
 client: $(NAME)
 	@address="localhost"; \
@@ -164,7 +178,85 @@ client: $(NAME)
 			echo $(E_NC); ./$(NAME) $(i); \
 		fi; \
 	fi
+test:$(NAME)
+	./testScripts/runClients.sh
+dclient:$(NAME)
+	@chmod +x testScripts/defaultClient.sh
+	@trap 'echo $(RED)"...Process interrupted" $(E_NC); exit 1' INT;\
+	./testScripts/defaultClient.sh; \
+	ret=$$?; \
+	if [ $$ret -eq 0 ]; then \
+		echo $(GREEN)"dClient finished"  $(E_NC); \
+		exit 0; \
+	else \
+		echo $(RED)"...dClient terminated"  $(E_NC); \
+	fi;
+delUsers:
+	@pgrep -x "hexchat" > /dev/null; \
+	ret=$$?; \
+	if [ $$ret -eq 0 ]; then \
+		echo $(GREEN)"HexChat is running"  $(E_NC); \
+	else \
+		echo $(RED)"...Deleting usersFile"  $(E_NC); \
+		rm -f testScripts/users_created.txt; \
+	fi;
+hexChat: $(NAME) delUsers addon
+	@trap 'clear; echo ;echo $(RED)"...Process interrupted" $(E_NC); exit 1' INT; \
+	python3 testScripts/openHexchat.py; echo $(GREEN)"Process Ended" $(E_NC);
+msg:$(NAME)
+	python3 testScripts/sendMsg.py
+addon:
+	@chmod +r $(PWD)/testScripts/testHexChat.py
+	@mkdir -p $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons/
+	@cp $(PWD)/testScripts/testHexChat.py $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons
+	@chmod +r $(PWD)/testScripts/handshake.py
+	@cp $(PWD)/testScripts/handshake.py $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons
+	@echo $(GREEN)...Addon added to  HexChat path $(E_NC)
+#	flatpak run io.github.Hexchat --command="py load ~/.var/app/io.github.Hexchat/config/hexchat/addons/testHexChat.py"
 
+# #-------------------- PROCESS UTILS ----------------------------#
+killPD:
+	@echo "Closing all processes related to $(NAME)..."
+	@pkill -f $(NAME)
+	@echo "All related processes have been closed."
+
+closeFD:
+	@echo "Finding process ID(s) for process name: $(NAME)"
+	@pids=$$(pgrep $(NAME)); \
+	if [ -z "$$pids" ]; then \
+		echo "No process found with name: $(NAME)"; \
+	else \
+		for pid in $$pids; do \
+			echo "Closing file descriptors for process ID: $$pid"; \
+			for fd in /proc/$$pid/fd/*; do \
+				if [ -e $$fd ]; then \
+					exec 3>&-; \
+				fi; \
+			done; \
+		done; \
+	fi
+checkOpen:
+	@echo $(WHITE)"Checking open files for process name: $(NAME)"$(E_NC)
+	@pids=$$(pgrep $(NAME)); \
+	if [ -z "$$pids" ]; then \
+		echo $(RED)"No process found with name: $(NAME)"$(E_NC); \
+	else \
+		for pid in $$pids; do \
+			echo "Open files for process ID: $$pid"; \
+			lsof -p $$pid; \
+		done; \
+	fi
+freePort: checkOpen;
+	@port="6667";\
+	pids=$$(lsof -t -i :$$port); \
+	if [ -z "$$pids" ]; then \
+		echo $(WHITE)"Port $$port is already free."$(E_NC); \
+	else \
+		echo $(YELLOW)"Freeing port $$port..."$(E_NC); \
+		echo $(YELLOW)"Terminating processes using port $$port: $$pids" $(E_NC); \
+		kill -9 $$pids; \
+		echo $(GREEN)"Port $$port has been freed." $(E_NC); \
+	fi
 # #-------------------- UTILS ----------------------------#
 info:
 	@echo GIT_REPO:  $(CYAN) $(GIT_REPO) $(E_NC)
@@ -246,7 +338,7 @@ PURPLE = "\033[1;38;2;189;147;249m"
 define CPP
 
 		⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄
-		⣠⣾⣿⡟⠛⢻⠛⠛⠛⠛⠛⢿⣿⣿⠟⠛⠛⠛⣿⣿⣿⣄
+		⣠⣾⣿⡟⠛⢻⠛⠛⠛⠛⠛⢿⣿⣿⠟⠛⠛⠛⣿⣿⣷⣄
 		⣿⣿⣿⡇⠀⢸⠀⠀⣿⣿⡇⠀⣿⠁⠀⣠⣤⣤⣿⣿⣿⣿
 		⣿⣿⣿⡇⠀⢸⠀⠀⠿⠿⠃⣠⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿
 		⣿⣿⣿⡇⠀⢸⠀⠀⣀⣀⠀⠙⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿
@@ -258,7 +350,7 @@ define CPP
 		⣿⣿⣿⣿⣿⡗⢀⣀⣀⣀⣤⣾⣿⣿⣿⣿⣷⣾⣿⣿⣿⣿
 		⠙⢿⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋
 		⠀⠀⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋
-			
+
 endef
 export CPP
 define TRASH
@@ -354,7 +446,7 @@ define CPP_CONTENT
 {{CLASS_NAME}}::{{CLASS_NAME}}({{CLASS_NAME}} const& rhs)
 {
 
-}sparse-checkout
+}
 
 {{CLASS_NAME}}::~{{CLASS_NAME}}(void)
 {

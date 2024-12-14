@@ -35,6 +35,8 @@ public:
 	void	addAllowedPeople(Client *client);
 	void	removeOperator(Client *client);
 	void	broadcastTopic(Client* sender);
+	bool isMember(Client *client);
+	~Channel();
 
 			//getters
 

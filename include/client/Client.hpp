@@ -8,8 +8,9 @@
 # include <cstring> // strerror
 # include <sys/socket.h>
 #include <vector>
-#include <Server.hpp>
+// #include <Server.hpp>
 #include <Channel.hpp>
+
 # include "CommandParser.hpp"
 
 # ifndef DEBUG
@@ -20,7 +21,8 @@
 # ifndef MAX_BUFFER
 # define MAX_BUFFER 4096
 # endif
-class Server;
+
+// class Server;
 class Channel;
 
 class Client 
@@ -28,9 +30,8 @@ class Client
 	private:
 		int _clientFD;
 		bool _authenticated;
-		Server* server;
-		bool _isOperator;   //need to delete
-		std::vector<Channel *> channels;
+		bool _serverOperator;
+		bool _welcomeMessage;
 	public:
 		std::string nickname;
 		std::string username;
@@ -38,22 +39,25 @@ class Client
 		std::string _buffer;
 		pthread_t thread;
 
-		Client( Server* srv);
-
 		Client(int fd);
 		~Client();
 		int getFd() const;
 		void sendMessage(const std::string &message);
 		void handleRead();
 		bool isAuthenticated() const;
-		std::string getNick() const {return nickname;}
+		bool hasReceiveWelcomeMessage() const;
+		void checkAndSendWelcomeMessage();
 
 		// Setter
 		void setAuthenticated(bool);
+		void setServerOperator(bool);
+		void setReceivedWelcomeMessage(bool);
 
-		//-------my fct
-		int getSocket() const { return _clientFD; }
+		// Getters
+		bool getServerOperator() const;
 		std::string getClientNick() const {return this->nickname;}
+		std::string getNick() const {return nickname;}
+		int getSocket() const { return _clientFD; }
 
 };
 
