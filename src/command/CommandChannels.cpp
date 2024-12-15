@@ -142,6 +142,11 @@ void	Command::handleKick(Client& client, const std::string& args, std::map<std::
 		for (unsigned long int i = 0; i < targetChannel->getMembers().size(); i++){
 			if (targetChannel->getMembers()[i]->getNick() == target) {
 				found = true;
+				if(target == client.getNick()){
+					std::string error = "You can t kick yourself dummy :))!. Use PART <#channel name> to exit channel.";
+					client.sendMessage(error);
+					return;
+				}
 				std::string response = "You got kicked from the channel:" + channelName + "\n";
 				send(targetChannel->getMembers()[i]->getFd(), response.c_str(), response.size() + 1, 0);
 				std::cout << targetChannel->getMembers()[i]->getNick() << " got kicked from: " << targetChannel->getName()<<std::endl;
@@ -270,6 +275,11 @@ void	Command::handleTopic(Client& client, const std::string& args, std::map<std:
 				}
 			}
 			if(isOperator){
+				if(targetChannel->getTopic() == topic){
+					std::string message = "Topic already set to: " + topic + ".\n";
+					client.sendMessage(message);
+					return;
+				}
 				targetChannel->setTopic(topic);
 				std::string message = "Channel topic set to: " + targetChannel->getTopic()+'\n';
 				client.sendMessage(message);
@@ -282,6 +292,11 @@ void	Command::handleTopic(Client& client, const std::string& args, std::map<std:
 			}
 		}
 		else{
+			if(targetChannel->getTopic() == topic){
+					std::string message = "Topic already set to: " + topic + ".\n";
+					client.sendMessage(message);
+					return;
+				}
 			targetChannel->setTopic(topic);
 			std::string message = "Channel topic set to: " + targetChannel->getTopic()+'\n';
 			client.sendMessage(message);
@@ -345,6 +360,20 @@ void	Command::handleInvite(Client& client, const std::string& args, std::map<std
 					return ;
 				}
 				if (targetClient) {
+					bool invitedAlready = false;
+					std::vector<Client*> invited = targetChannel->getAllowedPeople();
+					for (std::vector<Client*>::iterator It = invited.begin(); It != invited.end(); ++It) {
+						if ((*It)->getNick() == targetNick) {
+							invitedAlready = true;
+							break;
+						}
+					}
+					if(invitedAlready){
+						std::string response = targetNick + " already invited in the " + channelName  + ".\n";
+						client.sendMessage(response);
+						return ;
+					}
+
 					targetChannel->addAllowedPeople(targetClient);
 					std::string response = "You have been invited to join channel: " + channelName + "\n";
 					targetClient->sendMessage(response);
@@ -414,6 +443,13 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 				}
 			}
 			if (found){
+				{
+					if(targetChannel->getPassword() == passWord){
+						std::string error = "The password of the channel: " + channelName +" already set to " + passWord + "\n";
+						client.sendMessage(error);
+						return ;
+					}
+				}
 				targetChannel->setPassword(passWord);
 				std::string error = "Password for the channel: " + channelName +" set to: " +passWord + "\n";
 				client.sendMessage(error);
@@ -435,12 +471,22 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 			}
 
 			if(mode == "set"){
+				if(targetChannel->getInviteStatus()){
+					std::string error = "Channel: " + channelName + " already set to invitation only.\n";
+					client.sendMessage(error);
+					return ;
+				}
 				targetChannel->setInviteStatus(true);
 				std::string error = "Channel: " + channelName + " set to invitation only.\n";
 				client.sendMessage(error);
 			}
 			else if (mode == "remove")
 			{
+				if(!targetChannel->getInviteStatus()){
+					std::string error = "Channel: " + channelName + " invitation only already removed.\n";
+					client.sendMessage(error);
+					return ;
+				}
 				targetChannel->setInviteStatus(false);
 				std::string error = "Invitation only in channel: " + channelName +" removed.\n";
 				client.sendMessage(error);
@@ -475,6 +521,25 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 				}
 			}
 			if(isMember){
+				if(client.getNick() == name){
+					std::string error = "You are already an operator dummy.! :))\n";
+					client.sendMessage(error);
+					return ;
+				}
+				bool isAlreadyOperator;
+				std::vector<Client*> operators = targetChannel->getOperators();
+				for (std::vector<Client*>::iterator It = operators.begin(); It != operators.end(); ++It) {
+					if ((*It)->getNick() == name) {
+						isAlreadyOperator = true;
+						break;
+					}
+				}
+				if(isAlreadyOperator)
+				{
+					std::string error = "That client is already an operator.!\n";
+					client.sendMessage(error);
+					return ;
+				}
 				Client *clientTarget = _server.getClientByNick(name);
 				std::string message = "You gave operator priviliges to: " + name +".\n";
 				client.sendMessage(message);
@@ -522,14 +587,12 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 				client.sendMessage(error);
 				return;
 			}
-			
-			for (unsigned long int i = 0; i < targetChannel->getOperators().size(); i++){
-				if (targetChannel->getOperators()[i] == &client) {
-					isOperator = true;
-					break;
-				}
+			if(targetChannel->getLimit() == nb){
+				std::string error = "Limit already set to: " + limit + ".\n";
+				client.sendMessage(error);
+				return;
 			}
-		
+			
 			targetChannel->setLimit(nb);
 			std::string message = "Limit clients in the " + channelName + " set to: " + limit + ".\n";
 			client.sendMessage(message);
@@ -543,20 +606,25 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 				client.sendMessage(error);
 				return; 
 			}
-			for (unsigned long int i = 0; i < targetChannel->getOperators().size(); i++){
-				if (targetChannel->getOperators()[i] == &client) {
-					isOperator = true;
-					break;
-				}
-			}
+			
 			if(mode == "set")
 			{
+				if(targetChannel->getFlagTopic()){
+					std::string error = "Topic restriction is already set.\n";
+					client.sendMessage(error);
+					return ;
+				}
 				std::string error = "Topic restriction set.\n";
 				client.sendMessage(error);
 				targetChannel->setFlagTopic(true);
 			}
 
 			else if(mode == "remove") {
+				if(!targetChannel->getFlagTopic()){
+					std::string error = "Topic restriction is already removed.\n";
+					client.sendMessage(error);
+					return ;
+				}
 				std::string error = "You removed topic restriction.\n";
 				client.sendMessage(error);
 				targetChannel->setFlagTopic(false);
@@ -578,5 +646,13 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 	}
 }
 
-// clear memory when remove channel or in destructor
-
+// clear memory when remove channel or in destructor-->partialy done
+// check if you can kick your self ---> done
+// check if topic is the same already -->done
+// check if password is the same already -->done
+// check if the limit is the same already -->done
+// check if you can give your self operator priviliges -->done
+// check if the client you give oprator priviliges is already an operator -->done
+// check if the guy you invited is already invited -->done
+// check if channel already set to invite/remove only -->done
+// check if restriction topic already set/remove --> done
