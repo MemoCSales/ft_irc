@@ -4,7 +4,7 @@ endif
 #------ TARGET ------#
 NAME		:= ircserv
 #------ WFLAGS ------#
-D_FLAGS		= -Wall -Wextra -std=c++98 -Werror #-Wshadow #-pg #-Wno-unused-function -Wunused
+D_FLAGS		= -Wall -Wextra -std=c++98 -Werror  #-Wshadow #-pg #-Wno-unused-function -Wunused
 INCLUDE_DIRS := $(shell find include -type d 2>/dev/null)
 INC := $(addprefix -I,$(INCLUDE_DIRS))
 #------ SRC FILES & DIRECTORIES ------#
@@ -77,7 +77,7 @@ endif
 	@printf "$(LF)⚙️ $(P_BLUE) Create $(P_GREEN)$@ ⚙️\n"
 	@echo $(GREEN)
 	@printf "$(CXX) $(D_FLAGS) $(INC) $(P_YELLOW) $^ $(P_GREEN) -o $@ $(FG_TEXT) \n\n";
-	@$(CXX) $(D_FLAGS) $(INC) $^ -o $(NAME)
+	@$(CXX) $(D_FLAGS) $(INC) $^ -o $(NAME) -lpthread
 	@printf "\n$(LF)✅ $(P_BLUE)Successfully Created $(P_GREEN)$@! ✅\n$(P_NC)"
 	@echo $(CYAN) "$$CPP" $(E_NC)
 	@echo "$$MANUAL" $(E_NC)
