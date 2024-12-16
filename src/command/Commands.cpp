@@ -21,7 +21,9 @@ Command::Command(CommandType type, Server& server) : _type(type), _server(server
 	commands[MODE] = &Command::handleMode;
 }
 
-Command::~Command() {}
+Command::~Command() {
+	commands.clear();
+}
 
 void Command::execute(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	if (commands.find(_type) != commands.end()) {

@@ -284,7 +284,6 @@ void Server::removeLockFile()
 
 void Server::removeClient(int clientFD)
 {
-	// pthread_mutex_lock(&clientsMutex);
 	ClientsIte it = clients.find(clientFD);
 	if (it != clients.end())
 	{
@@ -292,7 +291,6 @@ void Server::removeClient(int clientFD)
 		close(it->first);
 		clients.erase(it);
 	}
-	// pthread_mutex_unlock(&clientsMutex);
 }
 
 std::string const Server::getPassword() const {
