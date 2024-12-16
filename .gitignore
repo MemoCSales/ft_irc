@@ -64,3 +64,7 @@ ircserv
 testScripts/users_created.txt
 #ignore .settings .vscode
 .settings/.vscode
+
+valgrind/
+# Dockerfile
+# docker-compose.yml

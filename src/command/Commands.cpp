@@ -21,7 +21,9 @@ Command::Command(CommandType type, Server& server) : _type(type), _server(server
 	commands[MODE] = &Command::handleMode;
 }
 
-Command::~Command() {}
+Command::~Command() {
+	commands.clear();
+}
 
 void Command::execute(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	if (commands.find(_type) != commands.end()) {
@@ -99,6 +101,10 @@ void Command::handleNick(Client& client, const std::string& args, std::map<std::
 			}
 		}
 	}
+	// Check if registration OK
+	if (!client.username.empty()) {
+		client.setRegistered(true);
+	} 
 	std::cout << "NICK command received. Client nickname changed from: " << oldNick << " to: " << newNick << std::endl;
 }
 
@@ -149,6 +155,10 @@ void Command::handleUser(Client& client, const std::string& args, std::map<std::
 	client.username = userName;
 	client.realname = realName;
 
+	// Check if registration OK
+	if (!client.nickname.empty()) {
+		client.setRegistered(true);
+	} 
 	std::cout << "USER command received. Client username set to: " << userName << ", realname set to: " << realName << std::endl;
 }
 

@@ -47,10 +47,15 @@ void CommandParser::parseAndExecute(Client& client, const std::string& message, 
 		}
 		return;
 	}
-	else {
 		CommandPtr command = commandFactory->createCommand(commandName);
 		if (command) {
-			command->execute(client, args, channels);
+			try	{
+				command->execute(client, args, channels);
+			}
+			catch(const std::exception& e)	{
+				delete command;
+				throw;
+			}
 			delete command;
 
 			// Check if client has completed the registration
@@ -59,5 +64,4 @@ void CommandParser::parseAndExecute(Client& client, const std::string& message, 
 			std::string response = ERR_UNKNOWNCOMMAND(commandName);
 			client.sendMessage(response);
 		}
-	}
 }
