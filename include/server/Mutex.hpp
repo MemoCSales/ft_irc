@@ -25,6 +25,7 @@ class Mutex
 
 	private:
 		pthread_mutex_t _mutex;
+		bool _status;
 };
 
 #endif // MUTEX_HPP

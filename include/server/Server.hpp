@@ -45,6 +45,7 @@ class Server
 		Mutex channelsMutex;
 		Mutex printMutex;
 		Mutex shutdownMutex;
+		pthread_t pingThread;
 		std::string const lockFilePath;
 		static Server* instance;
 

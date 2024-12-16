@@ -13,7 +13,6 @@ MESSAGE="Hello, IRC!"
 # Function to handle signal interruptions
 cleanup()
 {
-	clear
 	echo "Signal received. Cleaning up..."
 	pkill -P $$ nc
 	exit 0
