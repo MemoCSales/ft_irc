@@ -5,6 +5,11 @@
 
 void Command::handleJoin(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	std::string channelName = trim(args);
+	// Check if client registration is complete before joining a channel
+	if (!client.isRegistered()) {
+		client.sendMessage("Complete your registration before joining a channel");
+		return;
+	}
 	if (channelName.empty()) {
 		std::string error = "Error: No channel name provided.\n";
 		client.sendMessage(error);

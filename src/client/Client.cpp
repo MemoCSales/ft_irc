@@ -82,3 +82,11 @@ void Client::checkAndSendWelcomeMessage() {
 		}
 	}
 }
+
+void Client::setRegistered(bool flag) {
+	_registered = flag;
+}
+
+bool Client::isRegistered() const {
+	return _registered;
+}

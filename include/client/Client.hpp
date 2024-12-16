@@ -30,6 +30,7 @@ class Client
 	private:
 		int _clientFD;
 		bool _authenticated;
+		bool _registered;
 		bool _serverOperator;
 		bool _welcomeMessage;
 	public:
@@ -52,12 +53,14 @@ class Client
 		void setAuthenticated(bool);
 		void setServerOperator(bool);
 		void setReceivedWelcomeMessage(bool);
+		void setRegistered(bool);
 
 		// Getters
 		bool getServerOperator() const;
 		std::string getClientNick() const {return this->nickname;}
 		std::string getNick() const {return nickname;}
 		int getSocket() const { return _clientFD; }
+		bool isRegistered() const;
 
 };
 
