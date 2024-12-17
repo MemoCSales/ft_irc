@@ -39,6 +39,7 @@ class Client
 		std::string realname;
 		std::string _buffer;
 		pthread_t thread;
+		pthread_mutex_t clientMutex;
 
 		Client(int fd);
 		~Client();

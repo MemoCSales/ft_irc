@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <csignal>
 #include <fstream>
+# include "Utils.hpp"
 
 Server* Server::instance = NULL;
 
@@ -57,6 +58,9 @@ Server::Server(int& port, const std::string& password) : password(password)
 		struct pollfd serverP_FDs = {serverFD, POLLIN, 0};
 		pollFDs.push_back(serverP_FDs);
 
+		pthread_mutex_init(&clientsMutex, NULL);
+		// pthread_mutex_init(&coutMutex, NULL);
+
 		setupSignalHandlers();
 
 		setOperName();
@@ -88,15 +92,19 @@ void Server::handleNewConnection()
 		pollFDs.push_back(pfd);
 
 		Client* newClient = new Client(clientSocket);
+		pthread_mutex_lock(&clientsMutex);
 		clients.insert(std::make_pair(clientSocket, newClient));
+		pthread_mutex_unlock(&clientsMutex);
 
 		// Get client's IP address and port
 		char clientIP[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
 		int clientPort = ntohs(clientAddress.sin_port);
-		
-		std::cout << getColorStr(FGREEN, "New client connected: ") << clientIP << ":" << clientPort
-		<< "[" << clientSocket << "]"<< std::endl;
+
+		std::ostringstream oss;
+		oss << "New client connected: " << clientIP << ":" + toStr(clientPort) 
+					<< "[" << toStr(clientSocket) << "]";
+		Utils::safePrint(oss.str());
 
 		// Send welcome message
 		newClient->sendMessage(welcomeMsg());
@@ -204,6 +212,8 @@ void Server::signalHandler(int signum)
 
 Server::~Server()
 {
+	pthread_mutex_destroy(&clientsMutex);
+	// pthread_mutex_destroy(&coutMutex);
 	pthread_cancel(pingThread);
 	pthread_join(pingThread, NULL);
 
@@ -284,6 +294,7 @@ void Server::removeLockFile()
 
 void Server::removeClient(int clientFD)
 {
+	pthread_mutex_lock(&clientsMutex);
 	ClientsIte it = clients.find(clientFD);
 	if (it != clients.end())
 	{
@@ -291,6 +302,7 @@ void Server::removeClient(int clientFD)
 		close(it->first);
 		clients.erase(it);
 	}
+	pthread_mutex_unlock(&clientsMutex);
 }
 
 std::string const Server::getPassword() const {
@@ -306,12 +318,12 @@ std::map<int, Client*>& Server::getClients() {
 }
 
 void Server::sendPingToClients() {
-	// pthread_mutex_lock(&clientsMutex);
+	pthread_mutex_lock(&clientsMutex);
 	for (ClientsIte it = clients.begin(); it != clients.end(); it++) {
-		std::cout << "Sending PING to client: " << it->first << std::endl;
+		Utils::safePrint("Sending PING to client: " + toStr(it->first));
 		it->second->sendMessage("PING ping\r\n");
 	}
-	// pthread_mutex_unlock(&clientsMutex);
+	pthread_mutex_unlock(&clientsMutex);
 }
 
 void* pingTask(void* arg) {

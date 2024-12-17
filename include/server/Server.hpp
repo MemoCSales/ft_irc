@@ -37,7 +37,7 @@ class Server
 		std::string const lockFilePath;
 		static Server* instance;
 		pthread_t pingThread;
-
+		pthread_mutex_t clientsMutex;
 		// Server operator credentials
 		std::string _operName;
 		std::string _operPassword;

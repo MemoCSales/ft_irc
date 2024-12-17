@@ -49,7 +49,7 @@ void Command::handlePass(Client& client, const std::string& args, std::map<std::
 	}
 	if (password == _server.getPassword()) {
 		client.setAuthenticated(true);
-		std::cout << "Client authenticated -> fd: " << client.getFd() << std::endl;
+		Utils::safePrint("Client authenticated -> fd: " + toStr(client.getFd()));
 		client.sendMessage("You have been authenticated. Please continue your registration.");
 		if (!client.nickname.empty() && !client.username.empty()) {
 			response = RPL_WELCOME(client.nickname);
@@ -105,7 +105,7 @@ void Command::handleNick(Client& client, const std::string& args, std::map<std::
 	if (!client.username.empty()) {
 		client.setRegistered(true);
 	} 
-	std::cout << "NICK command received. Client nickname changed from: " << oldNick << " to: " << newNick << std::endl;
+	Utils::safePrint("NICK command received. Client nickname changed from: " + toStr(oldNick) + " to: " + toStr(newNick));
 }
 
 
@@ -159,7 +159,7 @@ void Command::handleUser(Client& client, const std::string& args, std::map<std::
 	if (!client.nickname.empty()) {
 		client.setRegistered(true);
 	} 
-	std::cout << "USER command received. Client username set to: " << userName << ", realname set to: " << realName << std::endl;
+	Utils::safePrint("USER command received. Client username set to: " + toStr(userName) + ", realname set to: " + toStr(realName));
 }
 
 void Command::handleQuit(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
@@ -190,7 +190,7 @@ void Command::handleQuit(Client& client, const std::string& args, std::map<std::
 	
 	client.sendMessage(response);
 	throw std::runtime_error("Client disconnected");
-	std::cout << "QUIT command received. Client disconnected with the reason: " << response << std::endl;
+	Utils::safePrint("QUIT command received. Client disconnected with the reason: " + response);
 }
 
 /* PING command is sent by either clients or servers to check the other
@@ -225,7 +225,7 @@ void Command::handlePong(Client& client, const std::string& args, std::map<std::
 		client.sendMessage(response);
 		return;
 	}
-	std::cout << "PONG command received with the token: " << reason  << std::endl;
+	Utils::safePrint("PONG command received with the token: " + reason);
 }
 
 void Command::handleOper(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
@@ -269,7 +269,7 @@ void Command::handleOper(Client& client, const std::string& args, std::map<std::
 	client.setServerOperator(true);
 	response = RPL_YOUREOPER;
 	client.sendMessage(response);
-	std::cout << "Client " << client.nickname << " is now a server operator." << std::endl;
+	Utils::safePrint("Client " + client.nickname + " is now a server operator.");
 }
 
 void Command::handlePrivMsg(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
@@ -299,7 +299,7 @@ void Command::handlePrivMsg(Client& client, const std::string& args, std::map<st
 
 	// Debug printing
 	InputParser::printTokens(tokens);
-	std::cout << "Message: " << message << std::endl;
+	Utils::safePrint("Message: " + message);
 
 	for (std::vector<std::string>::iterator itVector = tokens.begin(); itVector != tokens.end(); itVector++) {
 		bool found = false;
