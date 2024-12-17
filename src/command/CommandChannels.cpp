@@ -5,6 +5,11 @@
 
 void Command::handleJoin(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	std::string channelName = trim(args);
+	// Check if client registration is complete before joining a channel
+	if (!client.isRegistered()) {
+		client.sendMessage("Complete your registration before joining a channel");
+		return;
+	}
 	if (channelName.empty()) {
 		std::string error = "Error: No channel name provided.\n";
 		client.sendMessage(error);
@@ -24,7 +29,7 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
 		targetChannel = _server.getOrCreateChannel(channelName);
 		targetChannel->addMember(&client);
 		targetChannel->addOperator(&client);
-		std::cout << channelName << " was created!.\n";
+		Utils::safePrint(toStr(channelName) + " was created!");
 		return;
 	} else {
 		// Check if the client is in channel;
@@ -76,7 +81,7 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
 						targetChannel->addMember(&client);
 						std::string message = "Joined channel: " + targetChannel->getName() + ".\n";
 						client.sendMessage(message);
-						std::cout << client.getNick() << " has joined the channel: " << targetChannel->getName() << std::endl;
+						Utils::safePrint(client.getNick() + " has joined the channel: " + toStr(targetChannel->getName()));
 						if (!targetChannel->getTopic().empty())
 							targetChannel->broadcastTopic(&client);
 						return;
@@ -93,7 +98,7 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
 	targetChannel->addMember(&client);
 	std::string message = "Joined channel: " + targetChannel->getName() + ".\n";
 	client.sendMessage(message);
-	std::cout << client.getNick() << " has joined the channel: " << targetChannel->getName() << std::endl;
+	Utils::safePrint(client.getNick() + " has joined the channel: " + toStr(targetChannel->getName()));
 	if (!targetChannel->getTopic().empty()) {
 		targetChannel->broadcastTopic(&client);
 	}
@@ -139,7 +144,7 @@ void	Command::handleKick(Client& client, const std::string& args, std::map<std::
 				found = true;
 				std::string response = "You got kicked from the channel:" + channelName + "\n";
 				send(targetChannel->getMembers()[i]->getFd(), response.c_str(), response.size() + 1, 0);
-				std::cout << targetChannel->getMembers()[i]->getNick() << " got kicked from: " << targetChannel->getName()<<std::endl;
+				Utils::safePrint(toStr(targetChannel->getMembers()[i]->getNick()) + " got kicked from: " + toStr(targetChannel->getName()));
 				targetChannel->removeMember(targetChannel->getMembers()[i]);
 				break;
 			}
@@ -191,7 +196,7 @@ void	Command::handlePart(Client& client, const std::string& args, std::map<std::
 			}
 			std::string response = "Exited channel:" +targetChannel->getName() + "\n";
 			client.sendMessage(response);
-			std::cout << client.getNick() << " exited from: " << targetChannel->getName()<<std::endl;
+			Utils::safePrint(toStr(client.getNick()) + " exited from: " + targetChannel->getName());
 			break;
 		}
 	}
@@ -201,7 +206,7 @@ void	Command::handlePart(Client& client, const std::string& args, std::map<std::
 		return ;
 	}
 	if(targetChannel->getMembers().size() == 0){
-		std::cout << targetChannel->getName() << " was removed!\n";
+		Utils::safePrint(toStr(targetChannel->getName()) + " was removed!");
 		_server.removeChannel(targetChannel->getName());
 		return;
 	}
@@ -210,7 +215,7 @@ void	Command::handlePart(Client& client, const std::string& args, std::map<std::
         targetChannel->addOperator(oldestMember);
         std::string promotionMessage = "You have been promoted to operator in channel: " + targetChannel->getName() + "\n";
         oldestMember->sendMessage(promotionMessage);
-        std::cout << oldestMember->getNick() << " promoted to operator in channel: " << targetChannel->getName() << std::endl;
+		Utils::safePrint(toStr(oldestMember->getNick()) + " promoted to operator in channel: " + toStr(targetChannel->getName()));
     }
 
 }
@@ -268,7 +273,7 @@ void	Command::handleTopic(Client& client, const std::string& args, std::map<std:
 				targetChannel->setTopic(topic);
 				std::string message = "Channel topic set to: " + targetChannel->getTopic()+'\n';
 				client.sendMessage(message);
-				std::cout << targetChannel->getName() + " has the topic set to: " + targetChannel->getTopic() <<std::endl;
+				Utils::safePrint(toStr(targetChannel->getName()) + " has the topic set to: " + targetChannel->getTopic());
 			}
 			else{
 					std::string error = "You 're not an operator in " + channelName +  "\n";
@@ -279,7 +284,7 @@ void	Command::handleTopic(Client& client, const std::string& args, std::map<std:
 			targetChannel->setTopic(topic);
 			std::string message = "Channel topic set to: " + targetChannel->getTopic()+'\n';
 			client.sendMessage(message);
-			std::cout << targetChannel->getName() + " has the topic set to: " + targetChannel->getTopic() <<std::endl;
+			Utils::safePrint(toStr(targetChannel->getName()) + " has the topic set to: " + toStr(targetChannel->getTopic()));
 		}
 	}
 	else{
@@ -455,7 +460,7 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 				targetChannel->addOperator(clientTarget);
 				message = "You recived operator priviliges from: " + client.getNick()+" in "+ channelName +" channel" +".\n";
 				clientTarget->sendMessage(message);
-				std::cout << "new operator adde in the chanel : " <<  name << std::endl;
+				Utils::safePrint("new operator added in the channel : " + toStr(name));
 			}
 			else{
 				std::string message = name + " not found in: " + channelName + ".\n";

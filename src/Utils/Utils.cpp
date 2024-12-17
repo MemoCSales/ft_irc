@@ -572,3 +572,42 @@ bool isNumber(const std::string& str) {
     }
     return true;
 }
+
+/**
+ * @brief Global mutex for thread-safe console output operations
+ * 
+ * This static mutex protects access to std::cout across multiple threads,
+ * preventing race conditions when writing to the console. It is initialized
+ * using PTHREAD_MUTEX_INITIALIZER for C++98 compliance.
+ *
+ * Usage:
+ * - Lock before using std::cout operations
+ * - Unlock after console output is complete
+ * - Used primarily by Utils::safePrint() for thread-safe console output
+ *
+ * @note This mutex must be destroyed at program exit via Utils::cleanupMutex()
+ */
+pthread_mutex_t Utils::coutMutex = PTHREAD_MUTEX_INITIALIZER;
+
+void Utils::cleanupMutex() {
+	pthread_mutex_destroy(&coutMutex);
+}
+
+/**
+ * @brief Helper function to register mutex cleanup
+ */
+static int registerMutexCleanup() {
+    std::atexit(Utils::cleanupMutex);
+    return 0;
+}
+
+/**
+ * @brief Static initialization to register mutex cleanup handler
+ */
+static int registerCleanup = registerMutexCleanup();
+
+void Utils::safePrint(const std::string& message) {
+	pthread_mutex_lock(&coutMutex);
+	std::cout << message << std::endl;
+	pthread_mutex_unlock(&coutMutex);
+}

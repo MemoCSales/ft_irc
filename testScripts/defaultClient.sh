@@ -13,10 +13,10 @@ MESSAGE="Hello, IRC!"
 # Function to handle signal interruptions
 cleanup()
 {
-	clear
 	echo "Signal received. Cleaning up..."
+	exec 0</dev/null
 	pkill -P $$ nc
-	exit 0
+	exit 1
 }
 
 # Set the trap to catch SIGINT (Ctrl+C)
@@ -38,7 +38,7 @@ trap cleanup SIGINT
 	# echo "QUIT"
 	# Connect to the IRC server
 	while true; do
-		if ! read -t 1 -p "" input <&0; then
+		if ! read -p "" input <&0; then
 			if [ $? -eq 1 ]; then
 				pkill -P $$ nc
 			fi

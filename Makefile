@@ -4,7 +4,7 @@ endif
 #------ TARGET ------#
 NAME		:= ircserv
 #------ WFLAGS ------#
-D_FLAGS		= -Wall -Wextra -std=c++98 -Werror  #-Wshadow #-pg #-Wno-unused-function -Wunused
+D_FLAGS		= -Wall -Wextra -std=c++98 -Werror #-Wshadow #-pg #-Wno-unused-function -Wunused
 INCLUDE_DIRS := $(shell find include -type d 2>/dev/null)
 INC := $(addprefix -I,$(INCLUDE_DIRS))
 #------ SRC FILES & DIRECTORIES ------#
