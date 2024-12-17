@@ -4,9 +4,16 @@
 SERVER="localhost"
 PORT=6667
 PASSWORD="42"
-NICK="Vicki"
-USER="Victoria"
-REALNAME="VictoriaLizarraga"
+# Lists of possible values
+NICKS=("Vicki" "Memo" "Marian" "Test")
+USERS=("Victoria" "Guillermo" "Marian" "Test")
+REALNAMES=("VictoriaL" "GuillermoC" "MarianS" "TestR")
+
+# Select random values
+index=$((RANDOM % ${#NICKS[@]}))
+NICK=${NICKS[$index]}
+USER=${USERS[$index]}
+REALNAME=${REALNAMES[$index]}
 CHANNEL="#YourChannel"
 MESSAGE="Hello, IRC!"
 
@@ -14,8 +21,9 @@ MESSAGE="Hello, IRC!"
 cleanup()
 {
 	echo "Signal received. Cleaning up..."
+	exec 0</dev/null
 	pkill -P $$ nc
-	exit 0
+	exit 1
 }
 
 # Set the trap to catch SIGINT (Ctrl+C)
@@ -37,7 +45,7 @@ trap cleanup SIGINT
 	# echo "QUIT"
 	# Connect to the IRC server
 	while true; do
-		if ! read -t 1 -p "" input <&0; then
+		if ! read -p "" input <&0; then
 			if [ $? -eq 1 ]; then
 				pkill -P $$ nc
 			fi
