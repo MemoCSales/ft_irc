@@ -9,6 +9,8 @@
 # include <sys/socket.h>
 
 # include "CommandParser.hpp"
+#include "Mutex.hpp"
+#include "LockGuard.hpp"
 
 # ifndef DEBUG
 #  define DEBUG 0
@@ -29,6 +31,7 @@ class Client
 		std::string username;
 		std::string realname;
 		std::string _buffer;
+		Mutex clientMutex;
 		pthread_t thread;
 
 		Client(int fd);

@@ -6,8 +6,11 @@ Client::Client(int fd) : _clientFD(fd), _authenticated(false), nickname(""), use
 
 void Client::sendMessage(const std::string &message)
 {
+	LockGuard lock(clientMutex);
 	std::string msg = message + "\r\n";
-	send(_clientFD, msg.c_str(), msg.length(), 0);
+	ssize_t bytesSent = send(_clientFD, msg.c_str(), msg.length(), 0);
+	if (bytesSent == -1)
+		throw std::runtime_error("Error sending message: " + std::string(strerror(errno)));
 }
 
 Client::~Client() {}
@@ -15,7 +18,8 @@ Client::~Client() {}
 void Client::handleRead() {
 	char buffer[MAX_BUFFER];
 	int nbytes = recv(_clientFD, buffer, sizeof(buffer) - 1, 0);
-	if (nbytes < 0) {
+	if (nbytes < 0)
+	{
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 			return; // No data available
 		else
@@ -27,13 +31,16 @@ void Client::handleRead() {
 	}
 	buffer[nbytes] = '\0';
 	this->_buffer += buffer;
-	std::cout << "Received message: " << buffer << std::endl;
 	// printAsciiDecimal(buffer);
 	// std::cout << "Message_: " << _buffer << std::endl;
 	// printAsciiDecimal(buffer);
 
 	// Process commands
 	Server* server = Server::getInstance();
+	{
+		LockGuard lock(server->printMutex);
+		std::cout << "Received message: " << buffer << std::endl;
+	}
 	CommandParser commandParser(*server);
 	size_t pos;
 	while ((pos = this->_buffer.find_first_of("\r\n")) != std::string::npos)
@@ -63,9 +70,15 @@ void Client::setServerOperator(bool flag) {
 
 int Client::getFd() const
 {
+	LockGuard lock(clientMutex);
 	return _clientFD;
 }
 
 bool Client::getServerOperator() const {
 	return _serverOperator;
+}
+
+Mutex& Client::getMutex()
+{
+	return clientMutex;
 }

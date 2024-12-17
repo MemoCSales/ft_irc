@@ -18,7 +18,7 @@
 Server* Server::instance = NULL;
 volatile sig_atomic_t Server::_shutdownFlag = 0;
 Server::Server(int& port, const std::string& password) : 
-password(password)//, _shutdownFlag(0)
+serverFD(-1), password(password)//, _shutdownFlag(0)
 {
 	instance = this;
 	try
@@ -356,10 +356,12 @@ std::string const Server::getPassword() const {
 }
 
 std::map<std::string, Channel*>& Server::getChannels() {
+	LockGuard lock(channelsMutex);
 	return channels;
 }
 
 std::map<int, Client*>& Server::getClients() {
+	LockGuard lock(clientsMutex);
 	return clients;
 }
 

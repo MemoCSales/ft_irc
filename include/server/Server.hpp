@@ -12,8 +12,8 @@
 # include <cerrno>
 # include <cstring> // strerror
 #include "Mutex.hpp"
-#include <csignal>
 #include "LockGuard.hpp"
+#include <csignal>
 
 # ifndef DEBUG
 #  define DEBUG 0
