@@ -183,7 +183,7 @@ test:$(NAME)
 dclient:$(NAME)
 	@chmod +x testScripts/defaultClient.sh
 	@trap 'echo $(RED)"...Process interrupted" $(E_NC); exit 1' INT;\
-	./testScripts/defaultClient.sh; \
+	./testScripts/defaultClient.sh > /dev/null; \
 	ret=$$?; \
 	if [ $$ret -eq 0 ]; then \
 		echo $(GREEN)"dClient finished"  $(E_NC); \

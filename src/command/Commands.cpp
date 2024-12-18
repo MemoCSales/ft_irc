@@ -189,7 +189,7 @@ void Command::handleQuit(Client& client, const std::string& args, std::map<std::
 	}
 	
 	client.sendMessage(response);
-	throw std::runtime_error("Client disconnected [" + toStr(client.getFd()) + "]");
+	throw std::runtime_error("Client disconnected");
 	Utils::safePrint("QUIT command received. Client disconnected with the reason: " + response);
 }
 

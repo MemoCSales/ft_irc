@@ -4,9 +4,16 @@
 SERVER="localhost"
 PORT=6667
 PASSWORD="42"
-NICK="Vicki"
-USER="Victoria"
-REALNAME="VictoriaLizarraga"
+# Lists of possible values
+NICKS=("Vicki" "Memo" "Marian" "Test")
+USERS=("Victoria" "Guillermo" "Marian" "Test")
+REALNAMES=("VictoriaL" "GuillermoC" "MarianS" "TestR")
+
+# Select random values
+index=$((RANDOM % ${#NICKS[@]}))
+NICK=${NICKS[$index]}
+USER=${USERS[$index]}
+REALNAME=${REALNAMES[$index]}
 CHANNEL="#YourChannel"
 MESSAGE="Hello, IRC!"
 
