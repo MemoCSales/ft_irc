@@ -1,4 +1,5 @@
 #include "Client.hpp"
+#include "Server.hpp"
 #include <unistd.h>
 #include <cstring>
 
@@ -6,7 +7,7 @@ Client::Client(int fd) : _clientFD(fd), _authenticated(false), nickname(""), use
 
 void Client::sendMessage(const std::string &message)
 {
-	LockGuard lock(clientMutex);
+	LockGuard lock(this->getMutex());
 	std::string msg = message + "\r\n";
 	ssize_t bytesSent = send(_clientFD, msg.c_str(), msg.length(), 0);
 	if (bytesSent == -1)
@@ -38,7 +39,7 @@ void Client::handleRead() {
 	// Process commands
 	Server* server = Server::getInstance();
 	{
-		LockGuard lock(server->printMutex);
+		LockGuard lock(server->getPrintMutex()); // Use getter method
 		std::cout << "Received message: " << buffer << std::endl;
 	}
 	CommandParser commandParser(*server);
@@ -70,7 +71,7 @@ void Client::setServerOperator(bool flag) {
 
 int Client::getFd() const
 {
-	LockGuard lock(clientMutex);
+	LockGuard lock(this->getMutex()); // Use getter method and const_cast
 	return _clientFD;
 }
 
@@ -80,5 +81,5 @@ bool Client::getServerOperator() const {
 
 Mutex& Client::getMutex()
 {
-	return clientMutex;
+	return _clientMutex;
 }

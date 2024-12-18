@@ -26,12 +26,12 @@ class Client
 		int _clientFD;
 		bool _authenticated;
 		bool _serverOperator;
+		Mutex _clientMutex; // Moved to private section
 	public:
 		std::string nickname;
 		std::string username;
 		std::string realname;
 		std::string _buffer;
-		Mutex clientMutex;
 		pthread_t thread;
 
 		Client(int fd);
@@ -47,6 +47,7 @@ class Client
 
 		// Getters
 		bool getServerOperator() const;
+		Mutex& getMutex(); // Added method to access clientMutex
 
 };
 

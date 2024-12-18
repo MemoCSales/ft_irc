@@ -32,61 +32,63 @@ typedef std::map<std::string, Channel*>::iterator ChannelIte;
 class Server
 {
 	private:
-		int serverFD;
-		std::string const password;
+		int _serverFD;
+		std::string const _password;
 		// bool _shutdownFlag;
 		static volatile sig_atomic_t _shutdownFlag;
 		// std::vector<pthread_t> workerThreads;
 		// pthread_cond_t shutdownCond;
-		std::vector<struct pollfd> pollFDs;
-		std::map<int, Client*> clients;
-		std::map<std::string, Channel*> channels;
-		Mutex clientsMutex;
-		Mutex channelsMutex;
-		Mutex printMutex;
-		Mutex shutdownMutex;
-		pthread_t pingThread;
-		std::string const lockFilePath;
-		static Server* instance;
+		std::vector<struct pollfd> _pollFDs;
+		std::map<int, Client*> _clients;
+		std::map<std::string, Channel*> _channels;
+		Mutex _clientsMutex;
+		Mutex _channelsMutex;
+		Mutex _printMutex;
+		Mutex _shutdownMutex;
+		pthread_t _pingThread;
+		std::string const _lockFilePath;
+		static Server* _instance;
 
 		// Server operator credentials
 		std::string _operName;
 		std::string _operPassword;
 
-		void setNonBlocking(int fd);
-		void setupSignalHandlers();
+		void _setNonBlocking(int fd);
+		void _setupSignalHandlers();
 		// To delete
-		void createLockFile();
-		void removeLockFile();
+		void _createLockFile();
+		void _removeLockFile();
 		// End to delete
 
-		void removeClient(int clientFD);
-		static void signalHandlerWrapper(int signum);
-		
+		void _removeClient(int clientFD);
+		static void _signalHandlerWrapper(int signum);
+		static void* _clientHandler(void* arg);
+		static void _signalHandler(int signum); // does it need to be static ?
+		void _handleNewConnection();
+		void _handleClient(int clientFD);
+		std::string _welcomeMsg();
 		// Disable copy constructor and assignment operator
 		Server(const Server&);
 		Server& operator=(const Server&);
 
 	public:
 		Server(int& port, std::string const& password);
-		static void signalHandler(int signum); // does it need to be static ?
-		void handleNewConnection();
-		void handleClient(int clientFD);
 		static Server* getInstance(); // is it the only solution?
 		~Server();
 		void run();
-		std::string welcomeMsg();
+
 		std::string const getPassword() const;
 		std::map<std::string, Channel*>& getChannels();
 		std::map<int, Client*>& getClients();
 		// void sendPingToClients();
 		// void startPingTask();
 		// static void* pingTask(void* arg);
-		static void* clientHandler(void* arg);
+
 		std::string const getOperName() const;
 		std::string const getOperPassword() const;
 		void setOperName(void);
 		void setOperPassword(void);
+		Mutex& getPrintMutex(); // Add getter method for printMutex
 
 };
 

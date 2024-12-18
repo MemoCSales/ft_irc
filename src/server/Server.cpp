@@ -15,21 +15,22 @@
 
 #include <fstream>
 
-Server* Server::instance = NULL;
+Server* Server::_instance = NULL;
 volatile sig_atomic_t Server::_shutdownFlag = 0;
+
 Server::Server(int& port, const std::string& password) : 
-serverFD(-1), password(password)//, _shutdownFlag(0)
+	_serverFD(-1), _password(password)
 {
-	instance = this;
+	_instance = this;
 	try
 	{
-		serverFD = socket(AF_INET, SOCK_STREAM, 0);
-		if (serverFD <= 0)
+		_serverFD = socket(AF_INET, SOCK_STREAM, 0);
+		if (_serverFD <= 0)
 		{
 			throw std::runtime_error("Can't create socket");
 		}
 		int opt = 1;
-		if (setsockopt(serverFD, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+		if (setsockopt(_serverFD, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 		{
 			throw std::runtime_error("setsockopt(SO_REUSEADDR) failed");
 		}
@@ -37,14 +38,14 @@ serverFD(-1), password(password)//, _shutdownFlag(0)
 		SockAddressInitializer initializer(port);
 		struct sockaddr_in serverAddress = initializer.getAddress();
 
-		if (bind(serverFD, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1)
+		if (bind(_serverFD, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1)
 		{
 			throw std::runtime_error("Can't bind to IP/port");
 		}
 
 		char ServerIP[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &serverAddress.sin_addr, ServerIP, INET_ADDRSTRLEN);
-		if (listen(serverFD, SOMAXCONN) == -1)
+		if (listen(_serverFD, SOMAXCONN) == -1)
 		{
 			std::stringstream ss;
 
@@ -53,12 +54,12 @@ serverFD(-1), password(password)//, _shutdownFlag(0)
 		}
 		std::cout << "Server listening on " << ServerIP << ":" << port << "\n";
 
-		setNonBlocking(serverFD);
+		_setNonBlocking(_serverFD);
 
-		struct pollfd serverP_FDs = {serverFD, POLLIN, 0};
-		pollFDs.push_back(serverP_FDs);
+		struct pollfd serverP_FDs = {_serverFD, POLLIN, 0};
+		_pollFDs.push_back(serverP_FDs);
 
-		setupSignalHandlers();
+		_setupSignalHandlers();
 
 		setOperName();
 		setOperPassword();
@@ -73,26 +74,26 @@ serverFD(-1), password(password)//, _shutdownFlag(0)
 	}
 }
 
-void Server::handleNewConnection()
+void Server::_handleNewConnection()
 {
 	try
 	{
 		struct sockaddr_in clientAddress;
 		socklen_t clientLength = sizeof(clientAddress);
-		int clientSocket = accept(serverFD, (struct sockaddr *)&clientAddress, (socklen_t*)&clientLength);
+		int clientSocket = accept(_serverFD, (struct sockaddr *)&clientAddress, (socklen_t*)&clientLength);
 		if (clientSocket < 0)
 		{
 			throw std::runtime_error("Failed to accept new connection: " + std::string(strerror(errno)));
 		}
-		setNonBlocking(clientSocket);
+		_setNonBlocking(clientSocket);
 		struct pollfd pfd = {clientSocket, POLLIN, 0};
-		pollFDs.push_back(pfd);
+		_pollFDs.push_back(pfd);
 
 		Client* newClient;
 		{
-			LockGuard lock(clientsMutex);
+			LockGuard lock(_clientsMutex);
 			newClient = new Client(clientSocket);
-			clients.insert(std::make_pair(clientSocket, newClient));
+			_clients.insert(std::make_pair(clientSocket, newClient));
 
 			// Get client's IP address and port
 			char clientIP[INET_ADDRSTRLEN];
@@ -100,46 +101,44 @@ void Server::handleNewConnection()
 			int clientPort = ntohs(clientAddress.sin_port);
 
 			{
-				LockGuard printLock(printMutex);
+				LockGuard printLock(_printMutex);
 				std::cout << getColorStr(FGREEN, "New client connected: ") << clientIP << ":" << clientPort
 						  << "[" << clientSocket << "]" << std::endl;
 			}
 
 			// Send welcome message
-			newClient->sendMessage(welcomeMsg());
+			newClient->sendMessage(_welcomeMsg());
 		}
-		if (pthread_create(&newClient->thread, NULL, Server::clientHandler, newClient) != 0)
+		if (pthread_create(&newClient->thread, NULL, _clientHandler, newClient) != 0)
 		{
-			LockGuard printLock(printMutex);
+			LockGuard printLock(_printMutex);
 			throw std::runtime_error("Failed to create thread for new connection: " + std::string(strerror(errno)));
-			LockGuard lock(clientsMutex);
-			removeClient(clientSocket);		
+			LockGuard lock(_clientsMutex);
+			_removeClient(clientSocket);		
 			
 		}
 		if (pthread_detach(newClient->thread) != 0)
 		// if (pthread_join(newClient->thread, NULL) != 0)
 		{
-			LockGuard printLock(printMutex);
+			LockGuard printLock(_printMutex);
 			throw std::runtime_error("Failed to detach thread: " + std::string(strerror(errno)));
 		}
 	}
 	catch (const std::exception& e)
 	{
-		LockGuard printLock(printMutex);
+		LockGuard printLock(_printMutex);
 		std::cerr << "Error handling new connection: " << e.what() << std::endl;
 	}
 }
 
-void Server::handleClient(int clientFD)
+void Server::_handleClient(int clientFD)
 {
-	// Server* server = Server::getInstance();
-	// LockGuard clientlock(server->clientsMutex);
-	ClientsIte it = clients.find(clientFD);
-	if (it != clients.end())
+	ClientsIte it = _clients.find(clientFD);
+	if (it != _clients.end())
 		it->second->handleRead();
 }
 
-void* Server::clientHandler(void* arg)
+void* Server::_clientHandler(void* arg)
 {
 	Client* client = static_cast<Client*>(arg);
 	Server* server = Server::getInstance();
@@ -149,39 +148,31 @@ void* Server::clientHandler(void* arg)
 		while (true)
 		{
 			{
-				// LockGuard lock(server->shutdownMutex);
-				// if (server->_shutdownFlag)
-				// {
-				// 	return NULL;
-				// }
-			}
-			{
-				LockGuard clientlock(server->clientsMutex);
-				if (server->clients.find(clientFD) == server->clients.end())
+				LockGuard clientlock(server->_clientsMutex);
+				if (server->_clients.find(clientFD) == server->_clients.end())
 				{
 					throw std::runtime_error("Client exited: " + std::string(strerror(errno)));
 				}
-				server->handleClient(clientFD);
+				server->_handleClient(clientFD);
 			}
 		}
 	}
 	catch (const std::exception& e)
 	{
 		{
-			LockGuard printLock(server->printMutex);
+			LockGuard printLock(server->_printMutex);
 			std::cerr << "Error handling client: " << e.what() << toStr(clientFD) << std::endl;
 			std::cerr << error("END CLIENT\r\n", 0);
 		}
 		{
-			LockGuard lock(server->clientsMutex);
-			server->removeClient(clientFD);
+			LockGuard lock(server->_clientsMutex);
+			server->_removeClient(clientFD);
 		}
 	}
 	{
-		LockGuard printLock(server->printMutex);
+		LockGuard printLock(server->_printMutex);
 		std::cerr << error("*END CLIENT\r\n", 0);
 	}
-	// pthread_exit(NULL);
 	return NULL;
 }
 
@@ -193,107 +184,105 @@ void Server::run()
 		try
 		{
 			{
-				LockGuard lock(server->shutdownMutex);
+				LockGuard lock(server->_shutdownMutex);
 				if (server->_shutdownFlag)
-				// if (_shutdownFlag)
 					break;
 			}
-			int pollCount = poll(pollFDs.data(), pollFDs.size(), -1);
+			int pollCount = poll(_pollFDs.data(), _pollFDs.size(), -1);
 			if (pollCount < 0)
 				throw std::runtime_error("Poll failed: " + std::string(strerror(errno)));
 
-			for (size_t i = 0; i < pollFDs.size(); ++i)
+			for (size_t i = 0; i < _pollFDs.size(); ++i)
 			{
-				if (pollFDs[i].revents & POLLIN)
+				if (_pollFDs[i].revents & POLLIN)
 				{
-					if (pollFDs[i].fd == serverFD)
-						handleNewConnection();
+					if (_pollFDs[i].fd == _serverFD)
+						_handleNewConnection();
 				}
 			}
 		}
 		catch (const std::exception& e)
 		{
-			LockGuard printLock(printMutex);
+			LockGuard printLock(_printMutex);
 			std::cerr << "Error in server run loop: " << e.what() << std::endl;
 		}
 	}
 	{
-		LockGuard lockClients(clientsMutex);
-		for (ClientsIte it = clients.begin(); it != clients.end(); ++it)
+		LockGuard lockClients(_clientsMutex);
+		for (ClientsIte it = _clients.begin(); it != _clients.end(); ++it)
 		{
 			close(it->first);
 			delete it->second;
-			clients.erase(it);
+			_clients.erase(it);
 		}
 	}
 	{
-		LockGuard lock(server->shutdownMutex);
-		close(serverFD);
+		LockGuard lock(server->_shutdownMutex);
+		close(_serverFD);
 	}
 }
 
-void Server::removeClient(int clientFD)
+void Server::_removeClient(int clientFD)
 {
-	ClientsIte it = clients.find(clientFD);
-	if (it != clients.end())
+	ClientsIte it = _clients.find(clientFD);
+	if (it != _clients.end())
 	{
 		close(it->first);
 		pthread_cancel(it->second->thread);
 		delete it->second;
-		clients.erase(it);
+		_clients.erase(it);
 	}
 }
 
-void Server::setupSignalHandlers()
+void Server::_setupSignalHandlers()
 {
-	signal(SIGINT, Server::signalHandlerWrapper);
-	signal(SIGTERM, Server::signalHandlerWrapper);
+	signal(SIGINT, Server::_signalHandlerWrapper);
+	signal(SIGTERM, Server::_signalHandlerWrapper);
 }
 
-void Server::signalHandlerWrapper(int signum)
+void Server::_signalHandlerWrapper(int signum)
 {
 	Server* server = Server::getInstance();
-	if (server->instance) {
-		server->signalHandler(signum);
+	if (server->_instance) {
+		server->_signalHandler(signum);
 	}
 }
 
-void Server::signalHandler(int signum)
+void Server::_signalHandler(int signum)
 {
 	const char* msg = "Interrupt signal received. Shutting down server.\n";
 	write(STDERR_FILENO, msg, strlen(msg));
 	{
 		Server* server = Server::getInstance();
-		LockGuard lock(server->shutdownMutex);
+		LockGuard lock(server->_shutdownMutex);
 		server->_shutdownFlag = 1;
-		LockGuard lockClients(server->clientsMutex);
-		ClientsIte it = server->clients.begin();
-		for (; it != server->clients.end(); ++it)
+		LockGuard lockClients(server->_clientsMutex);
+		ClientsIte it = server->_clients.begin();
+		for (; it != server->_clients.end(); ++it)
 		{
 			const char* shutDownMessage = "Server is shutting down.\n\n";
 			send(it->second->getFd(), shutDownMessage, strlen(shutDownMessage), 0);
 			close(it->first);
 		}
-		pthread_cancel(server->pingThread);
+		pthread_cancel(server->_pingThread);
 	}
 	(void)signum;
 }
 
-
 Server::~Server()
 {
-	LockGuard lock(shutdownMutex);
+	LockGuard lock(_shutdownMutex);
 
-	for (ChannelIte it = channels.begin(); it != channels.end(); ++it)
+	for (ChannelIte it = _channels.begin(); it != _channels.end(); ++it)
 	{
 		delete it->second;
-		channels.erase(it);
+		_channels.erase(it);
 	}
-	close(serverFD);
-	removeLockFile();
+	close(_serverFD);
+	_removeLockFile();
 }
 
-void Server::setNonBlocking(int fd)
+void Server::_setNonBlocking(int fd)
 {
 	int flags = fcntl(fd, F_GETFL, 0);
 	if (flags == -1)
@@ -306,7 +295,7 @@ void Server::setNonBlocking(int fd)
 	}
 }
 
-std::string Server::welcomeMsg()
+std::string Server::_welcomeMsg()
 {
 	std::stringstream msg;
 	
@@ -331,12 +320,12 @@ std::string Server::welcomeMsg()
 
 Server* Server::getInstance()
 {
-	return instance;
+	return _instance;
 }
 
-void Server::createLockFile()
+void Server::_createLockFile()
 {
-	std::ofstream lockFile(lockFilePath.c_str());
+	std::ofstream lockFile(_lockFilePath.c_str());
 	if (!lockFile)
 	{
 		throw std::runtime_error("Unable to create lock file");
@@ -344,60 +333,24 @@ void Server::createLockFile()
 	lockFile.close();
 }
 
-void Server::removeLockFile()
+void Server::_removeLockFile()
 {
-	std::remove(lockFilePath.c_str());
+	std::remove(_lockFilePath.c_str());
 }
 
-
-
 std::string const Server::getPassword() const {
-	return password;
+	return _password;
 }
 
 std::map<std::string, Channel*>& Server::getChannels() {
-	LockGuard lock(channelsMutex);
-	return channels;
+	LockGuard lock(_channelsMutex);
+	return _channels;
 }
 
 std::map<int, Client*>& Server::getClients() {
-	LockGuard lock(clientsMutex);
-	return clients;
+	LockGuard lock(_clientsMutex);
+	return _clients;
 }
-
-// void Server::sendPingToClients() {
-// 	LockGuard lock(clientsMutex);
-// 	for (ClientsIte it = clients.begin(); it != clients.end(); it++)
-// 	{
-// 		{
-// 			Server* server = getInstance();
-// 			LockGuard lock(server->shutdownMutex);
-// 			if (server->_shutdownFlag)
-// 			{
-// 				break;
-// 			}
-// 		}
-// 		std::cout << "Sending PING to client: " << it->first << std::endl;
-// 		it->second->sendMessage("PING ping\r\n");
-// 	}
-
-// }
-
-// void*  Server::pingTask(void* arg) {
-// 	Server* server = static_cast<Server*>(arg);
-// 	while (true) {
-// 		sleep(600);
-// 		server->sendPingToClients();
-// 	}
-// 	return NULL;
-// }
-
-// void Server::startPingTask() {
-// 	pthread_t thread;
-// 	pthread_create(&thread, NULL, pingTask, this);
-// 	pthread_detach(thread);
-// }
-
 
 void Server::setOperName(void) {
 	_operName = OPER_NAME;
@@ -413,4 +366,8 @@ std::string const Server::getOperName() const {
 
 std::string const Server::getOperPassword() const {
 	return _operPassword;
+}
+
+Mutex& Server::getPrintMutex() {
+	return _printMutex;
 }
