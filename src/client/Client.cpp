@@ -1,26 +1,28 @@
 #include "Client.hpp"
-#include "Server.hpp"
 #include <unistd.h>
 #include <cstring>
+# include "NumericMessages.hpp"
 
-Client::Client(int fd) : _clientFD(fd), _authenticated(false), nickname(""), username(""), _buffer("") {}
+Client::Client(int fd) : _clientFD(fd), _authenticated(false), _serverOperator(false), _welcomeMessage(false), nickname(""), username(""), _buffer("") {
+	pthread_mutex_init(&clientMutex, NULL);
+}
 
 void Client::sendMessage(const std::string &message)
 {
-	LockGuard lock(this->getMutex());
+	pthread_mutex_lock(&clientMutex);
 	std::string msg = message + "\r\n";
-	ssize_t bytesSent = send(_clientFD, msg.c_str(), msg.length(), 0);
-	if (bytesSent == -1)
-		throw std::runtime_error("Error sending message: " + std::string(strerror(errno)));
+	send(_clientFD, msg.c_str(), msg.length(), 0);
+	pthread_mutex_unlock(&clientMutex);
 }
 
-Client::~Client() {}
+Client::~Client() {
+	pthread_mutex_destroy(&clientMutex);
+}
 
 void Client::handleRead() {
 	char buffer[MAX_BUFFER];
 	int nbytes = recv(_clientFD, buffer, sizeof(buffer) - 1, 0);
-	if (nbytes < 0)
-	{
+	if (nbytes < 0) {
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 			return; // No data available
 		else
@@ -32,27 +34,20 @@ void Client::handleRead() {
 	}
 	buffer[nbytes] = '\0';
 	this->_buffer += buffer;
-	// printAsciiDecimal(buffer);
-	// std::cout << "Message_: " << _buffer << std::endl;
-	// printAsciiDecimal(buffer);
+	std::ostringstream oss;
+	oss << "Received message: " << buffer;
+	Utils::safePrint(oss.str());
 
 	// Process commands
 	Server* server = Server::getInstance();
-	{
-		LockGuard lock(server->getPrintMutex()); // Use getter method
-		std::cout << "Received message: " << buffer << std::endl;
-	}
 	CommandParser commandParser(*server);
 	size_t pos;
 	while ((pos = this->_buffer.find_first_of("\r\n")) != std::string::npos)
 	{
 		std::string command = this->_buffer.substr(0, pos);
-		this->_buffer.erase(0, pos + 2); // check if 2 or 1
-		// if (!this->_buffer.empty() && this->_buffer[0] == '\n') {
-		// 	this->_buffer.erase(0, 1);
-		// }
+		this->_buffer.erase(0, pos + 2);
 
-		std::cout << "Processing command: " << command << std::endl;
+		Utils::safePrint("Processing command: " + command);
 		commandParser.parseAndExecute(*this, command, server->getChannels());
 	}
 }
@@ -71,7 +66,6 @@ void Client::setServerOperator(bool flag) {
 
 int Client::getFd() const
 {
-	LockGuard lock(this->getMutex()); // Use getter method and const_cast
 	return _clientFD;
 }
 
@@ -79,7 +73,28 @@ bool Client::getServerOperator() const {
 	return _serverOperator;
 }
 
-Mutex& Client::getMutex()
-{
-	return _clientMutex;
+bool Client::hasReceiveWelcomeMessage() const {
+	return _welcomeMessage;
+}
+
+void Client::setReceivedWelcomeMessage(bool flag) {
+	_welcomeMessage = flag;
+}
+
+void Client::checkAndSendWelcomeMessage() {
+	if (isAuthenticated() && !nickname.empty() && !username.empty() && !realname.empty()) {
+		if (!hasReceiveWelcomeMessage()) {
+			std::string response = RPL_WELCOME(nickname);
+			sendMessage(response);
+			setReceivedWelcomeMessage(true);
+		}
+	}
+}
+
+void Client::setRegistered(bool flag) {
+	_registered = flag;
+}
+
+bool Client::isRegistered() const {
+	return _registered;
 }

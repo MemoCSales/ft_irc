@@ -20,7 +20,7 @@
 /* REPLY MESSAGES */
 # define RPL_NICKCHANGE(oldNick, user, host, newNick)  ":" + oldNick + "!" + user + "@" + host + " NICK :" + newNick + "\r\n"
 # define RPL_EMPTYCAPLIST(host) ":" + host + " CAP " + " LS :\r\n"
-# define RPL_QUIT(reason) "Quit" + reason + "\r\n"
+# define RPL_QUIT(reason) "Quit: " + reason + "\r\n"
 # define RPL_WELCOME(nickname) "Welcome to our IRC network, " + nickname + " !\r\n"
 # define RPL_YOUREOPER "You are now an IRC server operator \r\n"
 

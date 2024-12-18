@@ -13,6 +13,16 @@ Command::Command(CommandType type, Server& server) : _type(type), _server(server
 	commands[PONG] = &Command::handlePong;
 	commands[OPER] = &Command::handleOper;
 	commands[PRIVMSG] = &Command::handlePrivMsg;
+	commands[JOIN] = &Command::handleJoin;
+	commands[TOPIC] = &Command::handleTopic;
+	commands[PART] = &Command::handlePart;
+	commands[KICK] = &Command::handleKick;
+	commands[INVITE] = &Command::handleInvite;
+	commands[MODE] = &Command::handleMode;
+}
+
+Command::~Command() {
+	commands.clear();
 }
 
 void Command::execute(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
@@ -39,7 +49,8 @@ void Command::handlePass(Client& client, const std::string& args, std::map<std::
 	}
 	if (password == _server.getPassword()) {
 		client.setAuthenticated(true);
-		std::cout << "Client authenticated -> fd: " << client.getFd() << std::endl;
+		Utils::safePrint("Client authenticated -> fd: " + toStr(client.getFd()));
+		client.sendMessage("You have been authenticated. Please continue your registration.");
 		if (!client.nickname.empty() && !client.username.empty()) {
 			response = RPL_WELCOME(client.nickname);
 			client.sendMessage(response);
@@ -48,7 +59,6 @@ void Command::handlePass(Client& client, const std::string& args, std::map<std::
 		response = ERR_PASSWDMISMATCH;
 		client.sendMessage(response);
 	}
-	client.sendMessage("You have been authenticated. Please continue your registration.");
 }
 
 void Command::handleNick(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
@@ -83,21 +93,19 @@ void Command::handleNick(Client& client, const std::string& args, std::map<std::
 		client.sendMessage(response);
 
 		// Inform other clients about the nickname change
-		std::string message = ":" + oldNick + "!@localhost NICK: " + newNick;
+		// std::string message = ":" + oldNick + "!@localhost NICK: " + newNick;
 		for (ChannelIte itChannel = channels.begin(); itChannel != channels.end(); itChannel++) {
 			Channel* channel = itChannel->second;
 			if (channel->isMember(&client)) {
-				channel->broadcast(message, &client);
+				channel->broadcast(response, &client);
 			}
 		}
-
-		// Check before s`ending the welcome message
-		if (!client.username.empty() && client.isAuthenticated()) {
-			std::string response = RPL_WELCOME(client.nickname);
-			client.sendMessage(response);
-		}
 	}
-	std::cout << "NICK command received. Client nickname changed from: " << oldNick << " to: " << newNick << std::endl;
+	// Check if registration OK
+	if (!client.username.empty()) {
+		client.setRegistered(true);
+	} 
+	Utils::safePrint("NICK command received. Client nickname changed from: " + toStr(oldNick) + " to: " + toStr(newNick));
 }
 
 
@@ -147,23 +155,30 @@ void Command::handleUser(Client& client, const std::string& args, std::map<std::
 	client.username = userName;
 	client.realname = realName;
 
-	// Check before sending the message
-	if (!client.nickname.empty() && client.isAuthenticated()) {
-		std::string response = RPL_WELCOME(client.nickname);
-		client.sendMessage(response);
-	}
-
-	std::cout << "USER command received. Client username set to: " << userName << ", realname set to: " << realName << std::endl;
+	// Check if registration OK
+	if (!client.nickname.empty()) {
+		client.setRegistered(true);
+	} 
+	Utils::safePrint("USER command received. Client username set to: " + toStr(userName) + ", realname set to: " + toStr(realName));
 }
 
 void Command::handleQuit(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	std::vector<std::string> tokens = InputParser::parseInput(args, ' ');
-	std::string reason = tokens.empty() ? "" : tokens[0];
+	std::string reason;
 	std::string response;
 
+	if (tokens.empty()) {
+		reason = "";
+	} else {
+		for (std::vector<std::string>::iterator it = tokens.begin(); it != tokens.end(); ++it) {
+			reason.append(*it);
+			if (it + 1 != tokens.end()) {
+				reason.append(" ");
+			}
+		}
+	}
 	if (reason.empty()) {
 		response = "Quit";
-		// std::cout << response << std::endl;
 	} else {
 		response = RPL_QUIT(reason);
 	}
@@ -173,9 +188,9 @@ void Command::handleQuit(Client& client, const std::string& args, std::map<std::
 		it->second->removeMember(&client);
 	}
 	
-	client.sendMessage(ERROR(response));
+	client.sendMessage(response);
 	throw std::runtime_error("Client disconnected");
-	std::cout << "QUIT command received. Client disconnected with the reason: " << response << std::endl;
+	Utils::safePrint("QUIT command received. Client disconnected with the reason: " + response);
 }
 
 /* PING command is sent by either clients or servers to check the other
@@ -210,7 +225,7 @@ void Command::handlePong(Client& client, const std::string& args, std::map<std::
 		client.sendMessage(response);
 		return;
 	}
-	std::cout << "PONG command received with the token: " << reason  << std::endl;
+	Utils::safePrint("PONG command received with the token: " + reason);
 }
 
 void Command::handleOper(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
@@ -254,13 +269,14 @@ void Command::handleOper(Client& client, const std::string& args, std::map<std::
 	client.setServerOperator(true);
 	response = RPL_YOUREOPER;
 	client.sendMessage(response);
-	std::cout << "Client " << client.nickname << " is now a server operator." << std::endl;
+	Utils::safePrint("Client " + client.nickname + " is now a server operator.");
 }
 
 void Command::handlePrivMsg(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	std::string command = "PRIVMSG";
 
 	// Checks if the Client is already authenticated
+	// todo: receive messages until registration is complete
 	if (!client.isAuthenticated() || client.nickname.empty() || client.username.empty()) {
 		client.sendMessage(ERR_NOTREGISTERED);
 		return;
@@ -283,7 +299,7 @@ void Command::handlePrivMsg(Client& client, const std::string& args, std::map<st
 
 	// Debug printing
 	InputParser::printTokens(tokens);
-	std::cout << "Message: " << message << std::endl;
+	Utils::safePrint("Message: " + message);
 
 	for (std::vector<std::string>::iterator itVector = tokens.begin(); itVector != tokens.end(); itVector++) {
 		bool found = false;
@@ -313,3 +329,4 @@ void Command::handlePrivMsg(Client& client, const std::string& args, std::map<st
 		}
 	}
 }
+

@@ -7,10 +7,11 @@
 # include <cerrno>
 # include <cstring> // strerror
 # include <sys/socket.h>
+#include <vector>
+// #include <Server.hpp>
+#include <Channel.hpp>
 
 # include "CommandParser.hpp"
-#include "Mutex.hpp"
-#include "LockGuard.hpp"
 
 # ifndef DEBUG
 #  define DEBUG 0
@@ -20,19 +21,25 @@
 # ifndef MAX_BUFFER
 # define MAX_BUFFER 4096
 # endif
+
+// class Server;
+class Channel;
+
 class Client 
 {
 	private:
 		int _clientFD;
 		bool _authenticated;
+		bool _registered;
 		bool _serverOperator;
-		Mutex _clientMutex; // Moved to private section
+		bool _welcomeMessage;
 	public:
 		std::string nickname;
 		std::string username;
 		std::string realname;
 		std::string _buffer;
 		pthread_t thread;
+		pthread_mutex_t clientMutex;
 
 		Client(int fd);
 		~Client();
@@ -40,14 +47,21 @@ class Client
 		void sendMessage(const std::string &message);
 		void handleRead();
 		bool isAuthenticated() const;
+		bool hasReceiveWelcomeMessage() const;
+		void checkAndSendWelcomeMessage();
 
 		// Setter
 		void setAuthenticated(bool);
 		void setServerOperator(bool);
+		void setReceivedWelcomeMessage(bool);
+		void setRegistered(bool);
 
 		// Getters
 		bool getServerOperator() const;
-		Mutex& getMutex(); // Added method to access clientMutex
+		std::string getClientNick() const {return this->nickname;}
+		std::string getNick() const {return nickname;}
+		int getSocket() const { return _clientFD; }
+		bool isRegistered() const;
 
 };
 

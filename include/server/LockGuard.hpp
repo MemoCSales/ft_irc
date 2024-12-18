@@ -15,11 +15,11 @@
 class LockGuard
 {
 	public:
-		explicit LockGuard(Mutex& m);
+		explicit LockGuard(Mutex & m);
 		~LockGuard();
 
 	private:
-		Mutex& mutex;
+		Mutex const& mutex;
 };
 
 // std::ostream& operator << (std::ostream& os, LockGuard& rhs);
