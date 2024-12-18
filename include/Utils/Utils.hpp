@@ -9,6 +9,7 @@
 # include <cxxabi.h>
 # include <cstring>
 # include <cstdio>
+# include "NumericMessages.hpp"
 # ifndef DEBUG
 #  define DEBUG 0
 # endif
@@ -97,6 +98,7 @@ class Utils {
 	public:
 		static void safePrint(const std::string& message);
 		static void cleanupMutex();
+		static std::string truncateString(const std::string& string);
 
 		static pthread_mutex_t coutMutex;
 };

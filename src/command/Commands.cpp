@@ -72,6 +72,17 @@ void Command::handleNick(Client& client, const std::string& args, std::map<std::
 		return;
 	}
 
+	// check for invalid characters
+	char chars[] = {'#', ':', ' '};
+	size_t pos = newNick.find_first_of(chars);
+	if (pos != std::string::npos) {
+		Utils::safePrint("Invalid character found in Nick name at position: " + toStr(pos));
+		return;
+	}
+
+	// Check for long string. If found truncated
+	newNick = Utils::truncateString(newNick);
+
 	//check for a valid newNickname : ERR_ERRONEUSNICKNAME 432
 	std::map<int, Client*>& clients = _server.getClients();
 	for (ClientsIte it = clients.begin(); it != clients.end(); it++) {
@@ -132,6 +143,12 @@ void Command::handleUser(Client& client, const std::string& args, std::map<std::
 	std::string unused = trim(tokens[2]);
 	std::string realName = trim(tokens[3]);
 
+	// Check for long string. If found truncated
+	userName = Utils::truncateString(userName);
+	mode = Utils::truncateString(mode);
+	unused = Utils::truncateString(unused);
+	realName = Utils::truncateString(realName);
+
 	if (!realName.empty() && realName[0] == ':') {
 		realName = realName.substr(1);
 	}
@@ -180,6 +197,7 @@ void Command::handleQuit(Client& client, const std::string& args, std::map<std::
 	if (reason.empty()) {
 		response = "Quit";
 	} else {
+		reason = Utils::truncateString(reason);
 		response = RPL_QUIT(reason);
 	}
 	// todo: Check if this is the right approach for deletion
@@ -201,6 +219,7 @@ void Command::handlePing(Client& client, const std::string& args, std::map<std::
 	std::vector<std::string> tokens = InputParser::parseInput(args, ' ');
 	std::string reason = tokens.empty() ? "" : trim(tokens[0]);
 
+	reason = Utils::truncateString(reason);
 	InputParser::printTokens(tokens);
 
 	if (reason.empty()) {
@@ -218,6 +237,8 @@ void Command::handlePong(Client& client, const std::string& args, std::map<std::
 
 	std::vector<std::string> tokens = InputParser::parseInput(args, ' ');
 	std::string reason = tokens.empty() ? "" : trim(tokens[0]);
+
+	reason = Utils::truncateString(reason);
 
 	if (reason.empty()) {
 		std::string command = "PING";
