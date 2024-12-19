@@ -19,6 +19,10 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
 		sendInformativeMessage(client,"Error: Name of the channel must start with '#'.","");
 		return;
 	}
+
+	// Check for long string. If found truncated
+	channelName = Utils::truncateString(channelName);
+	
 	Channel* targetChannel = NULL;
 	bool found = false;
 	std::map<std::string, Channel*>::iterator it = channels.begin();

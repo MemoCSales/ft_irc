@@ -392,46 +392,6 @@ std::string const Server::getOperPassword() const {
 	return _operPassword;
 }
 
-void Server::sendPingToClients() {
-	pthread_mutex_lock(&clientsMutex);
-	for (ClientsIte it = clients.begin(); it != clients.end(); it++) {
-		Utils::safePrint("Sending PING to client: " + toStr(it->first));
-		it->second->sendMessage("PING ping\r\n");
-	}
-	pthread_mutex_unlock(&clientsMutex);
-}
-
-void* pingTask(void* arg) {
-	Server* server = static_cast<Server*>(arg);
-	while (true) {
-		sleep(600);
-		server->sendPingToClients();
-	}
-	return NULL;
-}
-
-void Server::startPingTask() {
-	pthread_create(&pingThread, NULL, pingTask, this);
-	// pthread_detach(pingThread);
-}
-
-
-void Server::setOperName(void) {
-	_operName = OPER_NAME;
-}
-
-void Server::setOperPassword(void) {
-	_operPassword = OPER_PASS;
-}
-
-std::string const Server::getOperName() const {
-	return _operName;
-}
-
-std::string const Server::getOperPassword() const {
-	return _operPassword;
-}
-
 //------my functions 
 
 Channel* Server::getOrCreateChannel(const std::string& name) {

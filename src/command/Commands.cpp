@@ -85,11 +85,16 @@ void Command::handleNick(Client& client, const std::string& args, std::map<std::
 		return;
 	}
 
-	// Checks if the Client is already authenticated
-	if (!client.isAuthenticated()) {
-		client.sendMessage(ERR_NOTREGISTERED);
+	// check for invalid characters
+	char chars[] = {'#', ':', ' '};
+	size_t pos = newNick.find_first_of(chars);
+	if (pos != std::string::npos) {
+		Utils::safePrint("Invalid character found in Nick name at position: " + toStr(pos));
 		return;
 	}
+
+	// Check for long string. If found truncated
+	newNick = Utils::truncateString(newNick);
 
 	//check for a valid newNickname : ERR_ERRONEUSNICKNAME 432
 	std::map<int, Client*>& clients = _server.getClients();
@@ -151,33 +156,17 @@ void Command::handleUser(Client& client, const std::string& args, std::map<std::
 	std::string unused = trim(tokens[2]);
 	std::string realName = trim(tokens[3]);
 
-	// Checks if the Client is already authenticated
-	if (!client.isAuthenticated()) {
-		client.sendMessage(ERR_NOTREGISTERED);
-		return;
-	}
-	std::vector<std::string> tokens = InputParser::parseInput(args, ' ');
-
-	if (tokens.size() < 4) {
-		std::string command = "USER";
-		std::string response = ERR_NEEDMOREPARAMS(command);
-		client.sendMessage(response);
-		client.sendMessage("Usage: Command <username> 0 * <realname>\r\n");
-		return ;
-	}
-
-	std::string userName = trim(tokens[0]);
-	std::string mode = trim(tokens[1]);
-	std::string unused = trim(tokens[2]);
-	std::string realName = trim(tokens[3]);
+	// Check for long string. If found truncated
+	userName = Utils::truncateString(userName);
+	mode = Utils::truncateString(mode);
+	unused = Utils::truncateString(unused);
+	realName = Utils::truncateString(realName);
 
 	if (!realName.empty() && realName[0] == ':') {
 		realName = realName.substr(1);
 	}
 
 	if (userName.empty() || userName.length() > USERLEN) {
-		std::string command = "USER";
-		std::string response = ERR_NEEDMOREPARAMS(command);
 		std::string command = "USER";
 		std::string response = ERR_NEEDMOREPARAMS(command);
 		client.sendMessage(response);
@@ -234,6 +223,7 @@ void Command::handleQuit(Client& client, const std::string& args, std::map<std::
 	if (reason.empty()) {
 		response = "Quit";
 	} else {
+		reason = Utils::truncateString(reason);
 		response = RPL_QUIT(reason);
 	}
 	// todo: Check if this is the right approach for deletion
@@ -256,6 +246,7 @@ void Command::handlePing(Client& client, const std::string& args, std::map<std::
 	std::vector<std::string> tokens = InputParser::parseInput(args, ' ');
 	std::string reason = tokens.empty() ? "" : trim(tokens[0]);
 
+	reason = Utils::truncateString(reason);
 	InputParser::printTokens(tokens);
 
 	if (reason.empty()) {
@@ -272,6 +263,8 @@ void Command::handlePong(Client& client, const std::string& args, std::map<std::
 
 	std::vector<std::string> tokens = InputParser::parseInput(args, ' ');
 	std::string reason = tokens.empty() ? "" : trim(tokens[0]);
+
+	reason = Utils::truncateString(reason);
 
 	if (reason.empty()) {
 		std::string command = "PING";
