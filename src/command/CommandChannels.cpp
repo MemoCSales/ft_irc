@@ -2,6 +2,7 @@
 # include "NumericMessages.hpp"
 # include "Utils.hpp"
 # include "InputParser.hpp"
+#include "ChannelUtils.hpp"
 
 void Command::handleJoin(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	std::string channelName = trim(args);
@@ -130,13 +131,7 @@ void	Command::handleKick(Client& client, const std::string& args, std::map<std::
 		client.sendMessage(error);
 		return;
 	}
-	bool isOperator = false;
-	for (unsigned long int i = 0; i < targetChannel->getOperators().size(); i++){
-		if (targetChannel->getOperators()[i] == &client) {
-				isOperator = true;
-				break;
-		}
-	}
+	bool isOperator = isOperatorFct(targetChannel,client);
 	if (isOperator){
 		bool found = false;
 		for (unsigned long int i = 0; i < targetChannel->getMembers().size(); i++){
@@ -166,7 +161,6 @@ void	Command::handleKick(Client& client, const std::string& args, std::map<std::
 }
 
 void	Command::handlePart(Client& client, const std::string& args, std::map<std::string, Channel*>& channels){
-	// check if other operators in channel , else give operator priviliges to oldest in channel
 	(void)channels;
 	std::istringstream stream(args);
 	std::string channelName;
@@ -182,13 +176,7 @@ void	Command::handlePart(Client& client, const std::string& args, std::map<std::
 		client.sendMessage(error);
 		return;
 	}
-	bool isOperator = false;
-	for (unsigned long int i = 0; i < targetChannel->getOperators().size(); i++){
-		if (targetChannel->getOperators()[i] == &client) {
-			isOperator = true;
-			break;
-		}
-	}
+	bool isOperator = isOperatorFct(targetChannel,client);
 	bool found = false;
 	for (unsigned long int i = 0; i < targetChannel->getMembers().size(); i++){
 		if (targetChannel->getMembers()[i] == &client) {
@@ -249,31 +237,12 @@ void	Command::handleTopic(Client& client, const std::string& args, std::map<std:
 		client.sendMessage(error);
 		return;
 	}
-	bool isMember = false;   // make a function for this
-	for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); ++it) {
-		if (it->first == channelName) {
-			targetChannel = it->second;
-			std::vector<Client*> members = targetChannel->getMembers(); // Get the members vector
-			for (std::vector<Client*>::iterator memberIt = members.begin(); memberIt != members.end(); ++memberIt) {
-				if (*memberIt == &client) {
-					isMember = true;
-					break;
-				}
-			}
-			break;
-		}
-	}
+	bool isMember = isMemberFct(targetChannel,client,channelName, channels);
 	if(isMember){
 		if(targetChannel->getFlagTopic() == true){
 			std::string error = "Topic restriction set to true, You need to be an operator.\n";
 			client.sendMessage(error);
-			bool isOperator = false;
-			for (unsigned long int i = 0; i < targetChannel->getOperators().size(); i++){
-				if (targetChannel->getOperators()[i] == &client) {
-					isOperator = true;
-					break;
-				}
-			}
+			bool isOperator = isOperatorFct(targetChannel,client);
 			if(isOperator){
 				if(targetChannel->getTopic() == topic){
 					std::string message = "Topic already set to: " + topic + ".\n";
@@ -326,34 +295,14 @@ void	Command::handleInvite(Client& client, const std::string& args, std::map<std
 		client.sendMessage(error);
 		return;
 	}
-
-	bool isOperator = false;
-	for (unsigned long int i = 0; i < targetChannel->getOperators().size(); i++){
-		if (targetChannel->getOperators()[i] == &client) {
-			isOperator = true;
-			break;
-		}
-	}
+	bool isOperator = isOperatorFct(targetChannel, client);
 	bool found = false;
 	for (unsigned long int i = 0; i < targetChannel->getMembers().size(); i++){
 		if (targetChannel->getMembers()[i] == &client) {
 			found = true;
 			if(isOperator){
 				Client *targetClient = _server.getClientByNick(targetNick);
-				bool isMember = false;
-				for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); ++it) {
-					if (it->first == channelName) {
-						targetChannel = it->second;
-						std::vector<Client*> members = targetChannel->getMembers(); // Get the members vector
-						for (std::vector<Client*>::iterator memberIt = members.begin(); memberIt != members.end(); ++memberIt) {
-							if (*memberIt == targetClient) {
-								isMember = true;
-								break;
-							}
-						}
-						break;
-					}
-				}
+				bool isMember = isMemberFct(targetChannel,*targetClient,channelName, channels);
 				if(isMember){
 					std::string response = targetNick + " already in the channel.\n";
 					client.sendMessage(response);
@@ -373,7 +322,6 @@ void	Command::handleInvite(Client& client, const std::string& args, std::map<std
 						client.sendMessage(response);
 						return ;
 					}
-
 					targetChannel->addAllowedPeople(targetClient);
 					std::string response = "You have been invited to join channel: " + channelName + "\n";
 					targetClient->sendMessage(response);
@@ -406,234 +354,44 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 		return;
 	}
 	if(flag.empty()){
-		std::string error = "You need to insert one of the appropriate flag, i, t, k, o, l.\n";
+		std::string error = "You need to insert one of the appropriate flags, i, t, k, o, l.\n";
 		client.sendMessage(error);
 		return;
 	}
 	Channel *targetChannel = _server.getChannel(channelName);
 	if (!targetChannel) {
-		std::string error = "Channel does not exist.\n";
+		std::string error = "Channel: " + channelName + " does not exist.\n";
 		client.sendMessage(error);
 		return;
 	}
 
-	bool isOperator = false;
-	for (unsigned long int i = 0; i < targetChannel->getOperators().size(); i++){
-		if (targetChannel->getOperators()[i] == &client) {
-			isOperator = true;
-			break;
-		}
-	}
+	bool isOperator = isOperatorFct(targetChannel,client);
 	if(isOperator){
 		if(flag == "k"){
 			std::string passWord;
 			stream >> passWord;
-			if(passWord.empty()){
-				std::string error = "you need to add a password after the flag.\n";
-				client.sendMessage(error);
-				return;
-			}
-			Channel* targetChannel = NULL;
-			bool found = false;
-			std::map<std::string, Channel*>::iterator it = channels.begin();
-			for (; it != channels.end(); ++it) {
-				if (it->first == channelName) {
-					found = true;
-					targetChannel = it->second;
-				}
-			}
-			if (found){
-				{
-					if(targetChannel->getPassword() == passWord){
-						std::string error = "The password of the channel: " + channelName +" already set to " + passWord + "\n";
-						client.sendMessage(error);
-						return ;
-					}
-				}
-				targetChannel->setPassword(passWord);
-				std::string error = "Password for the channel: " + channelName +" set to: " +passWord + "\n";
-				client.sendMessage(error);
-			}
-			else {
-				std::string error = "No channel named :"+ channelName +"\n";
-				client.sendMessage(error);
-			}
-
+			if(!modePass(passWord,client,channelName,targetChannel)) return ;
 		}
 		else if(flag == "i")
 		{
 			std::string mode;
 			stream >> mode;
-			if(mode.empty()){
-				std::string error = "you need to add a mode after the flag.\n";
-				client.sendMessage(error);
-				return;
-			}
-
-			if(mode == "set"){
-				if(targetChannel->getInviteStatus()){
-					std::string error = "Channel: " + channelName + " already set to invitation only.\n";
-					client.sendMessage(error);
-					return ;
-				}
-				targetChannel->setInviteStatus(true);
-				std::string error = "Channel: " + channelName + " set to invitation only.\n";
-				client.sendMessage(error);
-			}
-			else if (mode == "remove")
-			{
-				if(!targetChannel->getInviteStatus()){
-					std::string error = "Channel: " + channelName + " invitation only already removed.\n";
-					client.sendMessage(error);
-					return ;
-				}
-				targetChannel->setInviteStatus(false);
-				std::string error = "Invitation only in channel: " + channelName +" removed.\n";
-				client.sendMessage(error);
-			}
-
-			else {
-				std::string error = "You can only use set or remove.\n";
-				client.sendMessage(error);
-			}
+			if(!modeInvite(mode,targetChannel,client,channelName)) return ;
 		}
 		else if(flag == "o"){ 
 			std::string name;
 			stream>>name;
-			if(name.empty()){
-				std::string error = "You need to insert the name of the clinet.\n";
-				client.sendMessage(error);
-				return ;
-			}
-			bool isMember = false;
-			Channel* targetChannel = NULL;
-			for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); ++it) {
-				if (it->first == channelName) {
-					targetChannel = it->second;
-					std::vector<Client*> members = targetChannel->getMembers();
-					for (std::vector<Client*>::iterator memberIt = members.begin(); memberIt != members.end(); ++memberIt) {
-						if ((*memberIt)->getNick() == name) {
-							isMember = true;
-							break;
-						}
-					}
-					break;
-				}
-			}
-			if(isMember){
-				if(client.getNick() == name){
-					std::string error = "You are already an operator dummy.! :))\n";
-					client.sendMessage(error);
-					return ;
-				}
-				bool isAlreadyOperator;
-				std::vector<Client*> operators = targetChannel->getOperators();
-				for (std::vector<Client*>::iterator It = operators.begin(); It != operators.end(); ++It) {
-					if ((*It)->getNick() == name) {
-						isAlreadyOperator = true;
-						break;
-					}
-				}
-				if(isAlreadyOperator)
-				{
-					std::string error = "That client is already an operator.!\n";
-					client.sendMessage(error);
-					return ;
-				}
-				Client *clientTarget = _server.getClientByNick(name);
-				std::string message = "You gave operator priviliges to: " + name +".\n";
-				client.sendMessage(message);
-				targetChannel->addOperator(clientTarget);
-				message = "You recived operator priviliges from: " + client.getNick()+" in "+ channelName +" channel" +".\n";
-				clientTarget->sendMessage(message);
-				std::cout << "new operator adde in the chanel : " <<  name << std::endl;
-			}
-			else{
-				std::string message = name + " not found in: " + channelName + ".\n";
-				client.sendMessage(message);
-			}
+			if(!modeOperator(name,channels,client,channelName,_server)) return ;
 		}
 		else if(flag == "l"){
 			std::string limit;
 			stream >> limit;
-
-			if(limit.empty()){
-				std::string error = "No limit given.\n";
-				client.sendMessage(error);
-				return;
-			}
-			if(!isNumber(limit)){
-				std::string error = "Limit must be a number.\n";
-				client.sendMessage(error);
-				return;
-			}
-
-			long int nb = modAtoi(limit);
-			
-			if(nb >2147483647 )
-			{
-				std::string error = "you can t insert a number bigger than Max_int\n";
-				client.sendMessage(error);
-				return ;
-			}
-			else if(nb <= 0)
-			{
-				std::string error = "you can t insert a negative/null number\n";
-				client.sendMessage(error);
-				return ;
-			}
-			if ( static_cast<size_t>(nb) < targetChannel->getMembers().size()) {
-				std::string error = "You can t insert a limit smaller than the number of clients already in the channel.\n";
-				client.sendMessage(error);
-				return;
-			}
-			if(targetChannel->getLimit() == nb){
-				std::string error = "Limit already set to: " + limit + ".\n";
-				client.sendMessage(error);
-				return;
-			}
-			
-			targetChannel->setLimit(nb);
-			std::string message = "Limit clients in the " + channelName + " set to: " + limit + ".\n";
-			client.sendMessage(message);
-
+			if(!modeLimit(limit,client, targetChannel,channelName)) return ;
 		}
 		else if(flag == "t"){
 			std::string mode;
 			stream >> mode;
-			if(mode.empty()){
-				std::string error = "No mode given.\n";
-				client.sendMessage(error);
-				return; 
-			}
-			
-			if(mode == "set")
-			{
-				if(targetChannel->getFlagTopic()){
-					std::string error = "Topic restriction is already set.\n";
-					client.sendMessage(error);
-					return ;
-				}
-				std::string error = "Topic restriction set.\n";
-				client.sendMessage(error);
-				targetChannel->setFlagTopic(true);
-			}
-
-			else if(mode == "remove") {
-				if(!targetChannel->getFlagTopic()){
-					std::string error = "Topic restriction is already removed.\n";
-					client.sendMessage(error);
-					return ;
-				}
-				std::string error = "You removed topic restriction.\n";
-				client.sendMessage(error);
-				targetChannel->setFlagTopic(false);
-			}
-			else {
-				std::string error = "You can only use set or remove.\n";
-				client.sendMessage(error);
-			}
-
+			if(!modeTopic(mode,client,targetChannel,channelName)) return ;
 		}
 		else{
 			std::string error = "You can only use one of the appropriate flags: i,t,k,o,l\n";
@@ -646,13 +404,4 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 	}
 }
 
-// clear memory when remove channel or in destructor-->partialy done
-// check if you can kick your self ---> done
-// check if topic is the same already -->done
-// check if password is the same already -->done
-// check if the limit is the same already -->done
-// check if you can give your self operator priviliges -->done
-// check if the client you give oprator priviliges is already an operator -->done
-// check if the guy you invited is already invited -->done
-// check if channel already set to invite/remove only -->done
-// check if restriction topic already set/remove --> done
+
