@@ -17,8 +17,8 @@
 # include "Utils.hpp"
 
 Server* Server::instance = NULL;
-
-Server::Server(int& port, const std::string& password) : password(password)
+Server::Server(int& port, const std::string& password) : password(password),
+_serverStatus(0)
 {
 	instance = this;
 	try
@@ -136,6 +136,8 @@ void Server::run()
 {
 	while (true)
 	{
+		if (_serverStatus)
+			break;
 		try
 		{
 			int pollCount = poll(pollFDs.data(), pollFDs.size(), -1);
@@ -158,26 +160,18 @@ void Server::run()
 			std::cerr << "Error in server run loop: " << e.what() << std::endl;
 		}
 	}
+	cleanData();
 }
 
-void Server::setupSignalHandlers()
+void Server::cleanData()
 {
-	signal(SIGINT, Server::signalHandler);
-	signal(SIGTERM, Server::signalHandler);
-}
-
-void Server::signalHandler(int signum)
-{
-	const char* msg = "Interrupt signal received. Closing server socket.\n";
-	write(STDERR_FILENO, msg, strlen(msg));
-
 	// Access the server instance
 	Server* server = Server::getInstance();
 
 	// Send a message to each client
 	for (ClientsIte it = server->clients.begin(); it != server->clients.end(); ++it)
 	{
-		const char* shutDownMessage = "Server is shutting down.\r\n\0";
+		const char* shutDownMessage = "Server is shutting down.\0";
 		send(it->second->getFd(), shutDownMessage, strlen(shutDownMessage), 0);
 	}
 
@@ -207,7 +201,21 @@ void Server::signalHandler(int signum)
 	close(server->serverFD);
 
 	// Exit the program
-	exit(signum);
+	exit(1);
+}
+
+void Server::setupSignalHandlers()
+{
+	signal(SIGINT, Server::signalHandler);
+	signal(SIGTERM, Server::signalHandler);
+}
+
+void Server::signalHandler(int signum)
+{
+	const char* msg = "Interrupt signal received. Closing server socket.\n";
+	write(STDERR_FILENO, msg, strlen(msg));
+	Server* server = Server::getInstance();
+	server->_serverStatus = signum;
 }
 
 Server::~Server()
