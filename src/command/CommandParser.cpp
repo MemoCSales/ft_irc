@@ -20,8 +20,8 @@ void CommandParser::parseAndExecute(Client& client, const std::string& message, 
 	std::getline(stream, args);
 	// args = Utils::trim(args);
 	
-	std::cout << "cmdName: " << commandName << std::endl;
-	std::cout << "Args: " << args << std::endl;
+	// std::cout << "cmdName: " << commandName << std::endl;
+	// std::cout << "Args: " << args << std::endl;
 	if (commandName[0] == '#') {
 		Client *clientPtr = &client;
 		bool isMember = false;

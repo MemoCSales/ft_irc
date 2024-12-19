@@ -31,8 +31,6 @@ Command::~Command() {
 	commands.clear();
 }
 
-Command::~Command() {}
-
 void Command::execute(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	if (commands.find(_type) != commands.end()) {
 		(this->*commands[_type])(client, args, channels);
@@ -64,12 +62,7 @@ void Command::handlePass(Client& client, const std::string& args, std::map<std::
 	}
 	if (password == _server.getPassword()) {
 		client.setAuthenticated(true);
-		std::cout << "Client authenticated -> fd: " << client.getFd() << std::endl;
-		client.sendMessage("You have been authenticated. Please continue your registration.");
-		if (!client.nickname.empty() && !client.username.empty()) {
-			response = RPL_WELCOME(client.nickname);
-			client.sendMessage(response);
-		}
+		Utils::safePrint("Client authenticated -> fd: " + toStr(client.getFd()));
 		client.sendMessage("You have been authenticated. Please continue your registration.");
 		if (!client.nickname.empty() && !client.username.empty()) {
 			response = RPL_WELCOME(client.nickname);
@@ -81,7 +74,6 @@ void Command::handlePass(Client& client, const std::string& args, std::map<std::
 	}
 }
 
-void Command::handleNick(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 void Command::handleNick(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	std::string newNick = trim(args);
 	std::string oldNick = client.nickname;
@@ -100,8 +92,6 @@ void Command::handleNick(Client& client, const std::string& args, std::map<std::
 	}
 
 	//check for a valid newNickname : ERR_ERRONEUSNICKNAME 432
-	std::map<int, Client*>& clients = _server.getClients();
-	for (ClientsIte it = clients.begin(); it != clients.end(); it++) {
 	std::map<int, Client*>& clients = _server.getClients();
 	for (ClientsIte it = clients.begin(); it != clients.end(); it++) {
 		if (it->second->nickname == newNick) {
@@ -134,7 +124,7 @@ void Command::handleNick(Client& client, const std::string& args, std::map<std::
 	if (!client.username.empty()) {
 		client.setRegistered(true);
 	} 
-	std::cout << "NICK command received. Client nickname changed from: " << oldNick << " to: " << newNick << std::endl;
+	Utils::safePrint("NICK command received. Client nickname changed from: " + toStr(oldNick) + " to: " + toStr(newNick));
 }
 
 
@@ -196,7 +186,6 @@ void Command::handleUser(Client& client, const std::string& args, std::map<std::
 
 	std::map<int, Client*>& clients = _server.getClients();
 	for (ClientsIte it = clients.begin(); it != clients.end(); it++) {
-	for (ClientsIte it = clients.begin(); it != clients.end(); it++) {
 		if (client.username == userName) {
 			std::string response = ERR_ALREADYREGISTERED;
 			client.sendMessage(response);
@@ -211,7 +200,7 @@ void Command::handleUser(Client& client, const std::string& args, std::map<std::
 	if (!client.nickname.empty()) {
 		client.setRegistered(true);
 	} 
-	std::cout << "USER command received. Client username set to: " << userName << ", realname set to: " << realName << std::endl;
+	Utils::safePrint("USER command received. Client username set to: " + toStr(userName) + ", realname set to: " + toStr(realName));
 }
 
 void Command::handleQuit(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
@@ -249,32 +238,16 @@ void Command::handleQuit(Client& client, const std::string& args, std::map<std::
 	}
 	// todo: Check if this is the right approach for deletion
 	for (ChannelIte it = channels.begin(); it != channels.end(); it++) {
-	for (ChannelIte it = channels.begin(); it != channels.end(); it++) {
 		it->second->broadcast(client.nickname + " has quit: " + reason, &client);
 		it->second->removeMember(&client);
 	}
-	
+		
 	client.sendMessage(response);
-	
-	client.sendMessage(response);
-	throw std::runtime_error("Client disconnected");
-	std::cout << "QUIT command received. Client disconnected with the reason: " << response << std::endl;
+	throw std::runtime_error("Client disconnected " + toStr(client.getFd()));
+	Utils::safePrint("QUIT command received. Client disconnected with the reason: " + response);
 }
 
-/* PING command is sent by either clients or servers to check the other
- side of the connection is still connected. */
-void Command::handlePing(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
-	(void)channels;
 
-	std::vector<std::string> tokens = InputParser::parseInput(args, ' ');
-	std::string reason = tokens.empty() ? "" : trim(tokens[0]);
-
-	InputParser::printTokens(tokens);
-
-	if (reason.empty()) {
-		std::string command = "PING";
-		std::string response = ERR_NEEDMOREPARAMS(command);
-		client.sendMessage(response);
 /* PING command is sent by either clients or servers to check the other
  side of the connection is still connected. */
 void Command::handlePing(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
@@ -294,12 +267,6 @@ void Command::handlePing(Client& client, const std::string& args, std::map<std::
 	client.sendMessage("PONG " + reason + "\r\n");
 }
 
-
-void Command::handlePong(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
-	client.sendMessage("PONG " + reason + "\r\n");
-}
-
-
 void Command::handlePong(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	(void)channels;
 
@@ -310,41 +277,19 @@ void Command::handlePong(Client& client, const std::string& args, std::map<std::
 		std::string command = "PING";
 		std::string response = ERR_NEEDMOREPARAMS(command);
 		client.sendMessage(response);
-
-	std::vector<std::string> tokens = InputParser::parseInput(args, ' ');
-	std::string reason = tokens.empty() ? "" : trim(tokens[0]);
-
-	if (reason.empty()) {
-		std::string command = "PING";
-		std::string response = ERR_NEEDMOREPARAMS(command);
-		client.sendMessage(response);
 		return;
 	}
-	std::cout << "PONG command received with the token: " << reason  << std::endl;
-	std::cout << "PONG command received with the token: " << reason  << std::endl;
+	Utils::safePrint("PONG command received with the token: " + reason);
 }
 
-void Command::handleOper(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 void Command::handleOper(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	(void)channels;
 
 	// Checks if the Client is already authenticated
 	if (!client.isAuthenticated() || client.nickname.empty() || client.username.empty()) {
 		client.sendMessage(ERR_NOTREGISTERED);
-
-	// Checks if the Client is already authenticated
-	if (!client.isAuthenticated() || client.nickname.empty() || client.username.empty()) {
-		client.sendMessage(ERR_NOTREGISTERED);
 		return;
 	}
-
-	std::string command = "OPER";
-	std::string response;
-	std::vector<std::string> tokens = InputParser::parseInput(args, ' ');
-
-	if (tokens.size() < 2) {
-		client.sendMessage(ERR_NEEDMOREPARAMS(command));
-		client.sendMessage("Usage: Command <name> <password>\r\n");
 
 	std::string command = "OPER";
 	std::string response;
@@ -378,41 +323,10 @@ void Command::handleOper(Client& client, const std::string& args, std::map<std::
 	client.setServerOperator(true);
 	response = RPL_YOUREOPER;
 	client.sendMessage(response);
-	std::cout << "Client " << client.nickname << " is now a server operator." << std::endl;
+	Utils::safePrint("Client " + client.nickname + " is now a server operator.");
 }
 
-void Command::handlePrivMsg(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
-	std::string command = "PRIVMSG";
 
-	// Checks if the Client is already authenticated
-	// todo: receive messages until registration is complete
-	if (!client.isAuthenticated() || client.nickname.empty() || client.username.empty()) {
-		client.sendMessage(ERR_NOTREGISTERED);
-
-	std::string name = trim(tokens[0]);
-	std::string password = trim(tokens[1]);
-
-	if (name.empty() || password.empty()) {
-		response = ERR_NEEDMOREPARAMS(command);
-		client.sendMessage(response);
-		return ;
-	}
-	if (name != _server.getOperName()) {
-		response = ERR_NOOPERHOST;
-		client.sendMessage(response);
-		return ;
-	}
-	if (password != _server.getOperPassword()) {
-		response = ERR_PASSWDMISMATCH;
-		client.sendMessage(response);
-		return ;
-	}
-
-	client.setServerOperator(true);
-	response = RPL_YOUREOPER;
-	client.sendMessage(response);
-	std::cout << "Client " << client.nickname << " is now a server operator." << std::endl;
-}
 
 void Command::handlePrivMsg(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	std::string command = "PRIVMSG";
@@ -424,11 +338,6 @@ void Command::handlePrivMsg(Client& client, const std::string& args, std::map<st
 		return;
 	}
 
-	// Find the position of the colon that tells me the start of the message
-	size_t colonPos = args.find(" :");
-	if (colonPos == std::string::npos) {
-		client.sendMessage(ERR_NEEDMOREPARAMS(command));
-		client.sendMessage("Usage: Command <target>{,<target>} :<text to be sent>\r\n");
 	// Find the position of the colon that tells me the start of the message
 	size_t colonPos = args.find(" :");
 	if (colonPos == std::string::npos) {
@@ -446,36 +355,7 @@ void Command::handlePrivMsg(Client& client, const std::string& args, std::map<st
 
 	// Debug printing
 	InputParser::printTokens(tokens);
-	std::cout << "Message: " << message << std::endl;
-
-	for (std::vector<std::string>::iterator itVector = tokens.begin(); itVector != tokens.end(); itVector++) {
-		bool found = false;
-		std::string target = *itVector;
-
-		// Check if the target is a channel
-		if (target[0] == '#') {
-			Channel* channel = channels[target];
-			if (channel) {
-				channel->broadcast(client.nickname + ": " + message, &client);
-				found = true;
-			} else {
-				client.sendMessage(ERR_NOSUCHCHANNEL(target));
-			}
-		} else {
-			std::map<int, Client*>& clients = _server.getClients();
-			for (ClientsIte itClient = clients.begin(); itClient != clients.end(); itClient++) {
-				if (itClient->second->nickname == target) {
-					itClient->second->sendMessage(client.nickname + " :" + message);
-	// Extract the targets and the message
-	std::string targetsStr = args.substr(0, colonPos);
-	std::string message = args.substr(colonPos + 2); // Skipping the " :"
-
-	// Split the target by comma
-	std::vector<std::string> tokens = InputParser::parseInput(targetsStr, ',');
-
-	// Debug printing
-	InputParser::printTokens(tokens);
-	std::cout << "Message: " << message << std::endl;
+	Utils::safePrint("Message: " + message);
 
 	for (std::vector<std::string>::iterator itVector = tokens.begin(); itVector != tokens.end(); itVector++) {
 		bool found = false;
@@ -505,4 +385,3 @@ void Command::handlePrivMsg(Client& client, const std::string& args, std::map<st
 		}
 	}
 }
-
