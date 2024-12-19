@@ -177,7 +177,7 @@ void Server::signalHandler(int signum)
 	// Send a message to each client
 	for (ClientsIte it = server->clients.begin(); it != server->clients.end(); ++it)
 	{
-		const char* shutDownMessage = "Server is shutting down. \n \r\n";
+		const char* shutDownMessage = "Server is shutting down.\r\n\0";
 		send(it->second->getFd(), shutDownMessage, strlen(shutDownMessage), 0);
 	}
 
