@@ -183,13 +183,13 @@ test:$(NAME)
 dclient:$(NAME)
 	@chmod +x testScripts/defaultClient.sh
 	@trap 'echo $(RED)"...Process interrupted" $(E_NC); exit 1' INT;\
-	./testScripts/defaultClient.sh > /dev/null; \
+	./testScripts/defaultClient.sh ; \
 	ret=$$?; \
 	if [ $$ret -eq 0 ]; then \
 		echo $(GREEN)"dClient finished"  $(E_NC); \
 		exit 0; \
 	else \
-		echo $(RED)"...dClient terminated"  $(E_NC); \
+		echo $(RED)"...dClient terminated. Server not found"  $(E_NC); \
 	fi;
 delUsers:
 	@pgrep -x "hexchat" > /dev/null; \
