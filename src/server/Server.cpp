@@ -221,7 +221,6 @@ void Server::signalHandler(int signum)
 Server::~Server()
 {
 	pthread_mutex_destroy(&clientsMutex);
-	// pthread_mutex_destroy(&coutMutex);
 	pthread_cancel(pingThread);
 	pthread_join(pingThread, NULL);
 

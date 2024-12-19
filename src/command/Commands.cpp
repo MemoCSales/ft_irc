@@ -200,16 +200,6 @@ void Command::handleQuit(Client& client, const std::string& args, std::map<std::
 			}
 		}
 	}
-	if (tokens.empty()) {
-		reason = "";
-	} else {
-		for (std::vector<std::string>::iterator it = tokens.begin(); it != tokens.end(); ++it) {
-			reason.append(*it);
-			if (it + 1 != tokens.end()) {
-				reason.append(" ");
-			}
-		}
-	}
 	if (reason.empty()) {
 		response = "Quit";
 	} else {
