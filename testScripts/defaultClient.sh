@@ -4,23 +4,32 @@
 SERVER="localhost"
 PORT=6667
 PASSWORD="42"
-NICK="Vicki"
-USER="Victoria"
-REALNAME="VictoriaLizarraga"
+# Lists of possible values
+NICKS=("Vicki" "Memo" "Marian" "Test")
+USERS=("Victoria" "Guillermo" "Marian" "Test")
+REALNAMES=("VictoriaL" "GuillermoC" "MarianS" "TestR")
+
+# Select random values
+index=$((RANDOM % ${#NICKS[@]}))
+NICK=${NICKS[$index]}
+USER=${USERS[$index]}
+REALNAME=${REALNAMES[$index]}
 CHANNEL="#YourChannel"
 MESSAGE="Hello, IRC!"
 
-# Function to handle signal interruptions
-cleanup()
-{
-	clear
-	echo "Signal received. Cleaning up..."
-	pkill -P $$ nc
-	exit 0
-}
 
 # Set the trap to catch SIGINT (Ctrl+C)
 trap cleanup SIGINT
+
+
+cleanup()
+{
+	echo "Signal received. Cleaning up..."
+	pkill -P $$ nc
+	exit 1
+	# wait $!
+}
+
 
 # Connect to the IRC server
 (
@@ -38,20 +47,25 @@ trap cleanup SIGINT
 	# echo "QUIT"
 	# Connect to the IRC server
 	while true; do
-		if ! read -t 1 -p "" input <&0; then
-			if [ $? -eq 1 ]; then
+		if read -r input 2>/dev/null; then
+			if [ $? -eq 1 ]; then 
 				pkill -P $$ nc
+				echo "Error: Server connection terminated" >&2
+				exit 1
 			fi
-			break
 		fi
 		echo "$input"
 		# Break the loop if the input is "QUIT"
 		if [ "$input" == "QUIT" ]; then
-			echo "QUIT :Client exiting"
-			pkill -P $$ nc
-			break
+			exit 0
+		else
+			if [ "$input" == *"Server is shutting down."* ]; then
+				pkill -P $$ nc
+				echo "*$input"
+				exit 1
+			fi
 		fi
 	done
-	exec 1>&-
 ) | nc $SERVER $PORT &
-wait $!
+NC_PID=$!
+wait $NC_PID && echo

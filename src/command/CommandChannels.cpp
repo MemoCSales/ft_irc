@@ -24,7 +24,7 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
 		}
 	}
 
-	if (!found) {
+	if (!found) {  //maybe create a function for this
 		targetChannel = _server.getOrCreateChannel(channelName);
 		targetChannel->addMember(&client);
 		targetChannel->addOperator(&client);
