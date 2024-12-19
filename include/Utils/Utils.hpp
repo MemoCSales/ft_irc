@@ -99,14 +99,6 @@ class Utils {
 	public:
 		static void safePrint(const std::string& message);
 		static void cleanupMutex();
-
-		static pthread_mutex_t coutMutex;
-};
-
-class Utils {
-	public:
-		static void safePrint(const std::string& message);
-		static void cleanupMutex();
 		static std::string truncateString(const std::string& string);
 
 		static pthread_mutex_t coutMutex;

@@ -648,3 +648,10 @@ void Utils::safePrint(const std::string& message) {
 	std::cout << message << std::endl;
 	pthread_mutex_unlock(&coutMutex);
 }
+
+std::string Utils::truncateString(const std::string& string) {
+	if (string.length() <= USERLEN) {
+		return string;
+	}
+	return (string.substr(0, USERLEN - 3)) + "...";
+}

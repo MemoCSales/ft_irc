@@ -44,17 +44,13 @@ _serverStatus(0)
 
 		char ServerIP[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &serverAddress.sin_addr, ServerIP, INET_ADDRSTRLEN);
-		char ServerIP[INET_ADDRSTRLEN];
-		inet_ntop(AF_INET, &serverAddress.sin_addr, ServerIP, INET_ADDRSTRLEN);
 		if (listen(serverFD, SOMAXCONN) == -1)
 		{
 			std::stringstream ss;
 
 			ss << "Server " << ServerIP << ":" << port << " can't listen" << std::endl;
-			ss << "Server " << ServerIP << ":" << port << " can't listen" << std::endl;
 			throw std::runtime_error(ss.str());
 		}
-		std::cout << "Server listening on " << ServerIP << ":" << port << "\n";
 		std::cout << "Server listening on " << ServerIP << ":" << port << "\n";
 
 		setNonBlocking(serverFD);
@@ -67,11 +63,6 @@ _serverStatus(0)
 
 		setupSignalHandlers();
 
-		setOperName();
-		setOperPassword();
-
-		// Start the periodic PING task
-		startPingTask();
 		setOperName();
 		setOperPassword();
 
@@ -93,13 +84,9 @@ void Server::handleNewConnection()
 		socklen_t clientLength = sizeof(clientAddress);
 		int clientSocket = accept(serverFD, (struct sockaddr *)&clientAddress, (socklen_t*)&clientLength);
 		if (clientSocket < 0)
-		int clientSocket = accept(serverFD, (struct sockaddr *)&clientAddress, (socklen_t*)&clientLength);
-		if (clientSocket < 0)
 		{
 			throw std::runtime_error("Failed to accept new connection: " + std::string(strerror(errno)));
 		}
-		setNonBlocking(clientSocket);
-		struct pollfd pfd = {clientSocket, POLLIN, 0};
 		setNonBlocking(clientSocket);
 		struct pollfd pfd = {clientSocket, POLLIN, 0};
 		pollFDs.push_back(pfd);
@@ -136,23 +123,12 @@ void Server::handleClient(int clientFD)
 		try
 		{
 			client->handleRead();
-	std::map<int, Client*>::iterator it = clients.find(clientFD);
-	if (it != clients.end()) {
-		Client* client = it->second;
-		try
-		{
-			client->handleRead();
 		}
 		catch(const std::exception& e)
 		{
 			std::cerr << "Error handling client: " << e.what() << "\r\n";
 			removeClient(clientFD);
-		}	
-		catch(const std::exception& e)
-		{
-			std::cerr << "Error handling client: " << e.what() << "\r\n";
-			removeClient(clientFD);
-		}	
+		}		
 	}
 }
 
@@ -174,8 +150,6 @@ void Server::run()
 				{
 					if (pollFDs[i].fd == serverFD)
 						handleNewConnection();
-					else
-						handleClient(pollFDs[i].fd);
 					else
 						handleClient(pollFDs[i].fd);
 				}
@@ -333,7 +307,6 @@ void Server::removeClient(int clientFD)
 	if (it != clients.end())
 	{
 		delete it->second;
-		close(it->first);
 		close(it->first);
 		clients.erase(it);
 	}

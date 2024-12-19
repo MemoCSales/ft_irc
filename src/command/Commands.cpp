@@ -44,13 +44,6 @@ void Command::handleCap(Client& client, const std::string& args, std::map<std::s
 	return ;
 }
 
-void Command::handleCap(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
-	(void) client;
-	(void) args;
-	(void) channels;
-	return ;
-}
-
 void Command::handlePass(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	(void)channels;
 	std::string password = trim(args);
@@ -193,9 +186,6 @@ void Command::handleUser(Client& client, const std::string& args, std::map<std::
 }
 
 void Command::handleQuit(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
-	std::vector<std::string> tokens = InputParser::parseInput(args, ' ');
-	std::string reason;
-	std::string response;
 	std::vector<std::string> tokens = InputParser::parseInput(args, ' ');
 	std::string reason;
 	std::string response;
