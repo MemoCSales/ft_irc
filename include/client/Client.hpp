@@ -48,6 +48,8 @@ class Client
 		bool isAuthenticated() const;
 		bool hasReceiveWelcomeMessage() const;
 		void checkAndSendWelcomeMessage();
+		bool hasReceiveWelcomeMessage() const;
+		void checkAndSendWelcomeMessage();
 
 		// Setter
 		void setAuthenticated(bool);
@@ -55,6 +57,8 @@ class Client
 		void setReceivedWelcomeMessage(bool);
 		void setRegistered(bool);
 
+		// Getters
+		bool getServerOperator() const;
 		// Getters
 		bool getServerOperator() const;
 		std::string getClientNick() const {return this->nickname;}

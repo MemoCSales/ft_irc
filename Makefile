@@ -77,7 +77,7 @@ endif
 	@printf "$(LF)⚙️ $(P_BLUE) Create $(P_GREEN)$@ ⚙️\n"
 	@echo $(GREEN)
 	@printf "$(CXX) $(D_FLAGS) $(INC) $(P_YELLOW) $^ $(P_GREEN) -o $@ $(FG_TEXT) \n\n";
-	@$(CXX) $(D_FLAGS) $(INC) $^ -o $(NAME)
+	@$(CXX) $(D_FLAGS) $(INC) $^ -o $(NAME) -lpthread
 	@printf "\n$(LF)✅ $(P_BLUE)Successfully Created $(P_GREEN)$@! ✅\n$(P_NC)"
 	@echo $(CYAN) "$$CPP" $(E_NC)
 	@echo "$$MANUAL" $(E_NC)
@@ -182,14 +182,14 @@ test:$(NAME)
 	./testScripts/runClients.sh
 dclient:$(NAME)
 	@chmod +x testScripts/defaultClient.sh
-	@trap 'echo $(RED)"...Process interrupted" $(E_NC); exit 1' INT;\
-	./testScripts/defaultClient.sh; \
+	@trap 'echo $(RED)"...client process interrupted" $(E_NC);exit 0' INT;\
+	./testScripts/defaultClient.sh ; \
 	ret=$$?; \
 	if [ $$ret -eq 0 ]; then \
 		echo $(GREEN)"dClient finished"  $(E_NC); \
 		exit 0; \
 	else \
-		echo $(RED)"...dClient terminated"  $(E_NC); \
+		echo $(RED)"...dClient terminated. Server not found"  $(E_NC); \
 	fi;
 delUsers:
 	@pgrep -x "hexchat" > /dev/null; \

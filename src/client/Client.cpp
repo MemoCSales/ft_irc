@@ -81,6 +81,7 @@ void Client::checkAndSendWelcomeMessage() {
 			setReceivedWelcomeMessage(true);
 		}
 	}
+<<<<<<< HEAD
 }
 
 void Client::setRegistered(bool flag) {
@@ -89,4 +90,6 @@ void Client::setRegistered(bool flag) {
 
 bool Client::isRegistered() const {
 	return _registered;
+=======
+>>>>>>> Marian
 }

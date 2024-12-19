@@ -91,7 +91,8 @@ void		initSeed();
 void		osPrint(std::ostream& os, int const& val);
 void		printAsciiDecimal(const std::string& str);
 std::string trim(const std::string& str);
-bool isNumber(const std::string& str);
+bool 		isNumber(const std::string& str);
+long int 	modAtoi(std::string nb);
 
 #include <Utils.tpp>
 #endif
