@@ -216,3 +216,13 @@ bool	isOperatorFct(Channel *targetChannel, Client &client){
 	}
 	return false;
 }
+
+
+void sendInformativeMessage(Client& client, const std::string& baseMessage, const std::string& details = "") {
+    std::string errorMessage = baseMessage;
+    if (!details.empty()) {
+        errorMessage += ": " + details;
+    }
+    errorMessage += "\n";
+    client.sendMessage(errorMessage);
+}

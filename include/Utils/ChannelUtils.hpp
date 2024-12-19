@@ -3,9 +3,7 @@
 #define CHANNEL_UTILS_HPP
 
 # include "Commands.hpp"
-# include "NumericMessages.hpp"
 # include "Utils.hpp"
-// # include "InputParser.hpp"
 
 bool	modePass(std::string passWord, Client& client, std::string channelName,Channel* targetChannel);
 bool	modeInvite(std::string mode, Channel *targetChannel, Client &client, std::string channelName);
@@ -15,6 +13,8 @@ bool 	modeTopic(std::string mode, Client &client, Channel *targetChammel, std::s
 
 bool	isMemberFct(Channel *targetChannel, Client &client, std::string channelName, std::map<std::string, Channel*> &channels);
 bool	isOperatorFct(Channel *targetChannel, Client &client);
+
+void sendInformativeMessage(Client& client, const std::string& baseMessage, const std::string& details = "");
 
 
 #endif
