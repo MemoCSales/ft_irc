@@ -18,64 +18,109 @@ CHANNEL="#YourChannel"
 MESSAGE="Hello, IRC!"
 
 
-# Set the trap to catch SIGINT (Ctrl+C)
-trap cleanup SIGINT
-# Function to handle signal interruptions
 cleanup()
 {
 	echo "Signal received. Cleaning up..."
-	# exec 0</dev/null
-	# pkill -P $$ nc 2>/dev/null
-	pkill -P $NC_PID #2>/dev/null
-	# kill $NC_PID #2>/dev/null
-	wait $NC_PID 2>/dev/null
-	exit 1 
+	pkill -P $$ nc
+	exit 0
 }
 
-# Function to read from the ser
-
-# Connect to the IRC server
-# Function to read from the server and send input
-# read_and_send() {
-# 	while true; do
-# 		if ! kill -0 $NC_PID 2>/dev/null; then
-# 			# echo "Connection to server lost." <&0 
-# 			break
-# 		fi
-# 		read -r input #<&0 2>/dev/null
-# 		echo "$input" <&0
-# 	done
-# }
+# Set the trap to catch SIGINT (Ctrl+C)
+trap cleanup SIGINT
 
 # Connect to the IRC server
 (
-    sleep 1
-    echo "PASS $PASSWORD"
-    sleep 1
-    echo "NICK $NICK"
-    sleep 1
-    echo "USER $USER 0 * :$REALNAME"
-    sleep 1
+	sleep 1
+	echo "PASS $PASSWORD"
+	sleep 1
+	echo "NICK $NICK"
+	sleep 1
+	echo "USER $USER 0 * :$REALNAME"
+	sleep 1
+	# echo "PRIVMSG $CHANNEL :$MESSAGE"
+	# echo "JOIN $CHANNEL"
+	# sleep 1
+	# sleep 1
+	# echo "QUIT"
+	# Connect to the IRC server
 	while true; do
-		if ! read -r input <&0 ; then
-			if [ $? -eq 1 ]; then 
+		if ! read -t 1 -p "" input <&0; then
+			if [ $? -eq 1 ]; then
+				pkill -P $$ nc
 				break
 			fi
 			break
-			# break
 		fi
-		# read -r input <&0 >/dev/null;
 		echo "$input"
-		if [ "$input" == "QUIT" ]; then
-			# echo "QUIT :Client exiting"
-			break
-		fi
+		# # Break the loop if the input is "QUIT"
+		# if [ "$input" == "QUIT" ]; then
+		# 	echo "QUIT :Client exiting"
+		# 	pkill -P $$ nc
+		# 	break
+		# fi
 	done
-	# exit 0 >/dev/null;
 	exec 1>&-
 ) | nc $SERVER $PORT &
-NC_PID=$!
-wait $NC_PID 2>/dev/null
+wait $!
+# pkill -P $$ nc
+# Set the trap to catch SIGINT (Ctrl+C)
+# trap cleanup SIGINT
+# # Function to handle signal interruptions
+# cleanup()
+# {
+# 	echo "Signal received. Cleaning up..."
+# 	# exec 0</dev/null
+# 	# pkill -P $$ nc 2>/dev/null
+# 	pkill -P $NC_PID #2>/dev/null
+# 	# kill $NC_PID #2>/dev/null
+# 	wait $NC_PID 2>/dev/null
+# 	exit 1 
+# }
+
+# # Function to read from the ser
+
+# # Connect to the IRC server
+# # Function to read from the server and send input
+# # read_and_send() {
+# # 	while true; do
+# # 		if ! kill -0 $NC_PID 2>/dev/null; then
+# # 			# echo "Connection to server lost." <&0 
+# # 			break
+# # 		fi
+# # 		read -r input #<&0 2>/dev/null
+# # 		echo "$input" <&0
+# # 	done
+# # }
+
+# # Connect to the IRC server
+# (
+#     sleep 1
+#     echo "PASS $PASSWORD"
+#     sleep 1
+#     echo "NICK $NICK"
+#     sleep 1
+#     echo "USER $USER 0 * :$REALNAME"
+#     sleep 1
+# 	while true; do
+# 		if ! read -r input <&0 ; then
+# 			if [ $? -eq 1 ]; then 
+# 				break
+# 			fi
+# 			break
+# 			# break
+# 		fi
+# 		# read -r input <&0 >/dev/null;
+# 		echo "$input"
+# 		if [ "$input" == "QUIT" ]; then
+# 			# echo "QUIT :Client exiting"
+# 			break
+# 		fi
+# 	done
+# 	# exit 0 >/dev/null;
+# 	exec 1>&-
+# ) | nc $SERVER $PORT &
+# NC_PID=$!
+# wait $NC_PID 2>/dev/null
 
 		# if [ "$input" != "" ]; then
 		# 	echo "$input"
