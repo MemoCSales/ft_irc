@@ -51,7 +51,8 @@ _serverStatus(0)
 			ss << "Server " << ServerIP << ":" << port << " can't listen" << std::endl;
 			throw std::runtime_error(ss.str());
 		}
-		std::cout << "Server listening on " << ServerIP << ":" << port << "\n";
+		std::cout << getColorStr(FGREEN, "Server listening on ") <<
+		 ServerIP << ":" << port << std::endl << std::endl;
 
 		setNonBlocking(serverFD);
 
@@ -142,7 +143,7 @@ void Server::run()
 		{
 			int pollCount = poll(pollFDs.data(), pollFDs.size(), -1);
 			if (pollCount < 0)
-				throw std::runtime_error("Poll failed: " + std::string(strerror(errno)));
+				throw std::runtime_error(std::string(strerror(errno)));
 
 			for (size_t i = 0; i < pollFDs.size(); ++i)
 			{
@@ -171,7 +172,7 @@ void Server::cleanData()
 	// Send a message to each client
 	for (ClientsIte it = server->clients.begin(); it != server->clients.end(); ++it)
 	{
-		const char* shutDownMessage = "Server is shutting down.\0";
+		const char* shutDownMessage = "Server is shutting down.\n\0";
 		send(it->second->getFd(), shutDownMessage, strlen(shutDownMessage), 0);
 	}
 

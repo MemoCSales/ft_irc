@@ -56,10 +56,10 @@ class Server
 
 	public:
 		Server(int& port, std::string const& password);
-		static void signalHandler(int signum); // does it need to be static ?
+		static void signalHandler(int signum);
 		void handleNewConnection();
 		void handleClient(int clientFD);
-		static Server* getInstance(); // is it the only solution?
+		static Server* getInstance();
 		~Server();
 		void run();
 		std::string welcomeMsg();
