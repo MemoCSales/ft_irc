@@ -41,6 +41,14 @@ void Channel::removeOperator(Client *client) {
 	}
 }
 
+void Channel::removePeople(Client *client) {
+	// std::lock_guard<std::mutex> lock(channelMutex);
+	std::vector<Client *>::iterator it = std::remove(people.begin(), people.end(), client);
+	if (it != people.end()) {
+		people.erase(it, people.end());
+	}
+}
+
 void Channel::broadcast(const std::string &message, Client *sender) {
 	// std::lock_guard<std::mutex> lock(channelMutex);
 	std::string messageWithSender = "[" + _name + "][" + sender->getNick() + "] " + message + "\n";
@@ -73,3 +81,26 @@ bool Channel::isMember(Client *client) {
 	}
 	return found;
 }
+
+bool Channel::isOperator(Client *client) {
+	bool found = false;
+	for (std::vector<Client*>::iterator it = operators.begin(); it != operators.end(); it++) {
+		if ((*it)->nickname == client->nickname) {
+			found = true;
+			return found;
+		}
+	}
+	return found;
+}
+
+bool Channel::isInvited(Client *client) {
+	bool found = false;
+	for (std::vector<Client*>::iterator it = people.begin(); it != people.end(); it++) {
+		if ((*it)->nickname == client->nickname) {
+			found = true;
+			return found;
+		}
+	}
+	return found;
+}
+
