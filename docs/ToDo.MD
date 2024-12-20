@@ -37,27 +37,8 @@
 - [ ] Test multiple users join channel and kill server
 - [ ] Broadcast message when new client joins to everyone
 - [ ] Topic message is shown in  old clients but not in new client !!!!
-- [ ] User joint channel, another two did the same, send message to all, then first user was terminated, try to sent a message broadcasted from another client and got this error
-```bash
-==================
-WARNING: ThreadSanitizer: heap-use-after-free (pid=255453)
-  Read of size 4 at 0x7b3000000000 by main thread:
-    #0 Client::getSocket() const <null> (ircserv+0x4d1bc)
-    #1 Channel::broadcast(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, Client*) <null> (ircserv+0x4c6ed)
-    #2 Command::handlePrivMsg(Client&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::map<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, Channel*, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, Channel*> > >&) <null> (ircserv+0x81c86)
-    #3 Command::execute(Client&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::map<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, Channel*, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, Channel*> > >&) <null> (ircserv+0x7c30c)
-    #4 CommandParser::parseAndExecute(Client&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::map<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, Channel*, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, Channel*> > >&) <null> (ircserv+0x7915f)
-    #5 Client::handleRead() <null> (ircserv+0x51346)
-    #6 Server::handleClient(int) <null> (ircserv+0x54d54)
-    #7 Server::run() <null> (ircserv+0x556aa)
-    #8 main <null> (ircserv+0x8d607)
-
-  Previous write of size 8 at 0x7b3000000000 by main thread:
-    [failed to restore the stack]
-
-SUMMARY: ThreadSanitizer: heap-use-after-free (/home/lilizarr/42_Cursus/ft_irc/ircserv+0x4d1bc) in Client::getSocket() const
-==================
-```
+- [x] User joint channel, another two did the same, send message to all, then first user was terminated, try to sent a message broadcasted from another client and got this error
+- [x] Broadcast when client termnates or leave channel
 
 # NOTES
 
