@@ -3,21 +3,15 @@
 #include <cstring>
 # include "NumericMessages.hpp"
 
-Client::Client(int fd) : _clientFD(fd), _authenticated(false), _serverOperator(false), _welcomeMessage(false), nickname(""), username(""), _buffer("") {
-	pthread_mutex_init(&clientMutex, NULL);
-}
+Client::Client(int fd) : _clientFD(fd), _authenticated(false), _serverOperator(false), _welcomeMessage(false), nickname(""), username(""), _buffer("") {}
 
 void Client::sendMessage(const std::string &message)
 {
-	pthread_mutex_lock(&clientMutex);
 	std::string msg = message + "\r\n";
 	send(_clientFD, msg.c_str(), msg.length(), 0);
-	pthread_mutex_unlock(&clientMutex);
 }
 
-Client::~Client() {
-	pthread_mutex_destroy(&clientMutex);
-}
+Client::~Client() {}
 
 void Client::handleRead() {
 	char buffer[MAX_BUFFER];
@@ -34,9 +28,7 @@ void Client::handleRead() {
 	}
 	buffer[nbytes] = '\0';
 	this->_buffer += buffer;
-	std::ostringstream oss;
-	oss << "Received message: " << buffer;
-	Utils::safePrint(oss.str());
+	std::cout << "Received message: " << buffer << std::endl;
 
 	// Process commands
 	Server* server = Server::getInstance();
@@ -47,7 +39,7 @@ void Client::handleRead() {
 		std::string command = this->_buffer.substr(0, pos);
 		this->_buffer.erase(0, pos + 2);
 
-		Utils::safePrint("Processing command: " + command);
+		std::cout << "Processing command: " << command << std::endl;
 		commandParser.parseAndExecute(*this, command, server->getChannels());
 	}
 }
@@ -89,12 +81,4 @@ void Client::checkAndSendWelcomeMessage() {
 			setReceivedWelcomeMessage(true);
 		}
 	}
-}
-
-void Client::setRegistered(bool flag) {
-	_registered = flag;
-}
-
-bool Client::isRegistered() const {
-	return _registered;
 }

@@ -21,9 +21,7 @@ Command::Command(CommandType type, Server& server) : _type(type), _server(server
 	commands[MODE] = &Command::handleMode;
 }
 
-Command::~Command() {
-	commands.clear();
-}
+Command::~Command() {}
 
 void Command::execute(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
 	if (commands.find(_type) != commands.end()) {
@@ -49,7 +47,7 @@ void Command::handlePass(Client& client, const std::string& args, std::map<std::
 	}
 	if (password == _server.getPassword()) {
 		client.setAuthenticated(true);
-		Utils::safePrint("Client authenticated -> fd: " + toStr(client.getFd()));
+		std::cout << "Client authenticated -> fd: " << client.getFd() << std::endl;
 		client.sendMessage("You have been authenticated. Please continue your registration.");
 		if (!client.nickname.empty() && !client.username.empty()) {
 			response = RPL_WELCOME(client.nickname);
@@ -101,11 +99,7 @@ void Command::handleNick(Client& client, const std::string& args, std::map<std::
 			}
 		}
 	}
-	// Check if registration OK
-	if (!client.username.empty()) {
-		client.setRegistered(true);
-	} 
-	Utils::safePrint("NICK command received. Client nickname changed from: " + toStr(oldNick) + " to: " + toStr(newNick));
+	std::cout << "NICK command received. Client nickname changed from: " << oldNick << " to: " << newNick << std::endl;
 }
 
 
@@ -155,11 +149,7 @@ void Command::handleUser(Client& client, const std::string& args, std::map<std::
 	client.username = userName;
 	client.realname = realName;
 
-	// Check if registration OK
-	if (!client.nickname.empty()) {
-		client.setRegistered(true);
-	} 
-	Utils::safePrint("USER command received. Client username set to: " + toStr(userName) + ", realname set to: " + toStr(realName));
+	std::cout << "USER command received. Client username set to: " << userName << ", realname set to: " << realName << std::endl;
 }
 
 void Command::handleQuit(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
@@ -190,7 +180,7 @@ void Command::handleQuit(Client& client, const std::string& args, std::map<std::
 	
 	client.sendMessage(response);
 	throw std::runtime_error("Client disconnected");
-	Utils::safePrint("QUIT command received. Client disconnected with the reason: " + response);
+	std::cout << "QUIT command received. Client disconnected with the reason: " << response << std::endl;
 }
 
 /* PING command is sent by either clients or servers to check the other
@@ -225,7 +215,7 @@ void Command::handlePong(Client& client, const std::string& args, std::map<std::
 		client.sendMessage(response);
 		return;
 	}
-	Utils::safePrint("PONG command received with the token: " + reason);
+	std::cout << "PONG command received with the token: " << reason  << std::endl;
 }
 
 void Command::handleOper(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
@@ -269,7 +259,7 @@ void Command::handleOper(Client& client, const std::string& args, std::map<std::
 	client.setServerOperator(true);
 	response = RPL_YOUREOPER;
 	client.sendMessage(response);
-	Utils::safePrint("Client " + client.nickname + " is now a server operator.");
+	std::cout << "Client " << client.nickname << " is now a server operator." << std::endl;
 }
 
 void Command::handlePrivMsg(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
@@ -299,7 +289,7 @@ void Command::handlePrivMsg(Client& client, const std::string& args, std::map<st
 
 	// Debug printing
 	InputParser::printTokens(tokens);
-	Utils::safePrint("Message: " + message);
+	std::cout << "Message: " << message << std::endl;
 
 	for (std::vector<std::string>::iterator itVector = tokens.begin(); itVector != tokens.end(); itVector++) {
 		bool found = false;

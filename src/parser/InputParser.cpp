@@ -14,6 +14,7 @@ std::string InputParser::trim(const std::string& str) {
 std::vector<std::string> InputParser::parseInput(const std::string& args, char delimeter) {
 	std::vector<std::string> tokens;
 	std::string trimmedArgs = InputParser::trim(args);
+	std::cout << "trimmecArgs: " << trimmedArgs << std::endl;
 	printAsciiDecimal(trimmedArgs);
 	std::stringstream stream(trimmedArgs);
 	std::string token;
@@ -45,6 +46,6 @@ void InputParser::printTokens(std::vector<std::string>& tokens) {
 	size_t index = 0;
 	for (std::vector<std::string>::iterator it = tokens.begin(); it != tokens.end(); it++, index++) {
 		*it = trim(*it);
-		Utils::safePrint("Target [" + toStr(index) + "]: " + toStr(*it));
+		std::cout << "Target [" << index << "]: " << *it << std::endl;
 	}
 }

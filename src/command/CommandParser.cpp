@@ -20,8 +20,8 @@ void CommandParser::parseAndExecute(Client& client, const std::string& message, 
 	std::getline(stream, args);
 	// args = Utils::trim(args);
 	
-	// std::cout << "cmdName: " << commandName << std::endl;
-	// std::cout << "Args: " << args << std::endl;
+	std::cout << "cmdName: " << commandName << std::endl;
+	std::cout << "Args: " << args << std::endl;
 	if (commandName[0] == '#') {
 		Client *clientPtr = &client;
 		bool isMember = false;
@@ -47,15 +47,10 @@ void CommandParser::parseAndExecute(Client& client, const std::string& message, 
 		}
 		return;
 	}
+	else {
 		CommandPtr command = commandFactory->createCommand(commandName);
 		if (command) {
-			try	{
-				command->execute(client, args, channels);
-			}
-			catch(const std::exception& e)	{
-				delete command;
-				throw;
-			}
+			command->execute(client, args, channels);
 			delete command;
 
 			// Check if client has completed the registration
@@ -64,4 +59,5 @@ void CommandParser::parseAndExecute(Client& client, const std::string& message, 
 			std::string response = ERR_UNKNOWNCOMMAND(commandName);
 			client.sendMessage(response);
 		}
+	}
 }

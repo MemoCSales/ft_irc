@@ -54,6 +54,8 @@ void Channel::broadcast(const std::string &message, Client *sender) {
 }
 
 void	Channel::broadcastTopic( Client* sender){
+  // std::lock_guard<std::mutex> lock(channelMutex);
+//  std::cout << "entered in brodcast topic\n";
   std::string message = "The topic of the channel is: " + this->getTopic() + "\n";
   send(sender->getSocket(), message.c_str(), message.size() + 1, 0);
 }

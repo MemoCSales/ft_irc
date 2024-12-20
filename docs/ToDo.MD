@@ -55,3 +55,78 @@ In IRC, server replies are identified by numeric codes. These codes are used to 
 - **404**: ERR_CANNOTSENDTOCHAN - Cannot send to channel.
 - **421**: ERR_UNKNOWNCOMMAND - Unknown command.
 - **433**: ERR_NICKNAMEINUSE - Nickname is already in use.
+
+## EVAL
+
+Basic Checks
+[ ] Makefile and Compilation:
+
+	Ensure the project compiles correctly using the Makefile.
+
+	Verify the executable is named ircserv.
+
+[ ] Single poll() Call:
+
+	Confirm there is only one poll() call in the code, located in Server::run.
+
+[ ] poll() Before accept, read/recv, write/send:
+
+	Verify poll() is called before accept, recv, and send in the respective functions.
+
+[ ] fcntl() Usage:
+
+	Ensure fcntl(fd, F_SETFL, O_NONBLOCK) is used correctly in Server::setNonBlocking.
+
+### Networking Specials
+
+[ ] Partial Commands:
+
+	Use nc to send partial commands and verify the server handles them correctly.
+
+[ ] Unexpected Client Kill:
+
+	Kill a client unexpectedly and check if the server remains operational for other connections and new clients.
+
+[ ] Half Command Sent:
+
+	Use nc to send half a command and verify the server does not enter an odd state or get blocked.
+
+[ ] Stop Client and Flood Channel:
+
+	Stop a client connected to a channel and flood the channel using another client. Ensure the server does not hang and processes stored commands when the client resumes.
+
+### Client Commands Basic
+
+[ ] Authentication, Nickname, Username, Join Channel:
+
+	Test these functionalities using both nc and the reference IRC client.
+
+[ ] Private Messages (PRIVMSG):
+
+	Verify PRIVMSG functionality with different parameters.
+
+### Client Commands Channel Operator
+
+[ ] Regular User Privileges:
+
+	Ensure regular users do not have channel operator privileges.
+
+[ ] Channel Operator Commands:
+
+	Test all channel operator commands using both nc and the reference IRC client.
+
+### Memory Leaks
+
+[ ] Memory Leak Check:
+
+	Use tools like valgrind or leaks to check for memory leaks during various operations.
+
+### Additional Tests
+
+[ ] File Transfer (if implemented):
+
+	Test file transfer functionality with the reference IRC client.
+
+[ ] IRC Bot (if implemented):
+
+	Test the IRC bot functionality.

@@ -93,14 +93,6 @@ void		printAsciiDecimal(const std::string& str);
 std::string trim(const std::string& str);
 bool isNumber(const std::string& str);
 
-class Utils {
-	public:
-		static void safePrint(const std::string& message);
-		static void cleanupMutex();
-
-		static pthread_mutex_t coutMutex;
-};
-
 #include <Utils.tpp>
 #endif
 

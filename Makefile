@@ -55,7 +55,11 @@ endif
 # MAKEFLAGS	+= -j4 #--debug #// -j for multinodes
 ifeq ($(S), 1)
 #------ INCLUDE SANATIZER FLAGS ------#
-D_FLAGS		+= -pthread -fsanitize=thread,undefined,vptr  -fno-optimize-sibling-calls
+D_FLAGS		+= -pthread -fsanitize=thread,undefined,vptr -fno-optimize-sibling-calls
+endif
+ifeq ($(S), 2)
+#------ INCLUDE SANATIZER FLAGS ------#
+D_FLAGS		+= -fsanitize=address,undefined,vptr
 endif
 # To enable verbose output during compilation Make V=1
 V ?= 0
