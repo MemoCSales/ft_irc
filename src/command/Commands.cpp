@@ -25,6 +25,7 @@ Command::Command(CommandType type, Server& server) : _type(type), _server(server
 	commands[KICK] = &Command::handleKick;
 	commands[INVITE] = &Command::handleInvite;
 	commands[MODE] = &Command::handleMode;
+	commands[WHO] = &Command::handleWho;
 }
 
 Command::~Command() {
@@ -357,4 +358,43 @@ void Command::handlePrivMsg(Client& client, const std::string& args, std::map<st
 			}
 		}
 	}
+}
+
+void Command::handlePrivMsg(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
+	std::string target = trim(args);
+	std::string response;
+	std::string command = "WHO";
+
+	if (target.empty()) {
+		client.sendMessage(ERR_NEEDMOREPARAMS(command));
+		return;
+	}
+
+	if (target[0] == '#') {
+		// Target is a channel
+		Channel* channel = _server.getChannel(target);
+		if (!channel) {
+			client.sendMessage(ERR_NOSUCHCHANNEL(target));
+			return;
+		}
+
+		const std::vector<Client*>& members = channel->getMembers();
+		std::vector<Client*>::const_iterator it = members.begin();
+		for (; it != members.end(); ++it) {
+			Client* member = *it;
+			response = RPL_WHOREPLY(channel->getName(), member->getNick(), member->username, member->realname);
+			client.sendMessage(response);
+		}
+	} else {
+		// Target is a user
+		Client* targetClient = _server.getClientByNick(target);
+		if (!targetClient) {
+			client.sendMessage(ERR_NOSUCKNICK(target));
+			return;
+		}
+
+		response = RPL_WHOREPLY("*", targetClient->getNick(), targetClient->username, targetClient->realname);
+		client.sendMessage(response);
+	}
+	client.sendMessage(RPL_ENDOFWHO(target));
 }
