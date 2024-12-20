@@ -126,7 +126,7 @@ re: fclean all
 ## do not use yet as it does not handle 
 val: $(NAME)
 	@echo $(RED) $(VALGRIND) ./$(NAME) $$port $$pass $(E_NC) "\n"
-	@$(VALGRIND) ./$(NAME) $$port $$pass ; echo
+	@$(VALGRIND) ./$(NAME) $$port $$pass ; echo 
 leaks: $(NAME)
 	@echo $(RED)$(MAC_LEAKS) ./$(NAME) "$i" $(E_NC)  "\n"
 	@$(MAC_LEAKS) ./$(NAME)
@@ -250,7 +250,7 @@ checkOpen:
 			watch -n 2 "lsof -p $$pid 2>/dev/null | awk 'NR==1 || \$$4 ~ /u\$$/ {print \$$1, \$$2, \$$4, \$$5, \$$9, \$$10, \$$11}'"; \
 		done; \
 	fi
-freePort: checkOpen;
+freePort:
 	@port="6667";\
 	pids=$$(lsof -t -i :$$port); \
 	if [ -z "$$pids" ]; then \
