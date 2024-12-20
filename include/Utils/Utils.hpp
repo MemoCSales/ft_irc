@@ -9,6 +9,7 @@
 # include <cxxabi.h>
 # include <cstring>
 # include <cstdio>
+# include "NumericMessages.hpp"
 # ifndef DEBUG
 #  define DEBUG 0
 # endif
@@ -91,7 +92,17 @@ void		initSeed();
 void		osPrint(std::ostream& os, int const& val);
 void		printAsciiDecimal(const std::string& str);
 std::string trim(const std::string& str);
-bool isNumber(const std::string& str);
+bool 		isNumber(const std::string& str);
+long int 	modAtoi(std::string nb);
+
+class Utils {
+	public:
+		static void safePrint(const std::string& message);
+		static void cleanupMutex();
+		static std::string truncateString(const std::string& string);
+
+		static pthread_mutex_t coutMutex;
+};
 
 #include <Utils.tpp>
 #endif

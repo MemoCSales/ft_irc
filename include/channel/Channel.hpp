@@ -35,7 +35,7 @@ public:
 	void	addAllowedPeople(Client *client);
 	void	removeOperator(Client *client);
 	void	broadcastTopic(Client* sender);
-	bool isMember(Client *client);
+	bool 	isMember(Client *client);
 	~Channel();
 
 			//getters
@@ -59,9 +59,7 @@ public:
 	void	setInviteStatus(bool flag){_inviteOnly = flag;}
 	void	setLimit(int nb){_limit = nb;}
 
-	////just for  testing/debuging ///
-	void printOperators();
-	void printClients();
+
 
 
 };

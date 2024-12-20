@@ -8,7 +8,6 @@
 # include <cstring> // strerror
 # include <sys/socket.h>
 #include <vector>
-// #include <Server.hpp>
 #include <Channel.hpp>
 
 # include "CommandParser.hpp"
@@ -22,7 +21,6 @@
 # define MAX_BUFFER 4096
 # endif
 
-// class Server;
 class Channel;
 
 class Client 
@@ -30,6 +28,7 @@ class Client
 	private:
 		int _clientFD;
 		bool _authenticated;
+		bool _registered;
 		bool _serverOperator;
 		bool _welcomeMessage;
 	public:
@@ -38,6 +37,7 @@ class Client
 		std::string realname;
 		std::string _buffer;
 		pthread_t thread;
+		pthread_mutex_t clientMutex;
 
 		Client(int fd);
 		~Client();
@@ -52,12 +52,14 @@ class Client
 		void setAuthenticated(bool);
 		void setServerOperator(bool);
 		void setReceivedWelcomeMessage(bool);
+		void setRegistered(bool);
 
 		// Getters
 		bool getServerOperator() const;
 		std::string getClientNick() const {return this->nickname;}
 		std::string getNick() const {return nickname;}
 		int getSocket() const { return _clientFD; }
+		bool isRegistered() const;
 
 };
 

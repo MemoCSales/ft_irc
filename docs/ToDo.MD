@@ -19,9 +19,15 @@
 - [ ] check with helgrind for threads and file descriptors
 
 ## Client
+
 - [x] Check python testHexChaty on server message
 	[ ] Delete server info script and automatic message
 - [ ] Check if client connection is a new file descriptor when joining a channel or making new connection, is 
+
+## Channels
+
+- [ ] Test one user join channel and kill server
+- [ ] Test multiple users join channel and kill server
 
 # NOTES
 

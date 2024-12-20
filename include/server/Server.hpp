@@ -11,6 +11,7 @@
 # include <iostream>
 # include <cerrno>
 # include <cstring> // strerror
+# include <csignal>
 
 # ifndef DEBUG
 #  define DEBUG 0
@@ -37,16 +38,18 @@ class Server
 		std::string const lockFilePath;
 		static Server* instance;
 		pthread_t pingThread;
-
+		pthread_mutex_t clientsMutex;
 		// Server operator credentials
 		std::string _operName;
 		std::string _operPassword;
+		volatile sig_atomic_t _serverStatus;
 
 		void setNonBlocking(int fd);
 		void setupSignalHandlers();
 		void createLockFile();
 		void removeLockFile();
 		void removeClient(int clientFD);
+		void cleanData(void);
 		// Disable copy constructor and assignment operator
 		Server(const Server&);
 		Server& operator=(const Server&);
@@ -65,8 +68,6 @@ class Server
 		std::map<int, Client*>& getClients();
 		void sendPingToClients();
 		void startPingTask();
-		static void* clientHandler(void* arg);
-		// friend class ClientHandler;
 		std::string const getOperName() const;
 		std::string const getOperPassword() const;
 		void setOperName(void);
@@ -114,6 +115,7 @@ class SockAddressInitializer
 			addr.sin_family = AF_INET;
 			//tp change
 			inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);
+			// addr.sin_addr.s_addr = INADDR_ANY;
 			addr.sin_port = htons(port);
 		}
 
