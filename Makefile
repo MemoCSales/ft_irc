@@ -247,7 +247,7 @@ checkOpen:
 	else \
 		for pid in $$pids; do \
 			echo "Open files for process ID: $$pid"; \
-			lsof -p $$pid; \
+			watch -n 2 "lsof -p $$pid 2>/dev/null | awk 'NR==1 || \$$4 ~ /u\$$/ {print \$$1, \$$2, \$$4, \$$5, \$$9, \$$10, \$$11}'"; \
 		done; \
 	fi
 freePort: checkOpen;
