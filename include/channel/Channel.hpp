@@ -34,8 +34,11 @@ public:
 	void	addOperator(Client *client);
 	void	addAllowedPeople(Client *client);
 	void	removeOperator(Client *client);
+	void	removePeople(Client *client);
 	void	broadcastTopic(Client* sender);
 	bool 	isMember(Client *client);
+	bool	isOperator(Client *client);
+	bool	isInvited(Client *client);
 	~Channel();
 
 			//getters
@@ -50,6 +53,7 @@ public:
 	bool		getInviteStatus(){return _inviteOnly;}
 	std::string getTopic(){return _topic;}
 	int 		getLimit(){return _limit;}
+	
 
 	// setters
 	void	setName(std::string chanelName){_name = chanelName ;}

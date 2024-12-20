@@ -127,6 +127,32 @@ void Server::handleClient(int clientFD)
 		catch(const std::exception& e)
 		{
 			std::cerr << "Error handling client: " << e.what() << "\r\n";
+
+				ChannelIte itchannel = channels.begin();
+				for (; itchannel != channels.end(); itchannel++)
+				{
+					Channel* current = itchannel->second;
+					if (current->isMember(client)) {
+						current->removeMember(client);
+					}
+					if (current->isInvited(client)) {
+						current->removePeople(client);
+					}
+					if (current->isOperator(client)) {
+						current->removeOperator(client);
+						current->broadcast("has quitted.", client);
+						if (current->getOperators().size() < 1 && current->getMembers().size() > 0) {
+							Client * newOperator = *(current->getMembers().begin());
+							current->addOperator(newOperator);
+							current->broadcast("Hi! I'm the new operator of this channel.", newOperator);
+							newOperator->sendMessage("You're the new Operator of the channel " + toStr(current->getName()));
+							Utils::safePrint("New Operator in channel: " + newOperator->getClientNick());		
+						} else {
+							Utils::safePrint("Channel removed: " + itchannel->first);
+							removeChannel(itchannel->first);
+						}
+					}
+				}
 			removeClient(clientFD);
 		}		
 	}
