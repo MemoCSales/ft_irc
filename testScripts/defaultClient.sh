@@ -17,6 +17,11 @@ REALNAME=${REALNAMES[$index]}
 CHANNEL="#YourChannel"
 MESSAGE="Hello, IRC!"
 
+is_server_running()
+{
+	nc -z $SERVER $PORT
+	return $?
+}
 
 # Set the trap to catch SIGINT (Ctrl+C)
 trap cleanup SIGINT
@@ -53,6 +58,10 @@ cleanup()
 				echo "Error: Server connection terminated" >&2
 				exit 1
 			fi
+		fi
+		if ! is_server_running; then
+			echo "Error: Server is not running" 1>&2
+			exit 1
 		fi
 		echo "$input"
 		# Break the loop if the input is "QUIT"
