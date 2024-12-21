@@ -65,7 +65,6 @@ cleanup()
 			fi
 		fi
 		if ! is_server_running 1>/dev/null ; then
-			echo "**Error: Server is not running" 1>&2
 			pkill -P $$ nc 1>&2
 			break
 		fi		

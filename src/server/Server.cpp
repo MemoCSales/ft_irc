@@ -170,7 +170,7 @@ void Server::cleanData()
 	for (ClientsIte it = server->clients.begin(); it != server->clients.end(); ++it)
 	{
 		Client* client =  it->second;
-		std::string shutDownMessage= "ERROR :Closing Link: Server is shutting down.";
+		std::string shutDownMessage= "ERROR: Closing Link: Server is shutting down.";
 		client->sendMessage(shutDownMessage);
 	}
 
