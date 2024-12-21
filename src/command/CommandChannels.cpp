@@ -261,12 +261,14 @@ void	Command::handleTopic(Client& client, const std::string& args, std::map<std:
 					return;
 				}
 				targetChannel->setTopic(topic,client.getNick());
-				sendInformativeMessage(client,"Channel topic set to", targetChannel->getTopic());
+				std::string topicMsg = RPL_TOPIC(client.getNick(), client.username, targetChannel->getName(), targetChannel->getTopic());
+				client.sendMessage(topicMsg);
 				targetChannel->broadcastTopic(&client);
 				Utils::safePrint(toStr(targetChannel->getName()) + " has the topic set to: " + targetChannel->getTopic());
 			}
 			else{
-				sendInformativeMessage(client,"You 're not an operator in", channelName);
+				std::string errorMsg = RPL_PRIVMSG(client.getNick(), client.username, channelName, ERR_CHANOPRIVSNEEDED(channelName));
+				client.sendMessage(errorMsg);
 				return ;
 			}
 		}
@@ -276,7 +278,8 @@ void	Command::handleTopic(Client& client, const std::string& args, std::map<std:
 					return;
 				}
 			targetChannel->setTopic(topic,client.getNick());
-			sendInformativeMessage(client,"Channel topic set to", targetChannel->getTopic());
+			std::string topicMsg = RPL_TOPIC(client.getNick(), client.username, targetChannel->getName(), targetChannel->getTopic());
+			client.sendMessage(topicMsg);
 			targetChannel->broadcastTopic(&client);
 			Utils::safePrint(toStr(targetChannel->getName()) + " has the topic set to: " + targetChannel->getTopic());
 		}
@@ -402,8 +405,8 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 			if(!modeTopic(mode,client,targetChannel,channelName)) return ;
 		}
 		else{
-			std::string messageWithSender = ":" + client.getNick() + "!" + client.username + "@localhost PRIVMSG " + targetChannel->getName() + " :" + "You can only use one of the appropriate flags: i,t,k,o,l.!!!!!";
-			client.sendMessage(messageWithSender);
+			std::string messageWithSender = "You can only use one of the appropriate flags: i,t,k,o,l.";
+			client.sendMessage(RPL_PRIVMSG(client.getNick(), client.username, targetChannel->getName(), messageWithSender));
 		}
 	}
 	else{
