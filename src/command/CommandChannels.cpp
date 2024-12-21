@@ -191,12 +191,12 @@ void	Command::handlePart(Client& client, const std::string& args, std::map<std::
 		return;
 	}
 	if (targetChannel->getOperators().size() == 0 && targetChannel->getMembers().size() > 0) {
-        Client* oldestMember = targetChannel->getMembers().front();
-        targetChannel->addOperator(oldestMember);
-        std::string promotionMessage = "You have been promoted to operator in channel: " + targetChannel->getName() + "\n";
-        oldestMember->sendMessage(promotionMessage);
+		Client* oldestMember = targetChannel->getMembers().front();
+		targetChannel->addOperator(oldestMember);
+		std::string promotionMessage = "You have been promoted to operator in channel: " + targetChannel->getName() + "\n";
+		oldestMember->sendMessage(promotionMessage);
 		Utils::safePrint(toStr(oldestMember->getNick()) + " promoted to operator in channel: " + toStr(targetChannel->getName()));
-    }
+	}
 
 }
 

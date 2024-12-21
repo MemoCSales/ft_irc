@@ -60,10 +60,7 @@ _serverStatus(0)
 		pollFDs.push_back(serverP_FDs);
 
 		pthread_mutex_init(&clientsMutex, NULL);
-		// pthread_mutex_init(&coutMutex, NULL);
-
 		setupSignalHandlers();
-
 		setOperName();
 		setOperPassword();
 
@@ -103,8 +100,8 @@ void Server::handleNewConnection()
 		int clientPort = ntohs(clientAddress.sin_port);
 
 		std::ostringstream oss;
-		oss << "New client connected: " << clientIP << ":" + toStr(clientPort) 
-					<< "[" << toStr(clientSocket) << "]";
+		oss << getColorStr(FGREEN, "New client connected: ") << clientIP << ":" << clientPort
+				<< "[" << clientSocket << "]" << std::endl;
 		Utils::safePrint(oss.str());
 
 		// Send welcome message
