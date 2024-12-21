@@ -199,7 +199,7 @@ void Command::handleQuit(Client& client, const std::string& args, std::map<std::
 		response = "Quit";
 	} else {
 		reason = Utils::truncateString(reason);
-		response = RPL_QUIT(reason);
+		response = RPL_QUIT(client.nickname, client.username, reason);
 	}
 	// todo: Check if this is the right approach for deletion
 	for (ChannelIte it = channels.begin(); it != channels.end(); it++) {
@@ -289,7 +289,7 @@ void Command::handleOper(Client& client, const std::string& args, std::map<std::
 	}
 
 	client.setServerOperator(true);
-	response = RPL_YOUREOPER;
+	response = RPL_YOUREOPER(client.nickname);
 	client.sendMessage(response);
 	Utils::safePrint("Client " + client.nickname + " is now a server operator.");
 }
@@ -297,6 +297,7 @@ void Command::handleOper(Client& client, const std::string& args, std::map<std::
 
 
 void Command::handlePrivMsg(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
+	(void) channels;
 	std::string command = "PRIVMSG";
 
 	// Checks if the Client is already authenticated
@@ -331,19 +332,20 @@ void Command::handlePrivMsg(Client& client, const std::string& args, std::map<st
 
 		// Check if the target is a channel
 		if (target[0] == '#') {
-			Channel* channel = channels[target];
-			if (channel) {
-				channel->broadcast(message, &client);
-				Utils::safePrint("broadcast channel");
-				found = true;
-			} else {
+			Channel* channel = _server.getChannel(target);
+			if (!channel) {
 				client.sendMessage(ERR_NOSUCHCHANNEL(target));
+				Utils::safePrint("Channel does not exits");
+				return;
 			}
+			channel->broadcast(message, &client);
+			found = true;
+			Utils::safePrint("found: " + toStr(found));
 		} else {
 			std::map<int, Client*>& clients = _server.getClients();
 			for (ClientsIte itClient = clients.begin(); itClient != clients.end(); itClient++) {
 				if (itClient->second->nickname == target) {
-					itClient->second->sendMessage(client.nickname + " :" + message);
+					itClient->second->sendMessage(RPL_PRIVMSG(client.getNick(), client.username, target, message));
 					found = true;
 					break;
 				}
