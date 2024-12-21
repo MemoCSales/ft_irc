@@ -53,7 +53,7 @@ class Server
 		// Disable copy constructor and assignment operator
 		Server(const Server&);
 		Server& operator=(const Server&);
-
+		void handleErrorMessage(bool override, std::string const& func, std::exception const& e);
 	public:
 		Server(int& port, std::string const& password);
 		static void signalHandler(int signum);

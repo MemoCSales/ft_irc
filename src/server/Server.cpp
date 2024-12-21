@@ -109,7 +109,8 @@ void Server::handleNewConnection()
 	}
 	catch (const std::exception& e)
 	{
-		std::cerr << "Error handling new connection: " << e.what() << std::endl;
+		if (DEBUG)
+			std::cerr << "Error handling new connection: " << e.what() << std::endl;
 	}
 }
 
@@ -124,9 +125,9 @@ void Server::handleClient(int clientFD)
 		}
 		catch(const std::exception& e)
 		{
-			std::cerr << "Error handling client: " << e.what() << "\r\n";
+			handleErrorMessage(0, __func__, e);
 			removeClient(clientFD);
-		}		
+		}
 	}
 }
 
@@ -155,7 +156,7 @@ void Server::run()
 		}
 		catch (const std::exception& e)
 		{
-			std::cerr << std::endl << error("Error in server run loop: ", 1) << e.what() << std::endl;
+			handleErrorMessage(1, __func__, e);
 		}
 	}
 	cleanData();
@@ -240,6 +241,16 @@ Server::~Server()
 
 	close(serverFD);
 	removeLockFile();
+}
+
+void Server::handleErrorMessage(bool override, std::string const& func, std::exception const& e)
+{
+	if (DEBUG || override)
+	{
+		std::ostringstream err;
+		err << std::endl << error(func + "(): ", 0);
+		std::cerr << err.str() << e.what() << "\r\n";
+	}
 }
 
 void Server::setNonBlocking(int fd)
