@@ -416,18 +416,10 @@ Channel* Server::getOrCreateChannel(const std::string& name) {
 
 
 Channel *Server::getChannel(const std::string &name) {
-	// pthread_mutex_lock(&channelsMutex);
-	// pthread_mutex_lock(&channelsMutex);
-	// Check if the channel exists
 	std::map<std::string, Channel *>::iterator it = channels.find(name);
 	if (it != channels.end()) {
-		// Unlock the mutex before returning
-		// pthread_mutex_unlock(&channelsMutex);
-		// pthread_mutex_unlock(&channelsMutex);
 		return it->second;// Return the existing channel
 	}
-	// pthread_mutex_unlock(&channelsMutex);
-	// pthread_mutex_unlock(&channelsMutex);
 	return NULL;// Return the new channel
 }
 
