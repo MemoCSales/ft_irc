@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <string>
-//#include <mutex>
 #include <memory>
 #include <algorithm>
 
@@ -22,7 +21,11 @@ private:
 	bool _flagTopic;
 	std::vector<Client *> members; // clients in the chanel
 	std::vector<Client *> operators;
-	std::vector<Client *> people; 
+	std::vector<Client *> people;
+
+	// -----------test----------
+	std::string _topicSetter; // Nickname of the user who set the topic
+    std::time_t _topicTimestamp; 
 
 
 public:
@@ -34,8 +37,13 @@ public:
 	void	addOperator(Client *client);
 	void	addAllowedPeople(Client *client);
 	void	removeOperator(Client *client);
+	void	removePeople(Client *client);
 	void	broadcastTopic(Client* sender);
+	void    broadcastClientState( Client* client,std::string state);
+	void	sendUsersList(Client *client);
 	bool 	isMember(Client *client);
+	bool	isOperator(Client *client);
+	bool	isInvited(Client *client);
 	~Channel();
 
 			//getters
@@ -50,16 +58,21 @@ public:
 	bool		getInviteStatus(){return _inviteOnly;}
 	std::string getTopic(){return _topic;}
 	int 		getLimit(){return _limit;}
+	
 
 	// setters
 	void	setName(std::string chanelName){_name = chanelName ;}
 	void	setFlagTopic(bool status){_flagTopic = status;}
 	void	setPassword(std::string passWord){_passWord = passWord;}
-	void	setTopic(std::string topic){_topic = topic;}
+	// void	setTopic(std::string topic){_topic = topic;}
+	void 	setTopic(const std::string& newTopic, const std::string& setter);
+
 	void	setInviteStatus(bool flag){_inviteOnly = flag;}
 	void	setLimit(int nb){_limit = nb;}
 
-
+	// ------------------------test-----------------
+	std::string getTopicSetter() const;
+    std::time_t getTopicTimestamp() const;
 
 
 };

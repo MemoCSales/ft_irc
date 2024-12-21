@@ -14,10 +14,11 @@
 #include <stdexcept>
 #include <csignal>
 #include <fstream>
+# include "Utils.hpp"
 
 Server* Server::instance = NULL;
-
-Server::Server(int& port, const std::string& password) : password(password)
+Server::Server(int& port, const std::string& password) : password(password),
+_serverStatus(0)
 {
 	instance = this;
 	try
@@ -57,6 +58,9 @@ Server::Server(int& port, const std::string& password) : password(password)
 		struct pollfd serverP_FDs = {serverFD, POLLIN, 0};
 		pollFDs.push_back(serverP_FDs);
 
+		pthread_mutex_init(&clientsMutex, NULL);
+		// pthread_mutex_init(&coutMutex, NULL);
+
 		setupSignalHandlers();
 
 		setOperName();
@@ -88,15 +92,19 @@ void Server::handleNewConnection()
 		pollFDs.push_back(pfd);
 
 		Client* newClient = new Client(clientSocket);
+		pthread_mutex_lock(&clientsMutex);
 		clients.insert(std::make_pair(clientSocket, newClient));
+		pthread_mutex_unlock(&clientsMutex);
 
 		// Get client's IP address and port
 		char clientIP[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
 		int clientPort = ntohs(clientAddress.sin_port);
-		
-		std::cout << getColorStr(FGREEN, "New client connected: ") << clientIP << ":" << clientPort
-		<< "[" << clientSocket << "]"<< std::endl;
+
+		std::ostringstream oss;
+		oss << "New client connected: " << clientIP << ":" + toStr(clientPort) 
+					<< "[" << toStr(clientSocket) << "]";
+		Utils::safePrint(oss.str());
 
 		// Send welcome message
 		newClient->sendMessage(welcomeMsg());
@@ -118,9 +126,35 @@ void Server::handleClient(int clientFD)
 		}
 		catch(const std::exception& e)
 		{
-			std::cerr << "Error handling client: " << e.what() << '\n';
+			std::cerr << "Error handling client: " << e.what() << "\r\n";
+
+				ChannelIte itchannel = channels.begin();
+				for (; itchannel != channels.end(); itchannel++)
+				{
+					Channel* current = itchannel->second;
+					if (current->isMember(client)) {
+						current->removeMember(client);
+					}
+					if (current->isInvited(client)) {
+						current->removePeople(client);
+					}
+					if (current->isOperator(client)) {
+						current->removeOperator(client);
+						current->broadcast("has quitted.", client);
+						if (current->getOperators().size() < 1 && current->getMembers().size() > 0) {
+							Client * newOperator = *(current->getMembers().begin());
+							current->addOperator(newOperator);
+							current->broadcast("Hi! I'm the new operator of this channel.", newOperator);
+							newOperator->sendMessage("You're the new Operator of the channel " + toStr(current->getName()));
+							Utils::safePrint("New Operator in channel: " + newOperator->getClientNick());		
+						} else {
+							Utils::safePrint("Channel removed: " + itchannel->first);
+							removeChannel(itchannel->first);
+						}
+					}
+				}
 			removeClient(clientFD);
-		}	
+		}		
 	}
 }
 
@@ -128,6 +162,8 @@ void Server::run()
 {
 	while (true)
 	{
+		if (_serverStatus)
+			break;
 		try
 		{
 			int pollCount = poll(pollFDs.data(), pollFDs.size(), -1);
@@ -150,6 +186,48 @@ void Server::run()
 			std::cerr << "Error in server run loop: " << e.what() << std::endl;
 		}
 	}
+	cleanData();
+}
+
+void Server::cleanData()
+{
+	// Access the server instance
+	Server* server = Server::getInstance();
+
+	// Send a message to each client
+	for (ClientsIte it = server->clients.begin(); it != server->clients.end(); ++it)
+	{
+		const char* shutDownMessage = "Server is shutting down.\0";
+		send(it->second->getFd(), shutDownMessage, strlen(shutDownMessage), 0);
+	}
+
+	pthread_cancel(server->pingThread);
+	pthread_join(server->pingThread, NULL);
+
+	// Clear and release memory of pollFDs vector
+	server->pollFDs.clear();
+	std::vector<pollfd>().swap(server->pollFDs);
+
+	// Delete clients
+	for (ClientsIte it = server->clients.begin(); it != server->clients.end(); ++it)
+	{
+		delete it->second;
+		close(it->first);
+	}
+	server->clients.clear();
+
+	// Delete channels
+	for (ChannelIte it = server->channels.begin(); it != server->channels.end(); ++it)
+	{
+		delete it->second;
+	}
+	server->channels.clear();
+
+	// Close the server socket
+	close(server->serverFD);
+
+	// Exit the program
+	exit(1);
 }
 
 void Server::setupSignalHandlers()
@@ -160,50 +238,15 @@ void Server::setupSignalHandlers()
 
 void Server::signalHandler(int signum)
 {
-    const char* msg = "Interrupt signal received. Closing server socket.\n";
-    write(STDERR_FILENO, msg, strlen(msg));
-
-    // Access the server instance
-    Server* server = Server::getInstance();
-
-    // Send a message to each client
-    for (ClientsIte it = server->clients.begin(); it != server->clients.end(); ++it)
-    {
-        const char* shutDownMessage = "Server is shutting down.\n\n";
-        send(it->second->getFd(), shutDownMessage, strlen(shutDownMessage), 0);
-    }
-
-    pthread_cancel(server->pingThread);
-    pthread_join(server->pingThread, NULL);
-
-    // Clear and release memory of pollFDs vector
-    server->pollFDs.clear();
-    std::vector<pollfd>().swap(server->pollFDs);
-
-    // Delete clients
-    for (ClientsIte it = server->clients.begin(); it != server->clients.end(); ++it)
-    {
-        delete it->second;
-        close(it->first);
-    }
-    server->clients.clear();
-
-    // Delete channels
-    for (ChannelIte it = server->channels.begin(); it != server->channels.end(); ++it)
-    {
-        delete it->second;
-    }
-    server->channels.clear();
-
-    // Close the server socket
-    close(server->serverFD);
-
-    // Exit the program
-    exit(signum);
+	const char* msg = "Interrupt signal received. Closing server socket.\n";
+	write(STDERR_FILENO, msg, strlen(msg));
+	Server* server = Server::getInstance();
+	server->_serverStatus = signum;
 }
 
 Server::~Server()
 {
+	pthread_mutex_destroy(&clientsMutex);
 	pthread_cancel(pingThread);
 	pthread_join(pingThread, NULL);
 
@@ -284,7 +327,7 @@ void Server::removeLockFile()
 
 void Server::removeClient(int clientFD)
 {
-	// pthread_mutex_lock(&clientsMutex);
+	pthread_mutex_lock(&clientsMutex);
 	ClientsIte it = clients.find(clientFD);
 	if (it != clients.end())
 	{
@@ -292,7 +335,7 @@ void Server::removeClient(int clientFD)
 		close(it->first);
 		clients.erase(it);
 	}
-	// pthread_mutex_unlock(&clientsMutex);
+	pthread_mutex_unlock(&clientsMutex);
 }
 
 std::string const Server::getPassword() const {
@@ -308,12 +351,12 @@ std::map<int, Client*>& Server::getClients() {
 }
 
 void Server::sendPingToClients() {
-	// pthread_mutex_lock(&clientsMutex);
+	pthread_mutex_lock(&clientsMutex);
 	for (ClientsIte it = clients.begin(); it != clients.end(); it++) {
-		std::cout << "Sending PING to client: " << it->first << std::endl;
+		Utils::safePrint("Sending PING to client: " + toStr(it->first));
 		it->second->sendMessage("PING ping\r\n");
 	}
-	// pthread_mutex_unlock(&clientsMutex);
+	pthread_mutex_unlock(&clientsMutex);
 }
 
 void* pingTask(void* arg) {
@@ -350,49 +393,52 @@ std::string const Server::getOperPassword() const {
 //------my functions 
 
 Channel* Server::getOrCreateChannel(const std::string& name) {
-    // Lock the mutex for thread safety
-    // pthread_mutex_lock(&channelsMutex);
+	// Lock the mutex for thread safety
+	// pthread_mutex_lock(&channelsMutex);
 
-    // Check if the channel exists
-    std::map<std::string, Channel*>::iterator it = channels.find(name);
-    if (it != channels.end()) {
-        // Unlock the mutex before returning
-        // pthread_mutex_unlock(&channelsMutex);
-        return it->second; // Return the existing channel
-    }
+	// Check if the channel exists
+	std::map<std::string, Channel*>::iterator it = channels.find(name);
+	if (it != channels.end()) {
+		// Unlock the mutex before returning
+		// pthread_mutex_unlock(&channelsMutex);
+		return it->second; // Return the existing channel
+	}
 
-    // Create a new channel if not found
-    Channel* new_channel = new Channel(name);
-    channels[name] = new_channel;
+	// Create a new channel if not found
+	Channel* new_channel = new Channel(name);
+	channels[name] = new_channel;
 //	new_channel->setName(name);
 
-    // Unlock the mutex before returning
-    // pthread_mutex_unlock(&channelsMutex);
-    return new_channel; // Return the new channel
+	// Unlock the mutex before returning
+	// pthread_mutex_unlock(&channelsMutex);
+	return new_channel; // Return the new channel
 }
 
 
 Channel *Server::getChannel(const std::string &name) {
+	// pthread_mutex_lock(&channelsMutex);
 	// pthread_mutex_lock(&channelsMutex);
 	// Check if the channel exists
 	std::map<std::string, Channel *>::iterator it = channels.find(name);
 	if (it != channels.end()) {
 		// Unlock the mutex before returning
 		// pthread_mutex_unlock(&channelsMutex);
+		// pthread_mutex_unlock(&channelsMutex);
 		return it->second;// Return the existing channel
 	}
+	// pthread_mutex_unlock(&channelsMutex);
 	// pthread_mutex_unlock(&channelsMutex);
 	return NULL;// Return the new channel
 }
 
 void Server::removeChannel(const std::string& name) {
-    // pthread_mutex_lock(&clientsMutex);
-    std::map<std::string, Channel*>::iterator it = channels.find(name);
-    if (it != channels.end()) {
-        delete it->second;
-        channels.erase(it);
-    }
-    // pthread_mutex_unlock(&clientsMutex);
+	// pthread_mutex_lock(&clientsMutex);
+	std::map<std::string, Channel*>::iterator it = channels.find(name);
+	if (it != channels.end()) {
+		delete it->second;
+		channels.erase(it);
+	}
+	// pthread_mutex_unlock(&clientsMutex);
 }
 
 Client* Server::getClientByNick(const std::string& nick) {

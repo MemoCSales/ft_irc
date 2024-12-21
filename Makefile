@@ -55,7 +55,11 @@ endif
 # MAKEFLAGS	+= -j4 #--debug #// -j for multinodes
 ifeq ($(S), 1)
 #------ INCLUDE SANATIZER FLAGS ------#
-D_FLAGS		+= -pthread -fsanitize=thread,undefined,vptr  -fno-optimize-sibling-calls
+D_FLAGS		+= -pthread -fsanitize=thread,undefined,vptr -fno-optimize-sibling-calls
+endif
+ifeq ($(S), 2)
+#------ INCLUDE SANATIZER FLAGS ------#
+D_FLAGS		+= -fsanitize=address,undefined,vptr
 endif
 # To enable verbose output during compilation Make V=1
 V ?= 0
@@ -243,7 +247,7 @@ checkOpen:
 	else \
 		for pid in $$pids; do \
 			echo "Open files for process ID: $$pid"; \
-			lsof -p $$pid; \
+			watch -n 2 "lsof -p $$pid 2>/dev/null | awk 'NR==1 || \$$4 ~ /u\$$/ {print \$$1, \$$2, \$$4, \$$5, \$$9, \$$10, \$$11}'"; \
 		done; \
 	fi
 freePort: checkOpen;

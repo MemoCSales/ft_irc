@@ -2,7 +2,7 @@
 # define NUMERIC_MESSAGES_HPP
 
 
-# define USERLEN 30
+# define USERLEN 100
 
 /* ERROR MESSAGES */
 # define ERR_PASSWDMISMATCH		 ":server 464 * :Password incorrect\r\n"
