@@ -3,7 +3,7 @@
 # include "NumericMessages.hpp"
 # include "Utils.hpp"
 
-CommandParser::CommandParser(Server& server) {
+CommandParser::CommandParser(Server& server) : _server(server) {
 	commandFactory = new CommandFactory(server);
 }
 
@@ -24,26 +24,16 @@ void CommandParser::parseAndExecute(Client& client, const std::string& message, 
 	// std::cout << "Args: " << args << std::endl;
 	if (commandName[0] == '#') {
 		Client *clientPtr = &client;
-		bool isMember = false;
-		Channel* targetChannel = NULL;
-		for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); ++it) {
-			if (it->first == commandName) {
-				targetChannel = it->second;
-				std::vector<Client*> members = targetChannel->getMembers(); // Get the members vector
-				for (std::vector<Client*>::iterator memberIt = members.begin(); memberIt != members.end(); ++memberIt) {
-					if (*memberIt == clientPtr) {
-						isMember = true;
-						break;
-					}
-				}
-				break;
-			}
+		Channel* targetChannel = _server.getChannel(commandName);
+		if (!targetChannel) {
+			client.sendMessage(ERR_NOSUCHCHANNEL(commandName));
+			return;
 		}
-		if (isMember) {
+		if (targetChannel->isMember(clientPtr)) {
 			targetChannel->broadcast(args, clientPtr);
+			Utils::safePrint("printing after broadcast in parseAndExecute");
 		} else {
-			std::string error = "You are not a member of this channel.\n";
-			clientPtr->sendMessage(error);
+			client.sendMessage(ERR_CANNOTSENDTOCHAN(commandName));
 		}
 		return;
 	}
