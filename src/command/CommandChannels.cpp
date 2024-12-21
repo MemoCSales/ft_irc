@@ -37,7 +37,21 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
 		targetChannel = _server.getOrCreateChannel(channelName);
 		targetChannel->addMember(&client);
 		targetChannel->addOperator(&client);
-		sendInformativeMessage(client,channelName + " was created","you are the operator of this channel.");
+		client.sendMessage(":" + client.getNick() + "!" + client.username + "@localhost" + " JOIN " + channelName + "\r\n");
+			targetChannel->sendUsersList(&client);
+	targetChannel->broadcastClientState(&client,"join");
+	Utils::safePrint(client.getNick() + " has joined the channel: " + toStr(targetChannel->getName()));
+	if (!targetChannel->getTopic().empty()) {
+   	 	client.sendMessage(":serverhost 332 " + client.getNick() + " " + channelName + " :" + targetChannel->getTopic());
+		std::stringstream ss;
+		ss << targetChannel->getTopicTimestamp();
+		std::string topicTimestampStr = ss.str();
+    	// client.sendMessage(":serverhost 333 " + client.getNick() + " " + channelName + " " + targetChannel->getTopicSetter() + " " + std::to_string(targetChannel->getTopicTimestamp()));
+		client.sendMessage(":serverhost 333 " + client.getNick() + " " + channelName + " " + targetChannel->getTopicSetter() + " " + topicTimestampStr);
+	} else {
+		client.sendMessage(":serverhost 332 " + client.getNick() + " " + channelName + " :\r\n");
+	}
+		// sendInformativeMessage(client,channelName + " was created","you are the operator of this channel.");
 		Utils::safePrint(toStr(channelName) + " was created!");
 		return;
 	} else {
@@ -100,7 +114,8 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
 	}
 	// Join the channel	
 	targetChannel->addMember(&client);
-	sendInformativeMessage(client,"Joined Channel",targetChannel->getName());
+	// sendInformativeMessage(client,"Joined Channel",targetChannel->getName());
+	client.sendMessage(":" + client.getNick() + "!" + client.username + "@localhost" + " JOIN " + channelName + "\r\n");
 	targetChannel->sendUsersList(&client);
 	targetChannel->broadcastClientState(&client,"join");
 	Utils::safePrint(client.getNick() + " has joined the channel: " + toStr(targetChannel->getName()));
@@ -348,13 +363,13 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 		sendInformativeMessage(client,"Channel name must start with '#' or channel is empty", "");
 		return;
 	}
-	if(flag.empty()){
-		sendInformativeMessage(client,"You need to insert one of the appropriate flags, i, t, k, o, l.","");
-		return;
-	}
 	Channel *targetChannel = _server.getChannel(channelName);
 	if (!targetChannel) {
 		sendInformativeMessage(client,"Channel", channelName + " does not exist.");
+		return;
+	}
+	if(flag.empty()){
+		sendInformativeMessage(client, ":" + client.getNick() + "!" + client.username + "@localhost PRIVMSG " + targetChannel->getName() + " :" + "You can only use one of the appropriate flags: i,t,k,o,l.","");
 		return;
 	}
 
@@ -387,7 +402,8 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 			if(!modeTopic(mode,client,targetChannel,channelName)) return ;
 		}
 		else{
-			sendInformativeMessage(client,"You can only use one of the appropriate flags: i,t,k,o,l.","");
+			std::string messageWithSender = ":" + client.getNick() + "!" + client.username + "@localhost PRIVMSG " + targetChannel->getName() + " :" + "You can only use one of the appropriate flags: i,t,k,o,l.!!!!!";
+			client.sendMessage(messageWithSender);
 		}
 	}
 	else{

@@ -333,7 +333,8 @@ void Command::handlePrivMsg(Client& client, const std::string& args, std::map<st
 		if (target[0] == '#') {
 			Channel* channel = channels[target];
 			if (channel) {
-				channel->broadcast(client.nickname + ": " + message, &client);
+				channel->broadcast(message, &client);
+				Utils::safePrint("broadcast channel");
 				found = true;
 			} else {
 				client.sendMessage(ERR_NOSUCHCHANNEL(target));
