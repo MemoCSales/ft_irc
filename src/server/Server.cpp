@@ -101,7 +101,7 @@ void Server::handleNewConnection()
 
 		std::ostringstream oss;
 		oss << getColorStr(FGREEN, "New client connected: ") << clientIP << ":" << clientPort
-				<< "[" << clientSocket << "]" << std::endl;
+				<< "[" << clientSocket << "]";
 		Utils::safePrint(oss.str());
 
 		// Send welcome message
@@ -155,7 +155,7 @@ void Server::run()
 		}
 		catch (const std::exception& e)
 		{
-			std::cerr << "Error in server run loop: " << e.what() << std::endl;
+			std::cerr << std::endl << error("Error in server run loop: ", 1) << e.what() << std::endl;
 		}
 	}
 	cleanData();
@@ -169,8 +169,9 @@ void Server::cleanData()
 	// Send a message to each client
 	for (ClientsIte it = server->clients.begin(); it != server->clients.end(); ++it)
 	{
-		const char* shutDownMessage = "Server is shutting down.\n\0";
-		send(it->second->getFd(), shutDownMessage, strlen(shutDownMessage), 0);
+		Client* client =  it->second;
+		std::string shutDownMessage= "ERROR :Closing Link: Server is shutting down.";
+		client->sendMessage(shutDownMessage);
 	}
 
 	pthread_cancel(server->pingThread);
