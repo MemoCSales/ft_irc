@@ -2,19 +2,13 @@
 # include "NumericMessages.hpp"
 # include "Utils.hpp"
 # include "InputParser.hpp"
-# include "InputParser.hpp"
 
 Command::Command(CommandType type, Server& server) : _type(type), _server(server) {
-	commands[CAP] = &Command::handleCap;
 	commands[CAP] = &Command::handleCap;
 	commands[PASS] = &Command::handlePass;
 	commands[NICK] = &Command::handleNick;
 	commands[USER] = &Command::handleUser;
 	commands[QUIT] = &Command::handleQuit;
-	commands[PING] = &Command::handlePing;
-	commands[PONG] = &Command::handlePong;
-	commands[OPER] = &Command::handleOper;
-	commands[PRIVMSG] = &Command::handlePrivMsg;
 	commands[PING] = &Command::handlePing;
 	commands[PONG] = &Command::handlePong;
 	commands[OPER] = &Command::handleOper;

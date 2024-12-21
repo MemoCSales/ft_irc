@@ -37,6 +37,7 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
 		targetChannel = _server.getOrCreateChannel(channelName);
 		targetChannel->addMember(&client);
 		targetChannel->addOperator(&client);
+		sendInformativeMessage(client,channelName + " was created","you are the operator of this channel.");
 		Utils::safePrint(toStr(channelName) + " was created!");
 		return;
 	} else {
@@ -82,9 +83,12 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
 					if (targetChannel->getPassword() == pass) {
 						targetChannel->addMember(&client);
 						sendInformativeMessage(client,"Joined Channel",targetChannel->getName());
+						targetChannel->sendUsersList(&client);
+						targetChannel->broadcastClientState(&client,"join");
 						Utils::safePrint(client.getNick() + " has joined the channel: " + toStr(targetChannel->getName()));
 						if (!targetChannel->getTopic().empty())
-							targetChannel->broadcastTopic(&client);
+							sendInformativeMessage(client,"The topic of the channel" + channelName + "is",targetChannel->getTopic());
+							// targetChannel->broadcastTopic(&client);
 						return;
 					} else {
 						sendInformativeMessage(client,"Incorrect password","");
@@ -94,12 +98,21 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
 			}
 		}
 	}
-	// Join the channel
+	// Join the channel	
 	targetChannel->addMember(&client);
 	sendInformativeMessage(client,"Joined Channel",targetChannel->getName());
+	targetChannel->sendUsersList(&client);
+	targetChannel->broadcastClientState(&client,"join");
 	Utils::safePrint(client.getNick() + " has joined the channel: " + toStr(targetChannel->getName()));
 	if (!targetChannel->getTopic().empty()) {
-		targetChannel->broadcastTopic(&client);
+   	 	client.sendMessage(":serverhost 332 " + client.getNick() + " " + channelName + " :" + targetChannel->getTopic());
+		std::stringstream ss;
+		ss << targetChannel->getTopicTimestamp();
+		std::string topicTimestampStr = ss.str();
+    	// client.sendMessage(":serverhost 333 " + client.getNick() + " " + channelName + " " + targetChannel->getTopicSetter() + " " + std::to_string(targetChannel->getTopicTimestamp()));
+		client.sendMessage(":serverhost 333 " + client.getNick() + " " + channelName + " " + targetChannel->getTopicSetter() + " " + topicTimestampStr);
+	} else {
+		client.sendMessage(":serverhost 332 " + client.getNick() + " " + channelName + " :\r\n");
 	}
 }
 
@@ -172,6 +185,7 @@ void	Command::handlePart(Client& client, const std::string& args, std::map<std::
 		if (targetChannel->getMembers()[i] == &client) {
 			found = true;
 			targetChannel->removeMember(&client);
+			targetChannel->broadcastClientState(&client,"exit");
 			if(isOperator)
 			{
 				targetChannel->removeOperator(&client);
@@ -231,7 +245,7 @@ void	Command::handleTopic(Client& client, const std::string& args, std::map<std:
 					sendInformativeMessage(client,"Topic already set to",topic);
 					return;
 				}
-				targetChannel->setTopic(topic);
+				targetChannel->setTopic(topic,client.getNick());
 				sendInformativeMessage(client,"Channel topic set to", targetChannel->getTopic());
 				targetChannel->broadcastTopic(&client);
 				Utils::safePrint(toStr(targetChannel->getName()) + " has the topic set to: " + targetChannel->getTopic());
@@ -246,7 +260,7 @@ void	Command::handleTopic(Client& client, const std::string& args, std::map<std:
 					sendInformativeMessage(client, "Topic already set to", topic);
 					return;
 				}
-			targetChannel->setTopic(topic);
+			targetChannel->setTopic(topic,client.getNick());
 			sendInformativeMessage(client,"Channel topic set to", targetChannel->getTopic());
 			targetChannel->broadcastTopic(&client);
 			Utils::safePrint(toStr(targetChannel->getName()) + " has the topic set to: " + targetChannel->getTopic());
@@ -382,3 +396,12 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 }
 
 
+
+
+//topic broadcast reversed -->done
+//broadcast client join -->done
+// broadcast client part -->done
+//provide list with members in channel-->
+
+
+// need to do the same when signal killed'
