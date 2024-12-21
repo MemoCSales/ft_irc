@@ -360,7 +360,8 @@ void Command::handlePrivMsg(Client& client, const std::string& args, std::map<st
 	}
 }
 
-void Command::handlePrivMsg(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
+void Command::handleWho(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
+	(void)channels;
 	std::string target = trim(args);
 	std::string response;
 	std::string command = "WHO";
@@ -393,7 +394,7 @@ void Command::handlePrivMsg(Client& client, const std::string& args, std::map<st
 			return;
 		}
 
-		response = RPL_WHOREPLY("*", targetClient->getNick(), targetClient->username, targetClient->realname);
+		response = RPL_WHOREPLY(std::string("*"), targetClient->getNick(), targetClient->username, targetClient->realname);
 		client.sendMessage(response);
 	}
 	client.sendMessage(RPL_ENDOFWHO(target));

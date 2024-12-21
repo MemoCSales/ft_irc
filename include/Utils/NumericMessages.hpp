@@ -23,7 +23,7 @@
 # define RPL_QUIT(reason) "Quit: " + reason + "\r\n"
 # define RPL_WELCOME(nickname) "Welcome to our IRC network, " + nickname + " !\r\n"
 # define RPL_YOUREOPER "You are now an IRC server operator \r\n"
-# define RPL_WHOREPLY(channel, nick, user, realname) "352 " + channel + " " + user + " " + nick " " + realname + "\r\n"
+# define RPL_WHOREPLY(channel, nick, user, realname) "352 " + channel + " " + user + " " + nick + " " + realname + "\r\n"
 # define RPL_ENDOFWHO(target) "315 " +  target + " :End of WHO list\r\n"
 
 #endif

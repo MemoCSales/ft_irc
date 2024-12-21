@@ -82,7 +82,7 @@ if(name.empty()){
 			client.sendMessage(error);
 			return false;
 		}
-		bool isAlreadyOperator;
+		bool isAlreadyOperator = false;
 		std::vector<Client*> operators = targetChannel->getOperators();
 		for (std::vector<Client*>::iterator It = operators.begin(); It != operators.end(); ++It) {
 			if ((*It)->getNick() == name) {
