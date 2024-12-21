@@ -52,11 +52,11 @@ void Channel::broadcast(const std::string &message, Client *sender) {
 }
 
 void	Channel::broadcastTopic( Client* sender){
+	std::string topicMessage = RPL_TOPIC(sender->getNick(), sender->username, this->getName(), this->getTopic());
 	for (std::vector<Client *>::iterator it = members.begin(); it != members.end(); ++it) {
 		Client *member = *it;
 		if (member != sender) {
-			member->sendMessage(":serverhost 332 " + member->getNick() + " " + this->getName() + " :" + this->getTopic());
-
+			member->sendMessage(topicMessage);
 		}
 	}
 }
@@ -77,18 +77,23 @@ void	Channel::broadcastClientState( Client* client,std::string state){
 
 
 void	Channel::sendUsersList(Client *client){
+	std::string message = ":serverhost 353 " + client->getNick() + " = " + this->getName() + " :";
+	if (this->isOperator(client)) {
+		message += "@" + client->getNick() + " ";
+	} else {
+		message += client->getNick() + " ";
+	}
 
 	for (std::vector<Client *>::iterator it = members.begin(); it != members.end(); ++it) {
 		Client *member = *it;
-		std::string message = ":serverhost 353 " + client->getNick() + " = " + this->getName() + " :";
 		if (member != client) {
 			if(this->isOperator(member))
 				message += "@" + member->getNick() + " ";
 			else
 				message += member->getNick() + " ";
-			client->sendMessage(message);
 		}
 	}
+	client->sendMessage(message);
 	client->sendMessage(":serverhost 366 " + client->getNick() + " " + this->getName() + " :End of /NAMES list");
 }
 
