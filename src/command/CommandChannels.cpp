@@ -72,12 +72,12 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
 			// wait for password
 			char passBuff[4096];
 			memset(passBuff, 0, sizeof(passBuff));
-			int passBytesRecv = 0;
+			ssize_t passBytesRecv = 0;
 			// Loop to wait for password input
 			while (true) {
 				passBytesRecv = recv(client.getFd(), passBuff, sizeof(passBuff) - 1, 0);
 				if (passBytesRecv > 0) {
-					std::string pass(passBuff, passBytesRecv);
+					std::string pass(passBuff, static_cast<std::string::size_type>(passBytesRecv));
 					pass.erase(pass.find_last_not_of(" \n\r\t") + 1);
 					if (targetChannel->getPassword() == pass) {
 						targetChannel->addMember(&client);

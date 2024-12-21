@@ -21,7 +21,7 @@ Client::~Client() {
 
 void Client::handleRead() {
 	char buffer[MAX_BUFFER];
-	int nbytes = recv(_clientFD, buffer, sizeof(buffer) - 1, 0);
+	ssize_t nbytes = recv(_clientFD, buffer, sizeof(buffer) - 1, 0);
 	if (nbytes < 0) {
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 			return; // No data available

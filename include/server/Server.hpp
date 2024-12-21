@@ -116,7 +116,7 @@ class SockAddressInitializer
 			//tp change
 			inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);
 			// addr.sin_addr.s_addr = INADDR_ANY;
-			addr.sin_port = htons(port);
+			addr.sin_port = htons(static_cast<uint16_t>(port));
 		}
 
 		struct sockaddr_in getAddress() const
