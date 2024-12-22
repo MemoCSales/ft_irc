@@ -15,6 +15,7 @@ bool	isMemberFct(Channel *targetChannel, Client &client, std::string channelName
 bool	isOperatorFct(Channel *targetChannel, Client &client);
 
 void sendInformativeMessage(Client& client, const std::string& baseMessage, const std::string& details = "");
+void sendCodeMessage(Client& client, const std::string& code, const std::string& target, const std::string& message);
 
 
 #endif

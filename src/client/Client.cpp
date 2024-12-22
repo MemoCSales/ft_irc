@@ -10,7 +10,10 @@ Client::Client(int fd) : _clientFD(fd), _authenticated(false), _serverOperator(f
 void Client::sendMessage(const std::string &message)
 {
 	pthread_mutex_lock(&clientMutex);
-	std::string msg = message + "\r\n";
+	std::string msg = message;
+	if (msg.find("\r\n") == std::string::npos) {
+		msg += "\r\n";
+	}
 	send(_clientFD, msg.c_str(), msg.length(), 0);
 	pthread_mutex_unlock(&clientMutex);
 }
