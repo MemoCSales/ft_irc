@@ -207,8 +207,6 @@ delUsers:
 hexChat: $(NAME) delUsers addon
 	@trap 'clear; echo ;echo $(RED)"...Process interrupted" $(E_NC); exit 1' INT; \
 	python3 testScripts/openHexchat.py; echo $(GREEN)"Process Ended" $(E_NC);
-msg:$(NAME)
-	python3 testScripts/sendMsg.py
 addon:
 	@chmod +r $(PWD)/testScripts/testHexChat.py
 	@mkdir -p $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons/

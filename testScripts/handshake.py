@@ -1,27 +1,35 @@
 import hexchat
+import re
 
-WHITE = "\00300"
-BLACK = "\00301"
-BLUE = "\00302"
-GREEN = "\00303"
-RED = "\00304"
-BROWN = "\00305"
-PURPLE = "\00306"
-ORANGE = "\00307"
-YELLOW = "\00308"
-LIGHT_GREEN = "\00309"
-TEAL = "\00310"
-LIGHT_CYAN = "\00311"
-LIGHT_BLUE = "\00312"
-PINK = "\00313"
-GREY = "\00314"
+HEXCHAT_COLORS = {
+	'30': '\00301',  # Black
+	'31': '\00304',  # Red
+	'32': '\00303',  # Green
+	'33': '\00308',  # Yellow
+	'34': '\00302',  # Blue
+	'35': '\00306',  # Magenta
+	'36': '\00311',  # Cyan
+	'37': '\00300',  # White
+	'90': '\00314',  # Light Grey
+	'91': '\00313',  # Light Red
+	'92': '\00309',  # Light Green
+	'93': '\00308',  # Light Yellow
+	'94': '\00312',  # Light Blue
+	'95': '\00313',  # Light Magenta
+	'96': '\00311',  # Light Cyan
+	'97': '\00300',  # Light White
+}
+
 LIGHT_GREY = "\00315"
 ENDC = "\003"
-
 
 __module_name__ = "On Handshake"
 __module_version__ = "1.0"
 __module_description__ = "Prints a message when the handshake is established"
+
+# Regular expression to match ANSI color codes
+ansi_escape = re.compile(r'\x1B\[(\d+)(;\d+)*m')
+
 connection_established = False
 message = []
 #--------------------------------------------------------------------------------
@@ -51,6 +59,13 @@ def hexChatMsg():
 		hexchat.prnt(f"{RED}Failed to get current context{ENDC}")
 	return False
 #--------------------------------------------------------------------------------
+def translate_ansi_to_hexchat(message):
+	def replace_ansi(match):
+		codes = match.group(1).split(';')
+		hexchat_color = HEXCHAT_COLORS.get(codes[0], '')
+		return hexchat_color
+
+	return ansi_escape.sub(replace_ansi, message) + '\003'
 
 def on_handshake(word, word_eol, userdata):
 	global connection_established
@@ -60,20 +75,22 @@ def on_handshake(word, word_eol, userdata):
 		message.append("\n")
 	if word_eol:
 		message.append(word_eol[0])
+		line = translate_ansi_to_hexchat(word_eol[0])
+		# line = ansi_escape.sub('', word_eol[0])
 		if "NOTICE" in word_eol[0]:
-			hexchat.prnt(f"{YELLOW}NOTICE{ENDC}")
+			hexchat.emit_print("Server Text", f"{line}")
 		elif "ERROR" in word_eol[0]:
-			hexchat.prnt(f"{RED}ERROR{ENDC}")
+			hexchat.emit_print("Server Text", f"{line}")
 		elif "FT_IRC" in word:
 			if not connection_established:
 				hexchat.prnt(f"{LIGHT_GREY}------------- HANDSHAKE WITH SERVER -------------{ENDC}")
 				connection_established = True
-			for line in message:
-				hexchat.emit_print("Server Text", f"\t{line}")
-				# hexchat.emit_print("Server Text", f"\t{BLUE}{line}{ENDC}")
-			hexChatMsg()
+			for msg in message:
+				hexchat.emit_print("Server Text", f"\t{msg}")
+			# hexChatMsg()
 		elif connection_established:
-			hexchat.emit_print("Server Text", f"\t{BLUE}{word_eol[0]}{ENDC}")
+			# hexchat.emit_print("Server Text", f"{line}")
+			hexchat.emit_print("Server Text", f"{line}")
 			# try:
 			# 	message = message.encode('ascii', 'ignore').decode('ascii')
 			# except UnicodeEncodeError:
@@ -83,9 +100,35 @@ def on_handshake(word, word_eol, userdata):
 			# hexchat.prnt(f"{message} ({char_count} |eol: {len(word_eol)} | word: {len(word)} )")
 
 	return hexchat.EAT_ALL
+
+# def process_ansi_color(word, word_eol, userdata):
+# 	# Translate ANSI color codes to HexChat color codes
+# 	if word:
+# 		if word[1]:
+# 			message = translate_ansi_to_hexchat(word[1])
+# 			# Print the message with HexChat color codes
+# 			hexchat.emit_print("Channel Message", message)
+# 	return hexchat.EAT_HEXCHAT
+
+# Hook the print event for server messages
+# hexchat.hook_print("Server Text", process_ansi_color)
+# hexchat.hook_print("Channel Message", process_ansi_color)
+# hexchat.hook_print("Notice", process_ansi_color)
+# hexchat.hook_print("Private Message", process_ansi_color)
+
+
+# Hook the print event for channel messages
+# hexchat.hook_print("Channel Message", process_ansi_color)
+
 #--------------------------------------------------------------------------------
 # Hook into server messages
+# hexchat.hook_server("Server Text", process_ansi_color)
 hexchat.hook_server("RAW LINE", on_handshake)
+# hexchat.hook_server("RAW LINE", process_ansi_color)
+# hexchat.hook_print("Server Text", process_ansi_color)
+# hexchat.hook_print("Channel Message", process_ansi_color)
+# hexchat.hook_print("Notice", process_ansi_color)
+# hexchat.hook_print("Private Message", process_ansi_color)
 # hexchat.hook_print("Server Text", on_handshake)
 #--------------------------------------------------------------------------------
 # print(__module_name__, "version", __module_version__, "loaded.")

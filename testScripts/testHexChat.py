@@ -74,36 +74,36 @@ def send_message(nick):
 	hexchat.command(f"msg {nick} {nick}test")
 	return hexchat.EAT_ALL
 
-def cmd(word, word_eol, userdata):
-	hexchat.prnt(f"{BLUE}cmd was called!{ENDC}")
-	hexchat.prnt(f"{BLUE}word: {word}{ENDC}")
-	hexchat.prnt(f"{BLUE}word_eol: {word_eol}{ENDC}")
-	context = hexchat.get_context()
-	hexchat.prnt(RED + str(context) + ENDC)
-	if context is not None:
-		print(f"Current Context ID: {context_id}")
-		network = context.get_info("network")
-		server = context.get_info("server")
-		nick = context.get_info("nick")
-		user = context.get_info("user")
-		realname = context.get_info("realname")
-		context_id = context.get_info("contextid")
+# def cmd(word, word_eol, userdata):
+	# hexchat.prnt(f"{BLUE}cmd was called!{ENDC}")
+	# hexchat.prnt(f"{BLUE}word: {word}{ENDC}")
+	# hexchat.prnt(f"{BLUE}word_eol: {word_eol}{ENDC}")
+	# context = hexchat.get_context()
+	# hexchat.prnt(RED + str(context) + ENDC)
+	# if context is not None:
+	# 	print(f"Current Context ID: {context_id}")
+	# 	network = context.get_info("network")
+	# 	server = context.get_info("server")
+	# 	nick = context.get_info("nick")
+	# 	user = context.get_info("user")
+	# 	realname = context.get_info("realname")
+	# 	context_id = context.get_info("contextid")
 		
-		hexchat.prnt(f"{GREEN}Connected to network: {network}{ENDC}")
-		hexchat.prnt(f"{GREEN}Server address: {server}{ENDC}")
-		hexchat.prnt(f"{GREEN}Nick: {nick}{ENDC}")
-		hexchat.prnt(f"{GREEN}User name: {user}{ENDC}")
-		hexchat.prnt(f"{GREEN}Real name: {realname}{ENDC}")
-		hexchat.prnt(f"{GREEN}Context ID: {context_id}{ENDC}")
-	else:
-		print(RED + "Failed to get current context" + ENDC)
+	# 	hexchat.prnt(f"{GREEN}Connected to network: {network}{ENDC}")
+	# 	hexchat.prnt(f"{GREEN}Server address: {server}{ENDC}")
+	# 	hexchat.prnt(f"{GREEN}Nick: {nick}{ENDC}")
+	# 	hexchat.prnt(f"{GREEN}User name: {user}{ENDC}")
+	# 	hexchat.prnt(f"{GREEN}Real name: {realname}{ENDC}")
+	# 	hexchat.prnt(f"{GREEN}Context ID: {context_id}{ENDC}")
+	# else:
+	# 	print(RED + "Failed to get current context" + ENDC)
 
-	return hexchat.EAT_ALL
+	# return hexchat.EAT_ALL
 
 
 
 def runServer():
-	hexchat.hook_command("cmd", cmd)
+	# hexchat.hook_command("cmd", cmd)
 	# hexchat.command("set text_font Ubuntu Mono 9")
 	#Get info of current session
 	# hexchat.command(f"set irc_user_name {nick}")

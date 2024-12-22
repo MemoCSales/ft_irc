@@ -3,8 +3,6 @@
 
 #include <vector>
 #include <string>
-//#include <mutex>
-#include <memory>
 #include <algorithm>
 
 #include "Client.hpp"

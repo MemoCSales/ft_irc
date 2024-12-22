@@ -171,7 +171,7 @@ void Server::cleanData()
 	for (ClientsIte it = server->clients.begin(); it != server->clients.end(); ++it)
 	{
 		Client* client =  it->second;
-		std::string shutDownMessage= "ERROR: Closing Link: Server is shutting down.";
+		std::string shutDownMessage= error("Closing Link: Server is shutting down.", 0);
 		client->sendMessage(shutDownMessage);
 	}
 
@@ -249,7 +249,7 @@ void Server::handleErrorMessage(bool override, std::string const& func, std::exc
 	{
 		std::ostringstream err;
 		err << std::endl << error(func + "(): ", 0);
-		std::cerr << err.str() << e.what() << "\r\n";
+		std::cerr << err.str() << e.what() << "\r\n" << std::endl;
 	}
 }
 
