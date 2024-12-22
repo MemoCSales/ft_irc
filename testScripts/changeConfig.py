@@ -41,7 +41,7 @@ UNDERLINE = '\033[4m'
 
 
 # Generate random user data with the same unique number
-UNIQUE_NUMBER = random.randint(1000, 9999)
+UNIQUE_NUMBER = random.randint(0, 50)
 NICK = f"user{UNIQUE_NUMBER}"
 USERNAME = f"user{UNIQUE_NUMBER}"
 REALNAME = f"Real{UNIQUE_NUMBER}"

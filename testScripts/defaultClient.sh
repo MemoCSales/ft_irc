@@ -39,13 +39,13 @@ cleanup()
 
 # Connect to the IRC server
 (
-	sleep 1
+	sleep 0.5
 	echo "PASS $PASSWORD"
-	sleep 1
+	sleep 0.5
 	echo "NICK $NICK"
-	sleep 1
+	sleep 0.5
 	echo "USER $USER 0 * :$REALNAME"
-	sleep 1
+	sleep 0.5
 	# echo "PRIVMSG $CHANNEL :$MESSAGE"
 	# echo "JOIN $CHANNEL"
 	# sleep 1

@@ -14,7 +14,7 @@
 #  define DEBUG 0
 # endif
 
-# define C_FMT "\033[0;"
+# define C_FMT "\033["
 # define C_FMT256 "\033[0;38;"
 # define C_FMT256B "\033[1;38;"
 # define FLPURPLE C_FMT256 "2;189;147;249m"

@@ -3,7 +3,8 @@
 #include <cstring>
 # include "NumericMessages.hpp"
 
-Client::Client(int fd) : _clientFD(fd), _authenticated(false), _serverOperator(false), _welcomeMessage(false), nickname(""), username(""), _buffer("") {
+Client::Client(int fd) : _clientFD(fd), _authenticated(false), _serverOperator(false), _welcomeMessage(false), nickname(""), username(""), _buffer(""), color(getRandomColorFmt(1))
+{
 	pthread_mutex_init(&clientMutex, NULL);
 }
 
@@ -35,7 +36,7 @@ void Client::handleRead() {
 	buffer[nbytes] = '\0';
 	this->_buffer += buffer;
 	std::ostringstream oss;
-	oss << "Received message: " << buffer;
+	oss << color << "Received message: " << buffer << C_END;
 	Utils::safePrint(oss.str());
 
 	// Process commands
@@ -47,7 +48,7 @@ void Client::handleRead() {
 		std::string command = this->_buffer.substr(0, pos);
 		this->_buffer.erase(0, pos + 2);
 
-		Utils::safePrint("Processing command: " + command);
+		Utils::safePrint(color + "Processing command: " + command + std::string(C_END));
 		commandParser.parseAndExecute(*this, command, server->getChannels());
 	}
 }

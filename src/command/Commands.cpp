@@ -55,7 +55,7 @@ void Command::handlePass(Client& client, const std::string& args, std::map<std::
 	}
 	if (password == _server.getPassword()) {
 		client.setAuthenticated(true);
-		Utils::safePrint("Client authenticated -> fd: " + toStr(client.getFd()));
+		Utils::safePrint(client.color + "Client authenticated -> fd: " + toStr(client.getFd()) + toStr(C_END));
 		client.sendMessage("You have been authenticated. Please continue your registration.");
 		if (!client.nickname.empty() && !client.username.empty()) {
 			response = RPL_WELCOME(client.nickname);
@@ -122,7 +122,7 @@ void Command::handleNick(Client& client, const std::string& args, std::map<std::
 	if (!client.username.empty()) {
 		client.setRegistered(true);
 	} 
-	Utils::safePrint("NICK command received. Client nickname changed from: " + toStr(oldNick) + " to: " + toStr(newNick));
+	Utils::safePrint(client.color + "NICK command received. Client nickname changed from: " + toStr(oldNick) + " to: " + toStr(newNick) + toStr(C_END));
 }
 
 
@@ -181,8 +181,8 @@ void Command::handleUser(Client& client, const std::string& args, std::map<std::
 	// Check if registration OK
 	if (!client.nickname.empty()) {
 		client.setRegistered(true);
-	} 
-	Utils::safePrint("USER command received. Client username set to: " + toStr(userName) + ", realname set to: " + toStr(realName));
+	}
+	Utils::safePrint(client.color + "USER command received. Client username set to: " + toStr(userName) + ", realname set to: " + toStr(realName) + toStr(C_END));
 }
 
 void Command::handleQuit(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
@@ -213,7 +213,7 @@ void Command::handleQuit(Client& client, const std::string& args, std::map<std::
 	}
 		
 	client.sendMessage(response);
-	throw std::runtime_error("Client disconnected " + toStr(client.getFd()));
+	throw std::runtime_error(client.color + "Client disconnected " + toStr(client.getFd()) + toStr(C_END));
 	Utils::safePrint("QUIT command received. Client disconnected with the reason: " + response);
 }
 
@@ -347,7 +347,7 @@ void Command::handlePrivMsg(Client& client, const std::string& args, std::map<st
 			std::map<int, Client*>& clients = _server.getClients();
 			for (ClientsIte itClient = clients.begin(); itClient != clients.end(); itClient++) {
 				if (itClient->second->nickname == target) {
-					itClient->second->sendMessage(client.nickname + " :" + message);
+					itClient->second->sendMessage(client.color + client.nickname + " :" + message + toStr(C_END));
 					found = true;
 					break;
 				}

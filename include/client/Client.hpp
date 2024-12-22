@@ -36,6 +36,7 @@ class Client
 		std::string username;
 		std::string realname;
 		std::string _buffer;
+		std::string color;
 		pthread_t thread;
 		pthread_mutex_t clientMutex;
 

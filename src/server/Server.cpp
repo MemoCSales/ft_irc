@@ -100,8 +100,9 @@ void Server::handleNewConnection()
 		int clientPort = ntohs(clientAddress.sin_port);
 
 		std::ostringstream oss;
-		oss << getColorStr(FGREEN, "New client connected: ") << clientIP << ":" << clientPort
-				<< "[" << clientSocket << "]";
+		oss << getColorStr(FGREEN, "New client connected: ")
+		<< newClient->color << clientIP << ":" << clientPort
+		<< "[" << clientSocket << "]" << C_END;
 		Utils::safePrint(oss.str());
 
 		// Send welcome message
