@@ -35,7 +35,6 @@ class Server
 		std::map<int, Client*> clients;
 		std::map<std::string, Channel*> channels;
 		std::string const password;
-		std::string const lockFilePath;
 		static Server* instance;
 		pthread_t pingThread;
 		pthread_mutex_t clientsMutex;
@@ -46,8 +45,6 @@ class Server
 
 		void setNonBlocking(int fd);
 		void setupSignalHandlers();
-		void createLockFile();
-		void removeLockFile();
 		void removeClient(int clientFD);
 		void cleanData(void);
 		// Disable copy constructor and assignment operator

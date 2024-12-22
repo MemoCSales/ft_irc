@@ -51,7 +51,7 @@ _serverStatus(0)
 			ss << "Server " << ServerIP << ":" << port << " can't listen" << std::endl;
 			throw std::runtime_error(ss.str());
 		}
-		std::cout << getColorStr(FGREEN, "Server listening on ") <<
+		std::cout << getColorStr(FPURPLE, "Server listening on ") <<
 		 ServerIP << ":" << port << std::endl << std::endl;
 
 		setNonBlocking(serverFD);
@@ -69,7 +69,7 @@ _serverStatus(0)
 	}
 	catch (const std::exception& e)
 	{
-		std::cerr << "Error initializing server: " << e.what() << std::endl;
+		handleErrorMessage(1, __func__ , e);
 		exit(1);
 	}
 }
@@ -109,8 +109,7 @@ void Server::handleNewConnection()
 	}
 	catch (const std::exception& e)
 	{
-		if (DEBUG)
-			std::cerr << "Error handling new connection: " << e.what() << std::endl;
+		handleErrorMessage(1, __func__, e);
 	}
 }
 
@@ -212,8 +211,6 @@ void Server::setupSignalHandlers()
 
 void Server::signalHandler(int signum)
 {
-	// const char* msg = "Interrupt signal received. Closing server socket.\n";
-	// write(STDERR_FILENO, msg, strlen(msg));
 	Server* server = Server::getInstance();
 	server->_serverStatus = signum;
 }
@@ -240,7 +237,6 @@ Server::~Server()
 	channels.clear();
 
 	close(serverFD);
-	removeLockFile();
 }
 
 void Server::handleErrorMessage(bool override, std::string const& func, std::exception const& e)
@@ -285,28 +281,13 @@ std::string Server::welcomeMsg()
 	msg << "\t⠙⢿⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋" << std::endl;
 	msg << "\t⠀⠀⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋⠀⠀" << std::endl;
 	msg << "\nWelcome to the FT_IRC server!" << std::endl << std::endl;
-	return msg.str();
-	// return getColorStr(FGREEN, msg.str());
+	// return msg.str();
+	return getColorStr(FGREEN, msg.str());
 }
 
 Server* Server::getInstance()
 {
 	return instance;
-}
-
-void Server::createLockFile()
-{
-	std::ofstream lockFile(lockFilePath.c_str());
-	if (!lockFile)
-	{
-		throw std::runtime_error("Unable to create lock file");
-	}
-	lockFile.close();
-}
-
-void Server::removeLockFile()
-{
-	std::remove(lockFilePath.c_str());
 }
 
 void Server::removeClient(int clientFD)

@@ -56,16 +56,19 @@ def hexChatMsg():
 		hexchat.prnt(f"{LIGHT_GREY}Context ID: {context_id}{ENDC}")
 		hexchat.hook_timer(1000, send_message, nick)
 	else:
-		hexchat.prnt(f"{RED}Failed to get current context{ENDC}")
+		hexchat.prnt(f"{LIGHT_GREY}Failed to get current context{ENDC}")
 	return False
 #--------------------------------------------------------------------------------
-def translate_ansi_to_hexchat(message):
-	def replace_ansi(match):
-		codes = match.group(1).split(';')
-		hexchat_color = HEXCHAT_COLORS.get(codes[0], '')
-		return hexchat_color
+def replace_ansi(match):
+	codes = match.group(0).split(';')
+	hexchat_color = HEXCHAT_COLORS.get(codes[-1].strip('m'), '')
+	return hexchat_color
 
+def translate_ansi_to_hexchat(message):
 	return ansi_escape.sub(replace_ansi, message) + '\003'
+
+def toStr(lst):
+	return '\n'.join(lst) + '\n'
 
 def on_handshake(word, word_eol, userdata):
 	global connection_established
@@ -77,19 +80,18 @@ def on_handshake(word, word_eol, userdata):
 		message.append(word_eol[0])
 		line = translate_ansi_to_hexchat(word_eol[0])
 		# line = ansi_escape.sub('', word_eol[0])
-		if "NOTICE" in word_eol[0]:
-			hexchat.emit_print("Server Text", f"{line}")
-		elif "ERROR" in word_eol[0]:
-			hexchat.emit_print("Server Text", f"{line}")
-		elif "FT_IRC" in word:
+		if "FT_IRC" in word:
 			if not connection_established:
 				hexchat.prnt(f"{LIGHT_GREY}------------- HANDSHAKE WITH SERVER -------------{ENDC}")
 				connection_established = True
-			for msg in message:
-				hexchat.emit_print("Server Text", f"\t{msg}")
+			match = ansi_escape.search(message[0])
+			if match:
+				color = replace_ansi(match)
+				for msg in message:
+					newMsg = ansi_escape.sub('', msg)
+					hexchat.emit_print("Server Text", f"{color}{newMsg}\003")
 			# hexChatMsg()
 		elif connection_established:
-			# hexchat.emit_print("Server Text", f"{line}")
 			hexchat.emit_print("Server Text", f"{line}")
 			# try:
 			# 	message = message.encode('ascii', 'ignore').decode('ascii')

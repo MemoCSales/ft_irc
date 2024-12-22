@@ -14,11 +14,13 @@
 #  define DEBUG 0
 # endif
 
-# define C_FMT "\033["
-# define C_FMT256 "\033[0;38;5;"
-# define C_FMT256B "\033[1;38;5;"
-# define FLORANGE C_FMT256 "208m"
-# define FORANGE C_FMT256B "208m"
+# define C_FMT "\033[0;"
+# define C_FMT256 "\033[0;38;"
+# define C_FMT256B "\033[1;38;"
+# define FLPURPLE C_FMT256 "2;189;147;249m"
+# define FPURPLE C_FMT256B "2;189;147;249m"
+# define FLORANGE C_FMT256 "5;208m"
+# define FORANGE C_FMT256B "5;208m"
 # define C_END "\033[0m"
 
 /*

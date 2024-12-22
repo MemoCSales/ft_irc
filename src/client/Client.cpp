@@ -26,7 +26,7 @@ void Client::handleRead() {
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 			return; // No data available
 		else
-			throw std::runtime_error("Error on recv: " + std::string(strerror(errno)));
+			throw std::runtime_error(std::string(__func__) + ": " + std::string(strerror(errno)));
 	}
 	else if (nbytes == 0)
 	{
