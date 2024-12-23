@@ -204,7 +204,6 @@ void	Command::handlePart(Client& client, const std::string& args, std::map<std::
 	if (!targetChannel) {
 		std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ": Channel dosen t exist.";
 		client.sendMessage(error);
-		sendInformativeMessage(client ,"Channel does not exist","");
 		return;
 	}
 	bool isOperator = isOperatorFct(targetChannel,client);
@@ -401,12 +400,14 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 	std:: string flag;
 	stream >> flag;
 	if (channelName.empty() || channelName[0] != '#') {
-		client.sendMessage(ERR_NOSUCHCHANNEL(channelName));
+		std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ":Channel name can t be empty or needs to start wit '#.";
+		client.sendMessage(error);
 		return;
 	}
 	Channel *targetChannel = _server.getChannel(channelName);
 	if (!targetChannel) {
-		client.sendMessage(ERR_NOSUCHCHANNEL(channelName));
+		std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ":Channel not found.";
+		client.sendMessage(error);
 		return;
 	}
 	if(flag.empty()){
@@ -448,7 +449,7 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 		}
 	}
 	else{
-		std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ": You are anot an operator in this channel." ;
+		std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ": You are not an operator in this channel." ;
 		client.sendMessage(error);	}
 }
 

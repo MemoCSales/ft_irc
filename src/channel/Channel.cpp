@@ -164,7 +164,8 @@ void Channel::broadcastNotice(const std::string& message, Client* sender) {
 	std::string noticeMessage = ":" + sender->getNick() + "!" + sender->username + "@localhost NOTICE " + this->getName() + " :" + message;
 
 	for (std::vector<Client*>::iterator it = members.begin(); it != members.end(); it++) {
-		(*it) ->sendMessage(noticeMessage);
+		if(*it != sender)
+			(*it) ->sendMessage(noticeMessage);
 	}
 }
 
