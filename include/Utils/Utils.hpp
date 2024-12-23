@@ -21,6 +21,7 @@
 # define FORANGE C_FMT256B "208m"
 # define C_END "\033[0m"
 
+
 /*
 	FL is light foreground color
 	B is background color

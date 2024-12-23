@@ -61,16 +61,36 @@ void	Channel::broadcastTopic( Client* sender){
 	}
 }
 
-void	Channel::broadcastClientState( Client* client,std::string state){
+void Channel::broadcastClientState(Client* client, std::string state) {
 	std::string message;
-	for (std::vector<Client *>::iterator it = members.begin(); it != members.end(); ++it) {
-		Client *member = *it;
-		if (member != client) {
-			if(state == "join")
-				message = ":" + client->getNick() + "!user@host JOIN :" + this->getName();
-			else
-				message = ":" + client->getNick() + "!user@host PART :" + this->getName();
-			member->sendMessage(message);
+	if(state == "join") {
+		message = ":" + client->getNick() + "!user@host JOIN " + this->getName() + "\r\n";
+	}
+	else if(state == "part") {
+		message = ":" + client->getNick() + "!user@host PART " + this->getName() + "\r\n";
+		// For PART, only send to remaining members since parting user handles their own message
+		for (std::vector<Client*>::iterator it = members.begin(); it != members.end(); ++it) {
+				(*it)->sendMessage(message);
+		}
+		return;
+	}
+	else if(state == "kick") {
+		// For kicks, we need the source (kicker) and it should go to everyone including kicked user
+		std::string kicker = "server";
+		message = ":" + kicker + "!user@host KICK " + this->getName() + " " + client->getNick() + " :Kicked by " + kicker + "\r\n";
+		// Send to all members including kicked user
+		for (std::vector<Client*>::iterator it = members.begin(); it != members.end(); ++it) {
+			(*it)->sendMessage(message);
+		}
+		// Also send to kicked user
+		client->sendMessage(message);
+		return;
+	}
+	
+	// For JOIN, broadcast to all members
+	for (std::vector<Client*>::iterator it = members.begin(); it != members.end(); ++it) {
+		if (*it != client) {
+			(*it)->sendMessage(message);
 		}
 	}
 }
@@ -131,18 +151,17 @@ bool Channel::isInvited(Client *client) {
 	return found;
 }
 
-// ----------------------test-----------------
 void Channel::setTopic(const std::string& newTopic, const std::string& setter) {
-    _topic = newTopic;
-    _topicSetter = setter;
-    _topicTimestamp = std::time(NULL); // Get current timestamp
+	_topic = newTopic;
+	_topicSetter = setter;
+	_topicTimestamp = std::time(NULL); // Get current timestamp
 }
 
 
 std::string Channel::getTopicSetter() const {
-    return _topicSetter;
+	return _topicSetter;
 }
 
 std::time_t Channel::getTopicTimestamp() const {
-    return _topicTimestamp;
+	return _topicTimestamp;
 }
