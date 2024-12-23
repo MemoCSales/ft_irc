@@ -38,16 +38,16 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
 		targetChannel->addMember(&client);
 		targetChannel->addOperator(&client);
 		client.sendMessage(":" + client.getNick() + "!" + client.username + "@localhost" + " JOIN " + channelName + "\r\n");
-			targetChannel->sendUsersList(&client);
-	targetChannel->broadcastClientState(&client,"join");
-	Utils::safePrint(client.getNick() + " has joined the channel: " + toStr(targetChannel->getName()));
-	if (!targetChannel->getTopic().empty()) {
-   	 	client.sendMessage(":serverhost 332 " + client.getNick() + " " + channelName + " :" + targetChannel->getTopic());
-		std::stringstream ss;
-		ss << targetChannel->getTopicTimestamp();
-		std::string topicTimestampStr = ss.str();
-    	// client.sendMessage(":serverhost 333 " + client.getNick() + " " + channelName + " " + targetChannel->getTopicSetter() + " " + std::to_string(targetChannel->getTopicTimestamp()));
-		client.sendMessage(":serverhost 333 " + client.getNick() + " " + channelName + " " + targetChannel->getTopicSetter() + " " + topicTimestampStr);
+		targetChannel->sendUsersList(&client);
+		targetChannel->broadcastClientState(&client,"join");
+		Utils::safePrint(client.getNick() + " has joined the channel: " + toStr(targetChannel->getName()));
+		if (!targetChannel->getTopic().empty()) {
+			client.sendMessage(":serverhost 332 " + client.getNick() + " " + channelName + " :" + targetChannel->getTopic());
+			std::stringstream ss;
+			ss << targetChannel->getTopicTimestamp();
+			std::string topicTimestampStr = ss.str();
+			// client.sendMessage(":serverhost 333 " + client.getNick() + " " + channelName + " " + targetChannel->getTopicSetter() + " " + std::to_string(targetChannel->getTopicTimestamp()));
+			client.sendMessage(":serverhost 333 " + client.getNick() + " " + channelName + " " + targetChannel->getTopicSetter() + " " + topicTimestampStr);
 	} else {
 		client.sendMessage(":serverhost 332 " + client.getNick() + " " + channelName + " :\r\n");
 	}
