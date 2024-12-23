@@ -115,7 +115,7 @@ void	Channel::sendUsersList(Client *client){
 bool Channel::isMember(Client *client) {
 	bool found = false;
 	for (std::vector<Client*>::iterator it = members.begin(); it != members.end(); it++) {
-		if ((*it)->nickname == client->nickname) {
+		if (strcasecmp((*it)->nickname.c_str(), client->nickname.c_str()) == 0) {
 			found = true;
 			return found;
 		}
@@ -126,7 +126,7 @@ bool Channel::isMember(Client *client) {
 bool Channel::isOperator(Client *client) {
 	bool found = false;
 	for (std::vector<Client*>::iterator it = operators.begin(); it != operators.end(); it++) {
-		if ((*it)->nickname == client->nickname) {
+		if (strcasecmp((*it)->nickname.c_str(), client->nickname.c_str()) == 0) {
 			found = true;
 			return found;
 		}
@@ -137,7 +137,7 @@ bool Channel::isOperator(Client *client) {
 bool Channel::isInvited(Client *client) {
 	bool found = false;
 	for (std::vector<Client*>::iterator it = people.begin(); it != people.end(); it++) {
-		if ((*it)->nickname == client->nickname) {
+		if (strcasecmp((*it)->nickname.c_str(), client->nickname.c_str()) == 0) {
 			found = true;
 			return found;
 		}

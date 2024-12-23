@@ -143,7 +143,7 @@ void Server::handleClient(int clientFD)
 						Client * newOperator = *(current->getMembers().begin());
 						current->addOperator(newOperator);
 						current->broadcast("Hi! I'm the new operator of this channel.", newOperator);
-						std::string error = ":" + newOperator->username + "!user@host MODE " + current->getName() + " " + newOperator->getNick() + ":You're the new Operator of the channel." ;
+						std::string error = ":" + client->nickname + "!user@host MODE " + current->getName() + " +o " + newOperator->getNick() ;
 						newOperator->sendMessage(error);
 						current->broadcastUserList();
 						Utils::safePrint("New Operator in channel: " + newOperator->getClientNick());		
