@@ -41,7 +41,7 @@ bool	modeInvite(std::string mode, Channel *targetChannel, Client &client, std::s
 			return false;
 		}
 		targetChannel->setInviteStatus(true);
-		std::string error = ":" + client.username + "!user@host MODE " + channelName + " " + client.getNick() + ":Channel mode set to invite only.";
+		std::string error = ":" + client.username + "!user@host MODE " + channelName + " +i " + client.getNick() + ":Channel mode set to invite only.";
 		client.sendMessage(error);
 	}
 	else if (mode == "remove")
@@ -52,7 +52,7 @@ bool	modeInvite(std::string mode, Channel *targetChannel, Client &client, std::s
 			return false;
 		}
 		targetChannel->setInviteStatus(false);
-		std::string error = ":" + client.username + "!user@host MODE " + channelName + "  " + client.getNick() + ":Invitation only  mode removed.";
+		std::string error = ":" + client.username + "!user@host MODE " + channelName + " -i " + client.getNick() + ":Invitation only  mode removed.";
 		client.sendMessage(error);
 		
 	}
@@ -106,17 +106,13 @@ if(name.empty()){
 			return false;
 		}
 		Client *clientTarget = _server.getClientByNick(name);
-		std::string error = ":" + client.username + "!user@host MODE " + channelName + " " + client.getNick() + ":You gave operator priviliges to: " + name + ".";
+		std::string error = ":" + client.username + "!user@host MODE " + channelName + " +o " + clientTarget->getNick() ;
 		client.sendMessage(error);
 		targetChannel->addOperator(clientTarget);
-		targetChannel->sendUsersList(&client);
+		// targetChannel->sendUsersList(&client);
 
-		// Update NAMES list for all remaining channel members
-		std::vector<Client*>::const_iterator it = targetChannel->getMembers().begin();
-		for (; it != targetChannel->getMembers().end(); ++it) {
-			targetChannel->sendUsersList(*it);
-		}
-		std::string message = ":" + clientTarget->username + "!user@host MODE " + channelName + " " + clientTarget->getNick() + ":You received operator priviliges from: " + client.getNick();
+		targetChannel->broadcastUserList();
+		std::string message = ":" + clientTarget->username + "!user@host MODE " + channelName + " +o " + clientTarget->getNick();
 		clientTarget->sendMessage(message);
 		std::cout << "new operator added in the chanel : " <<  name << std::endl;
 	}
@@ -165,7 +161,7 @@ bool	modeLimit(std::string limit, Client &client,Channel *targetChannel, std::st
 	}
 	
 	targetChannel->setLimit(nb);
-	std::string error = ":" + client.username + "!user@host MODE " + channelName + " " + client.getNick() + ":Limit clients set to: " + limit;
+	std::string error = ":" + client.username + "!user@host MODE " + channelName + " +l " + client.getNick() + ":Limit clients set to: " + limit;
 	client.sendMessage(error);
 	return true;
 }
@@ -184,7 +180,7 @@ bool modeTopic(std::string mode, Client &client, Channel *targetChannel, std::st
 			client.sendMessage(error);
 			return false;
 		}
-		std::string error = ":" + client.username + "!user@host MODE " + channelName + " " + client.getNick() + ":Topic restriction is on.";
+		std::string error = ":" + client.username + "!user@host MODE " + channelName + " +t " + client.getNick() + ":Topic restriction is on.";
 		client.sendMessage(error);
 		targetChannel->setFlagTopic(true);
 	}
@@ -195,7 +191,7 @@ bool modeTopic(std::string mode, Client &client, Channel *targetChannel, std::st
 			client.sendMessage(error);
 			return false ;
 		}
-		std::string error = ":" + client.username + "!user@host MODE " + channelName + " " + client.getNick() + ":You removed topic restriction.";
+		std::string error = ":" + client.username + "!user@host MODE " + channelName + " -t " + client.getNick() + ":You removed topic restriction.";
 		client.sendMessage(error);
 		targetChannel->setFlagTopic(false);
 	}
