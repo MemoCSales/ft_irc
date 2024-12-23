@@ -99,20 +99,13 @@ void Channel::broadcastClientState(Client* client, std::string state) {
 
 void	Channel::sendUsersList(Client *client){
 	std::string message = ":serverhost 353 " + client->getNick() + " = " + this->getName() + " :";
-	if (this->isOperator(client)) {
-		message += "@" + client->getNick() + " ";
-	} else {
-		message += client->getNick() + " ";
-	}
 
 	for (std::vector<Client *>::iterator it = members.begin(); it != members.end(); ++it) {
 		Client *member = *it;
-		if (member != client) {
 			if(this->isOperator(member))
 				message += "@" + member->getNick() + " ";
 			else
 				message += member->getNick() + " ";
-		}
 	}
 	client->sendMessage(message);
 	client->sendMessage(":serverhost 366 " + client->getNick() + " " + this->getName() + " :End of /NAMES list");
@@ -152,7 +145,6 @@ bool Channel::isInvited(Client *client) {
 	return found;
 }
 
-// ----------------------test-----------------
 void Channel::setTopic(const std::string& newTopic, const std::string& setter) {
 	_topic = newTopic;
 	_topicSetter = setter;
@@ -166,4 +158,20 @@ std::string Channel::getTopicSetter() const {
 
 std::time_t Channel::getTopicTimestamp() const {
 	return _topicTimestamp;
+}
+
+
+void Channel::broadcastNotice(const std::string& message, Client* sender) {
+	std::string noticeMessage = ":" + sender->getNick() + "!" + sender->username + "@localhost NOTICE " + this->getName() + " :" + message;
+
+	for (std::vector<Client*>::iterator it = members.begin(); it != members.end(); it++) {
+		(*it) ->sendMessage(noticeMessage);
+	}
+}
+
+void Channel::broadcastUserList() {
+	std::vector<Client*>::iterator it = members.begin();
+	for (; it != members.end(); it++) {
+		sendUsersList(*it);
+	}
 }

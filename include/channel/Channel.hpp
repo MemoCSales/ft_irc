@@ -39,6 +39,8 @@ public:
 	void	removePeople(Client *client);
 	void	broadcastTopic(Client* sender);
 	void    broadcastClientState( Client* client,std::string state);
+	void	broadcastNotice(const std::string& message, Client* sender);
+	void	broadcastUserList();
 	void	sendUsersList(Client *client);
 	bool 	isMember(Client *client);
 	bool	isOperator(Client *client);
