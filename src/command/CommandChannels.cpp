@@ -164,10 +164,17 @@ void	Command::handleKick(Client& client, const std::string& args, std::map<std::
 					sendInformativeMessage(client,"You can t kick yourself dummy :))!. Use PART <#channel name> to exit channel.","");
 					return;
 				}
-				std::string response = "You got kicked from the channel:" + channelName + "\n";
-				send(targetChannel->getMembers()[i]->getFd(), response.c_str(), response.size() + 1, 0);
-				Utils::safePrint(toStr(targetChannel->getMembers()[i]->getNick()) + " got kicked from: " + toStr(targetChannel->getName()));
+				targetChannel->broadcastClientState(targetChannel->getMembers()[i], "kick");
 				targetChannel->removeMember(targetChannel->getMembers()[i]);
+
+				// Update NAMES list
+				for (std::vector<Client*>::const_iterator it = targetChannel->getMembers().begin(); 
+				it != targetChannel->getMembers().end(); ++it) {
+				targetChannel->sendUsersList(*it);
+			}
+				// std::string response = "You got kicked from the channel:" + channelName + "\n";
+				// send(targetChannel->getMembers()[i]->getFd(), response.c_str(), response.size() + 1, 0);
+				Utils::safePrint(toStr(targetChannel->getMembers()[i]->getNick()) + " got kicked from: " + toStr(targetChannel->getName()));
 				break;
 			}
 		}
@@ -199,13 +206,18 @@ void	Command::handlePart(Client& client, const std::string& args, std::map<std::
 	for (unsigned long int i = 0; i < targetChannel->getMembers().size(); i++){
 		if (targetChannel->getMembers()[i] == &client) {
 			found = true;
-			targetChannel->removeMember(&client);
-			targetChannel->broadcastClientState(&client,"exit");
-			if(isOperator)
-			{
-				targetChannel->removeOperator(&client);
+			if (found) {
+				targetChannel->broadcastClientState(&client, "part");
+
+				// Send explicit part message to the leaving client
+				client.sendMessage(":" + client.getNick() + "!" + client.username + "@localhost PART " + channelName + "\r\n");
+
+				if(isOperator)	{
+					targetChannel->removeOperator(&client);
+				}
+				targetChannel->removeMember(&client);
+				// sendInformativeMessage(client,"Exited channel", targetChannel->getName());
 			}
-			sendInformativeMessage(client,"Exited channel", targetChannel->getName());
 			Utils::safePrint(client.getNick() + " has joined the channel: " + toStr(targetChannel->getName()));
 			break;
 		}

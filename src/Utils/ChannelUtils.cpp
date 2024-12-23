@@ -100,9 +100,15 @@ if(name.empty()){
 		std::string message = "You gave operator priviliges to: " + name +".\n";
 		client.sendMessage(message);
 		targetChannel->addOperator(clientTarget);
-		message = "You recived operator priviliges from: " + client.getNick()+" in "+ channelName +" channel" +".\n";
+
+		// Update NAMES list for all remaining channel members
+		std::vector<Client*>::const_iterator it = targetChannel->getMembers().begin();
+		for (; it != targetChannel->getMembers().end(); ++it) {
+			targetChannel->sendUsersList(*it);
+		}
+		message = "You received operator priviliges from: " + client.getNick()+" in "+ channelName +" channel" +".\n";
 		clientTarget->sendMessage(message);
-		std::cout << "new operator adde in the chanel : " <<  name << std::endl;
+		std::cout << "new operator added in the chanel : " <<  name << std::endl;
 	}
 	else{
 		std::string message = name + " not found in: " + channelName + ".\n";
