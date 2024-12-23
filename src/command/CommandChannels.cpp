@@ -66,7 +66,7 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
 	} else {
 		// Check if the client is in channel;
 		if(isMemberFct(targetChannel,client,channelName,channels)){  // here different format
-			std::string error = ":" + client.username + "!user@host JOIN " + channelName + " " + client.getNick() + ":Already in channel";
+			std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ":Already in channel";
 			client.sendMessage(error);
 			return;
 		}

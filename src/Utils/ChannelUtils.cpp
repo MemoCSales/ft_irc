@@ -25,6 +25,7 @@ bool	modePass(std::string passWord,Client& client, std::string channelName,Chann
 	targetChannel->setPassword(passWord);
 	std::string error = ":" + client.username + "!user@host MODE " + channelName + " +k " + client.getNick() + ":Password for the channel: " + channelName +" set to: " +passWord;
 	client.sendMessage(error);
+	targetChannel->broadcastNotice("The operator has set password for this channel.",&client);
 	return true;
 }
 
@@ -43,6 +44,8 @@ bool	modeInvite(std::string mode, Channel *targetChannel, Client &client, std::s
 		targetChannel->setInviteStatus(true);
 		std::string error = ":" + client.username + "!user@host MODE " + channelName + " +i " + client.getNick() + ":Channel mode set to invite only.";
 		client.sendMessage(error);
+		targetChannel->broadcastNotice("The operator has set channel mode for invite only.",&client);
+
 	}
 	else if (mode == "remove")
 	{
@@ -54,6 +57,8 @@ bool	modeInvite(std::string mode, Channel *targetChannel, Client &client, std::s
 		targetChannel->setInviteStatus(false);
 		std::string error = ":" + client.username + "!user@host MODE " + channelName + " -i " + client.getNick() + ":Invitation only  mode removed.";
 		client.sendMessage(error);
+		targetChannel->broadcastNotice("The operator has removed the invite only mode.",&client);
+
 		
 	}
 	else {
@@ -109,6 +114,8 @@ if(name.empty()){
 		std::string error = ":" + client.username + "!user@host MODE " + channelName + " +o " + clientTarget->getNick() ;
 		client.sendMessage(error);
 		targetChannel->addOperator(clientTarget);
+		targetChannel->broadcastNotice(client.getNick() + " gave operator priviliges to :" + clientTarget->getNick(),&client);
+
 		// targetChannel->sendUsersList(&client);
 
 		targetChannel->broadcastUserList();
@@ -163,6 +170,8 @@ bool	modeLimit(std::string limit, Client &client,Channel *targetChannel, std::st
 	targetChannel->setLimit(static_cast<int>(nb));
 	std::string error = ":" + client.username + "!user@host MODE " + channelName + " +l " + client.getNick() + ":Limit clients set to: " + limit;
 	client.sendMessage(error);
+	targetChannel->broadcastNotice("The operator has a limit for the channel members.",&client);
+
 	return true;
 }
 
@@ -183,6 +192,8 @@ bool modeTopic(std::string mode, Client &client, Channel *targetChannel, std::st
 		std::string error = ":" + client.username + "!user@host MODE " + channelName + " +t " + client.getNick() + ":Topic restriction is on.";
 		client.sendMessage(error);
 		targetChannel->setFlagTopic(true);
+		targetChannel->broadcastNotice("The operator has set restriction for the channel topic.",&client);
+
 	}
 
 	else if(mode == "remove") {
@@ -194,6 +205,8 @@ bool modeTopic(std::string mode, Client &client, Channel *targetChannel, std::st
 		std::string error = ":" + client.username + "!user@host MODE " + channelName + " -t " + client.getNick() + ":You removed topic restriction.";
 		client.sendMessage(error);
 		targetChannel->setFlagTopic(false);
+			targetChannel->broadcastNotice("The operator has removed restriction for the channel topic.",&client);
+
 	}
 	else {
 		std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ":You can only use set or remove.";
