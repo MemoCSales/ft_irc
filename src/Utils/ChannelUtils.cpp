@@ -112,7 +112,7 @@ if(name.empty()){
 		// targetChannel->sendUsersList(&client);
 
 		targetChannel->broadcastUserList();
-		std::string message = ":" + clientTarget->username + "!user@host MODE " + channelName + " +o " + clientTarget->getNick();
+		std::string message = ":" + client.username + "!user@host MODE " + channelName + " +o " + clientTarget->getNick();
 		clientTarget->sendMessage(message);
 		std::cout << "new operator added in the chanel : " <<  name << std::endl;
 	}
