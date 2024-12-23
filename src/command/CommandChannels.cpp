@@ -66,7 +66,7 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
 	} else {
 		// Check if the client is in channel;
 		if(isMemberFct(targetChannel,client,channelName,channels)){  // here different format
-			std::string error = ":" + client.username + "!user@host PASS " + channelName + " " + client.getNick() + ":Already in channel";
+			std::string error = ":" + client.username + "!user@host JOIN " + channelName + " " + client.getNick() + ":Already in channel";
 			client.sendMessage(error);
 			return;
 		}
@@ -213,7 +213,6 @@ void	Command::handlePart(Client& client, const std::string& args, std::map<std::
 				}
 				targetChannel->removeMember(&client);
 				targetChannel->removePeople(&client);
-				// sendInformativeMessage(client,"Exited channel", targetChannel->getName());
 			}
 			Utils::safePrint(client.getNick() + " has joined the channel: " + toStr(targetChannel->getName()));
 			break;
@@ -231,8 +230,15 @@ void	Command::handlePart(Client& client, const std::string& args, std::map<std::
 	if (targetChannel->getOperators().size() == 0 && targetChannel->getMembers().size() > 0) {
         Client* oldestMember = targetChannel->getMembers().front();
         targetChannel->addOperator(oldestMember);
-        std::string promotionMessage = "You have been promoted to operator in channel: " + targetChannel->getName() + "\n";
-        oldestMember->sendMessage(promotionMessage);
+
+		// Send MODE mesage to update operator status
+		std::string promotionMessage = ":" + client.getNick() + "!" + client.username +"@localhost MODE " + targetChannel->getName() + " +o " + oldestMember->getNick();
+        targetChannel->broadcast(promotionMessage, &client);
+		// Update the names list
+		targetChannel->broadcastUserList();
+		// Broadcast informative message to all members
+		targetChannel->broadcastNotice(oldestMember->getNick() + " is the new operator of the channel", &client);
+		
 		Utils::safePrint(toStr(oldestMember->getNick()) + " promoted to operator in channel: " + toStr(targetChannel->getName()));
     }
 
