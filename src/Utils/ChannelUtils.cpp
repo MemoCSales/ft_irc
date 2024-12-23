@@ -170,8 +170,7 @@ bool	modeLimit(std::string limit, Client &client,Channel *targetChannel, std::st
 	targetChannel->setLimit(nb);
 	std::string error = ":" + client.username + "!user@host MODE " + channelName + " +l " + client.getNick() + ":Limit clients set to: " + limit;
 	client.sendMessage(error);
-	targetChannel->broadcastNotice("The operator has a limit for the channel members.",&client);
-
+	targetChannel->broadcastNotice("The operator has set the limit for the channel members.",&client);
 	return true;
 }
 
