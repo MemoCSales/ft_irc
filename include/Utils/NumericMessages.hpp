@@ -14,9 +14,11 @@
 # define ERR_NOOPERHOST ":serverhost 491 :No O-lines for your host\r\n"
 # define ERR_NOTREGISTERED ":serverhost 451 :You have not registered\r\n"
 # define ERR_NOSUCKNICK(nickname) ":serverhost 401 * " + nickname + " :No such nickname \r\n"
-# define ERR_NOSUCHCHANNEL(channel) ":serverhost 403 " + channel + " :No such channel \r\n"
+# define ERR_NOSUCHCHANNEL(channel) ":serverhost 403 " + channel + " :No such channel: " +  channel + "\r\n"
 # define ERR_CANNOTSENDTOCHAN(channel) ":serverhost 404 " + channel + ":Cannot send to channel\r\n"
 # define ERR_CHANOPRIVSNEEDED(channel) ":serverhost 482 " + channel + ":You're not a channel operator\r\n"
+# define ERR_ALREADYINCHANNEL(nick, targetNick, channel) ":serverhost 443 " + nick + " " + targetNick + " " + channel + " :is already on channel"
+# define ERR_NOTINCHANNEL(channel) ":serverhost 442 " + channel + " :You're not on that channel"
 
 /* REPLY MESSAGES */
 # define RPL_NICKCHANGE(oldNick, user, host, newNick)  ":" + oldNick + "!" + user + "@" + host + " NICK :" + newNick + "\r\n"

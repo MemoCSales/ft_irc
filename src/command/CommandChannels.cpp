@@ -166,6 +166,7 @@ void	Command::handleKick(Client& client, const std::string& args, std::map<std::
 				}
 				targetChannel->broadcastClientState(targetChannel->getMembers()[i], "kick");
 				targetChannel->removeMember(targetChannel->getMembers()[i]);
+				targetChannel->removePeople(targetChannel->getMembers()[i]);
 
 				// Update NAMES list
 				for (std::vector<Client*>::const_iterator it = targetChannel->getMembers().begin(); 
@@ -216,6 +217,7 @@ void	Command::handlePart(Client& client, const std::string& args, std::map<std::
 					targetChannel->removeOperator(&client);
 				}
 				targetChannel->removeMember(&client);
+				targetChannel->removePeople(&client);
 				// sendInformativeMessage(client,"Exited channel", targetChannel->getName());
 			}
 			Utils::safePrint(client.getNick() + " has joined the channel: " + toStr(targetChannel->getName()));
@@ -307,22 +309,26 @@ void	Command::handleTopic(Client& client, const std::string& args, std::map<std:
 void	Command::handleInvite(Client& client, const std::string& args, std::map<std::string, Channel*>& channels){
 	(void)channels;
 	std::istringstream stream(args);
-	std::string channelName;
-	stream >> channelName;
-	std::string targetNick;
+	std::string targetNick, channelName;
 	stream >> targetNick;
-	if (channelName.empty() || channelName[0] != '#') {
-		sendInformativeMessage(client,"Channel name must start with '#' or channel is empty", "");
+	stream >> channelName;
+	if(targetNick.empty()){
+		client.sendMessage(ERR_NEEDMOREPARAMS(std::string("INVITE")));
 		return;
 	}
-	if(targetNick.empty()){
-		sendInformativeMessage(client,"no nickname given.","");
+	Client *targetClient = _server.getClientByNick(targetNick);
+	if (!targetClient) {
+		client.sendMessage(ERR_NOSUCKNICK(targetNick));
+		return;
+	}
+	if (channelName.empty() || channelName[0] != '#') {
+		client.sendMessage(ERR_NOSUCHCHANNEL(channelName));
 		return;
 	}
 
 	Channel *targetChannel = _server.getChannel(channelName);
 	if (!targetChannel) {
-		sendInformativeMessage(client,"Channel does not exist.","");
+		client.sendMessage(ERR_NOSUCHCHANNEL(channelName));
 		return;
 	}
 	bool isOperator = isOperatorFct(targetChannel, client);
@@ -331,7 +337,6 @@ void	Command::handleInvite(Client& client, const std::string& args, std::map<std
 		if (targetChannel->getMembers()[i] == &client) {
 			found = true;
 			if(isOperator){
-				Client *targetClient = _server.getClientByNick(targetNick);
 				bool isMember = isMemberFct(targetChannel,*targetClient,channelName, channels);
 				if(isMember){
 					std::string response = targetNick + " already in the channel.\n";
@@ -348,23 +353,30 @@ void	Command::handleInvite(Client& client, const std::string& args, std::map<std
 						}
 					}
 					if(invitedAlready){
-						sendInformativeMessage(client,targetNick + " already invited in the", channelName);
+						client.sendMessage(ERR_ALREADYINCHANNEL(client.getNick(), targetNick, channelName));
 						return ;
 					}
 					targetChannel->addAllowedPeople(targetClient);
-					std::string response = "You have been invited to join channel: " + channelName + "\n";
+
+					// Send confirmation messages
+					client.sendMessage(":serverhost 341 " + client.getNick() + " " + targetNick + " " + channelName);
+					std::string response = ":" + client.getNick() + "!" + client.username + "@localhost INVITE " + targetNick + " " + channelName;
 					targetClient->sendMessage(response);
-				} else {
-					sendInformativeMessage(client,"User with nickname", targetNick + " not found");
-				}
+				} 
+				// else {
+				// 	sendInformativeMessage(client,"User with nickname", targetNick + " not found");
+				// }
 			} else {
-					sendInformativeMessage(client,"You 're not an operator in", targetChannel->getName());
+					// sendInformativeMessage(client,"You 're not an operator in", targetChannel->getName());
+					client.sendMessage(ERR_CHANOPRIVSNEEDED(targetChannel->getName()));
 			}
 			break;
 		}
 	}
 	if (!found){
-		sendInformativeMessage(client,"You are not part of",  targetChannel->getName() + " channel");
+		// sendInformativeMessage(client,"You are not part of",  targetChannel->getName() + " channel");
+		client.sendMessage(ERR_NOTINCHANNEL(channelName));
+		return;
 	}
 }
 
