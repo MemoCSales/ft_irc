@@ -147,6 +147,7 @@ void Server::handleClient(int clientFD)
 							current->broadcast("Hi! I'm the new operator of this channel.", newOperator);
 							std::string error = ":" + newOperator->username + "!user@host PASS " + current->getName() + " " + newOperator->getNick() + ":You're the new Operator of the channel." ;
 							newOperator->sendMessage(error);
+							current->sendUsersList(newOperator);
 							Utils::safePrint("New Operator in channel: " + newOperator->getClientNick());		
 						} else {
 							Utils::safePrint("Channel removed: " + itchannel->first);

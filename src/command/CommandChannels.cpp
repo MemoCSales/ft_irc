@@ -5,7 +5,14 @@
 #include "ChannelUtils.hpp"
 
 void Command::handleJoin(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
-	std::string channelName = trim(args);
+	std::istringstream ss(args);
+	std::string channelName;
+	ss >> channelName;
+	channelName = trim(channelName);
+	std::string passCode;
+	ss >> passCode;
+	passCode = trim(passCode);
+
 	// Check if client registration is complete before joining a channel
 	if (!client.isRegistered()) {
 		sendCodeMessage(client, "451", client.getNick(), ":You have not registered");
@@ -15,6 +22,8 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
         sendCodeMessage(client, "461", client.getNick(), "JOIN :Channel name must start with '#' or is empty");
 		return;
 	}
+
+
 
 	// Check for long string. If found truncated
 	channelName = Utils::truncateString(channelName);
@@ -28,6 +37,10 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
 			targetChannel = it->second;
 		}
 	}
+	// if(!targetChannel->getPassword().empty() && passCode.empty()){
+	// 	sendCodeMessage(client, "475", client.getNick(), "Private Channel, need a password.");
+	// 	return;
+	// }
 
 	if (!found) {  //maybe create a function for this
 		targetChannel = _server.getOrCreateChannel(channelName);
@@ -80,41 +93,19 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
 				return;
 			}
 		}
-		if (!targetChannel->getPassword().empty()) {
-			sendCodeMessage(client, "475", client.getNick(), "Password required. Private channel.");
-			// wait for password
-			char passBuff[4096];
-			memset(passBuff, 0, sizeof(passBuff));
-			int passBytesRecv = 0;
-			// Loop to wait for password input
-			while (true) {
-				passBytesRecv = recv(client.getFd(), passBuff, sizeof(passBuff) - 1, 0);
-				if (passBytesRecv > 0) {
-					std::string pass(passBuff, passBytesRecv);
-					pass.erase(pass.find_last_not_of(" \n\r\t") + 1);
-					if (targetChannel->getPassword() == pass) {
-						targetChannel->addMember(&client);
-						sendInformativeMessage(client,"Joined Channel",targetChannel->getName());
-						targetChannel->sendUsersList(&client);
-						targetChannel->broadcastClientState(&client,"join");
-						Utils::safePrint(client.getNick() + " has joined the channel: " + toStr(targetChannel->getName()));
-						if (!targetChannel->getTopic().empty()){
-							client.sendMessage(":serverhost 332 " + client.getNick() + " " + channelName + " :" + targetChannel->getTopic());
-							std::stringstream ss;
-							ss << targetChannel->getTopicTimestamp();
-							std::string topicTimestampStr = ss.str();
-							client.sendMessage(":serverhost 333 " + client.getNick() + " " + channelName + " " + targetChannel->getTopicSetter() + " " + topicTimestampStr);
-						} else {
-							client.sendMessage(":serverhost 332 " + client.getNick() + " " + channelName + " :\r\n");
-						}
-						return;
-					} else {
-						sendCodeMessage(client, "475", client.getNick(), "Cannot join channel (+k) - password wrong.");
-						return;
-					}
-				}
+		if(!targetChannel->getPassword().empty()){
+			// sendCodeMessage(client, "475", client.getNick(), "Private Channel, need a password.");
+			if(passCode.empty())
+			{
+				sendCodeMessage(client, "475", client.getNick(), "Cannot join channel password field empty, Private channel need a password.");
+				return;
+			}
+			else if(passCode != targetChannel->getPassword()){
+				sendCodeMessage(client, "475", client.getNick(), "Cannot join channel (+k) - password wrong.");
+				return;
 			}
 		}
+	
 	}
 	// Join the channel	
 	targetChannel->addMember(&client);
