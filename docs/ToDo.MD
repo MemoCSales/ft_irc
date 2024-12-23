@@ -25,6 +25,13 @@
 - **6660-6669**: A range of ports often used for IRC.
 - **7000-7005**: Another range of ports sometimes used for IRC.
 ```
+```bash
+	For setting up a local network, such as an IRC server, you can use any available port that is not already in use by another service. Commonly used ports for IRC servers are:
+
+- **6667**: The default port for IRC.
+- **6660-6669**: A range of ports often used for IRC.
+- **7000-7005**: Another range of ports sometimes used for IRC.
+```
 ## Client
 
 - [x] Check python testHexChaty on server message

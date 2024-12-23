@@ -30,7 +30,7 @@ UNDERLINE = '\033[4m'
 
 def modify_hexchat_config():
 	# Generate random user data with the same unique number
-	UNIQUE_NUMBER = random.randint(1000, 9999)
+	UNIQUE_NUMBER = random.randint(0, 50)
 	NICK = f"user{UNIQUE_NUMBER}"
 	USERNAME = f"user{UNIQUE_NUMBER}"
 	REALNAME = f"Real{UNIQUE_NUMBER}"
@@ -44,9 +44,9 @@ def modify_hexchat_config():
 	print(f"Username: {BLUE}{UNDERLINE}{USERNAME}{ENDC}")
 	# print(f"Generated Realname: {GREEN}{UNDERLINE}{REALNAME}{ENDC}")
 	#-------------------------------------------------------------------
-	USERS= "testScripts/users_created.txt"
-	with open(USERS, "a") as file:
-		file.write(f"{NICK}\n")
+	# USERS= "testScripts/users_created.txt"
+	# with open(USERS, "a") as file:
+	# 	file.write(f"{NICK}\n")
 	#-------------------------------------------------------------------
 
 	servlist_path = os.path.expanduser("~/.var/app/io.github.Hexchat/config/hexchat/servlist.conf")
@@ -101,8 +101,10 @@ nick, username, realname = modify_hexchat_config()
 # command = f'flatpak run io.github.Hexchat --existing--command="server {network}"'
 command = (
 	'flatpak run io.github.Hexchat '
-	'--command="set text_font Ubuntu Mono 9" '
+	'--command="set text_font Ubuntu Mono 9 " '
+	# '--command="server irc" '
 	'--command="py load ~/.var/app/io.github.Hexchat/config/hexchat/addons/testHexChat.py" '
+	'--command="py load ~/.var/app/io.github.Hexchat/config/hexchat/addons/handshake.py" '
 )
 #	'--command="server irc"'
 print("\n", MAG, f"command = {command}", ENDC)

@@ -3,14 +3,18 @@
 #include <cstring>
 # include "NumericMessages.hpp"
 
-Client::Client(int fd) : _clientFD(fd), _authenticated(false), _serverOperator(false), _welcomeMessage(false), nickname(""), username(""), _buffer("") {
+Client::Client(int fd) : _clientFD(fd), _authenticated(false), _serverOperator(false), _welcomeMessage(false), nickname(""), username(""), _buffer(""), color(getRandomColorFmt(1, 1))
+{
 	pthread_mutex_init(&clientMutex, NULL);
 }
 
 void Client::sendMessage(const std::string &message)
 {
 	pthread_mutex_lock(&clientMutex);
-	std::string msg = message + "\r\n";
+	std::string msg = message;
+	if (msg.find("\r\n") == std::string::npos) {
+		msg += "\r\n";
+	}
 	send(_clientFD, msg.c_str(), msg.length(), 0);
 	pthread_mutex_unlock(&clientMutex);
 }
@@ -21,12 +25,12 @@ Client::~Client() {
 
 void Client::handleRead() {
 	char buffer[MAX_BUFFER];
-	int nbytes = recv(_clientFD, buffer, sizeof(buffer) - 1, 0);
+	ssize_t nbytes = recv(_clientFD, buffer, sizeof(buffer) - 1, 0);
 	if (nbytes < 0) {
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 			return; // No data available
 		else
-			throw std::runtime_error("Error on recv: " + std::string(strerror(errno)));
+			throw std::runtime_error(std::string(__func__) + ": " + std::string(strerror(errno)));
 	}
 	else if (nbytes == 0)
 	{
@@ -35,7 +39,7 @@ void Client::handleRead() {
 	buffer[nbytes] = '\0';
 	this->_buffer += buffer;
 	std::ostringstream oss;
-	oss << "Received message: " << buffer;
+	oss << color << "Received message: " << buffer << C_END;
 	Utils::safePrint(oss.str());
 
 	// Process commands
@@ -47,7 +51,7 @@ void Client::handleRead() {
 		std::string command = this->_buffer.substr(0, pos);
 		this->_buffer.erase(0, pos + 2);
 
-		Utils::safePrint("Processing command: " + command);
+		Utils::safePrint(color + "Processing command: " + command + std::string(C_END));
 		commandParser.parseAndExecute(*this, command, server->getChannels());
 	}
 }

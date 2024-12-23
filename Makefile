@@ -126,7 +126,7 @@ re: fclean all
 ## do not use yet as it does not handle 
 val: $(NAME)
 	@echo $(RED) $(VALGRIND) ./$(NAME) $$port $$pass $(E_NC) "\n"
-	@$(VALGRIND) ./$(NAME) $$port $$pass ; echo
+	@$(VALGRIND) ./$(NAME) $$port $$pass ; echo 
 leaks: $(NAME)
 	@echo $(RED)$(MAC_LEAKS) ./$(NAME) "$i" $(E_NC)  "\n"
 	@$(MAC_LEAKS) ./$(NAME)
@@ -204,19 +204,28 @@ delUsers:
 		echo $(RED)"...Deleting usersFile"  $(E_NC); \
 		rm -f testScripts/users_created.txt; \
 	fi;
-hexChat: $(NAME) delUsers addon
+delHex:
+	@path="$(HOME)/.var/app/io.github.Hexchat/config/hexchat" ;\
+	rm -rf $$path/addons/* $$path/scrollback/irc/#* ; \
+	ret=$$?; \
+	if [ $$ret -eq 0 ]; then \
+		echo $(GREEN)"HexChat Addons deleted"  $(E_NC); \
+	else \
+		echo $(RED)"...Error removing addons"  $(E_NC); \
+	fi;
+thex: delHex addon
+	@flatpak run io.github.Hexchat --command="set text_font Ubuntu Mono 9 " --command="py load ~/.var/app/io.github.Hexchat/config/hexchat/addons/handshake.py" --command="server irc"
+hex: $(NAME) delUsers addon
 	@trap 'clear; echo ;echo $(RED)"...Process interrupted" $(E_NC); exit 1' INT; \
 	python3 testScripts/openHexchat.py; echo $(GREEN)"Process Ended" $(E_NC);
-msg:$(NAME)
-	python3 testScripts/sendMsg.py
 addon:
 	@chmod +r $(PWD)/testScripts/testHexChat.py
 	@mkdir -p $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons/
-	@cp $(PWD)/testScripts/testHexChat.py $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons
+#	@cp $(PWD)/testScripts/testHexChat.py $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons
 	@chmod +r $(PWD)/testScripts/handshake.py
 	@cp $(PWD)/testScripts/handshake.py $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons
 	@echo $(GREEN)...Addon added to  HexChat path $(E_NC)
-#	flatpak run io.github.Hexchat --command="py load ~/.var/app/io.github.Hexchat/config/hexchat/addons/testHexChat.py"
+# flatpak run io.github.Hexchat --command="py load ~/.var/app/io.github.Hexchat/config/hexchat/addons/testHexChat.py"
 
 # #-------------------- PROCESS UTILS ----------------------------#
 killPD:
@@ -250,7 +259,7 @@ checkOpen:
 			watch -n 2 "lsof -p $$pid 2>/dev/null | awk 'NR==1 || \$$4 ~ /u\$$/ {print \$$1, \$$2, \$$4, \$$5, \$$9, \$$10, \$$11}'"; \
 		done; \
 	fi
-freePort: checkOpen;
+freePort:
 	@port="6667";\
 	pids=$$(lsof -t -i :$$port); \
 	if [ -z "$$pids" ]; then \

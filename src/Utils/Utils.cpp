@@ -73,10 +73,30 @@ std::string	getColorFmt(int eColor)
 		eColor = DEFAULT;
 	if (eColor > FGRAY)
 		fmt += "1;";
+	else
+		fmt += "0;";
 	strColor << fmt << eColor << "m";
 	return (strColor.str());
 }
 
+t_color getRandomAnsiiColor()
+{
+	// Array of all possible colors in the eColor enum
+	t_color colors[] = {
+		FLBLACK, FLRED, FLGREEN, FLYELLOW, FLBLUE, FLMAGENTA, FLCYAN, FGRAY, FRED, FGREEN, FYELLOW, FBLUE, FMAGENTA, FCYAN
+	};
+
+	// Get the number of colors in the array
+	int num_colors = sizeof(colors) / sizeof(colors[0]);
+
+	// Seed the random number generator
+	initSeed();
+	// Select a random index
+	int random_index = rand() % num_colors;
+
+	// Return the random color
+	return colors[random_index];
+}
 /**
  * Generates an error message with optional formatting.
  *
@@ -93,6 +113,8 @@ std::string error(std::string str, bool bold)
 	fmt = C_FMT;
 	if (bold)
 		fmt += "1;";
+	else 
+		fmt += "0;";
 	strColor << fmt << FRED << "m"
 	<< "ERROR: " << str << C_END;
 	return (strColor.str());
@@ -181,14 +203,19 @@ int ft_rand(int min, int max)
  * strColor << fmt
 	<< rColorRGB(ft_rand(80, 200), ft_rand(80, 200), ft_rand(80, 200));
  */
-std::string getRandomColorFmt(bool bold)
+std::string getRandomColorFmt(bool bold, bool standard)
 {
 	std::ostringstream strColor;
 
 	strColor << C_FMT;
 	if (bold)
 		strColor << + "1;";
-	strColor << rColorRGB(ft_rand(60, 255), ft_rand(60, 255), ft_rand(60, 255));
+	else
+		strColor << + "0;";
+	if (standard)
+		strColor << getRandomAnsiiColor() << "m";
+	else
+		strColor << rColorRGB(ft_rand(60, 255), ft_rand(60, 255), ft_rand(60, 255));
 	return (strColor.str());
 }
 
@@ -247,11 +274,11 @@ std::string setObjColor(int const& color)
 	if (DEBUG == 0)
 	{
 		if ((color > FWHITE && color < BGRAY ) || color > 107)
-			return(getRandomColorFmt(1));
+			return(getRandomColorFmt(1, 0));
 		return (getColorFmt(color));
 	}
 	else
-		return (getRandomColorFmt(1));
+		return (getRandomColorFmt(1, 0));
 }
 
 /**
@@ -547,11 +574,17 @@ void osPrint(std::ostream& os, int const& val)
 	os << val << " ";
 }
 
-void printAsciiDecimal(const std::string& str) {
-	for (size_t i = 0; i < strlen(str.c_str()); i++) {
-		printf("%d, ", (int)str[i]);
+void printAsciiDecimal(const std::string& str){
+	if (DEBUG < 2)
+		return ;
+	std::ostringstream os;
+
+	for (size_t i = 0; i < strlen(str.c_str()); ++i)
+	{
+		os << static_cast<int>(str[i]) << ",";
 	}
-	printf("\n");
+	os << std::endl;
+	Utils::safePrint(os.str());
 }
 
 std::string trim(const std::string& str) {
@@ -566,47 +599,47 @@ std::string trim(const std::string& str) {
 
 bool isNumber(const std::string& str) {
 	
-    if (str.empty()) {
-        return false;
-    }
-    unsigned long int i = 0;
-    if (str[0] == '-' || str[0] == '+') {
-        i++;
-        if (i == str.size()) {
-            return false;
-        }
-    }
+	if (str.empty()) {
+		return false;
+	}
+	unsigned long int i = 0;
+	if (str[0] == '-' || str[0] == '+') {
+		i++;
+		if (i == str.size()) {
+			return false;
+		}
+	}
 
-    for (; i < str.size(); i++) {
-        if (!std::isdigit(str[i])) {
-            return false;
-        }
-    }
-    return true;
+	for (; i < str.size(); i++) {
+		if (!std::isdigit(str[i])) {
+			return false;
+		}
+	}
+	return true;
 }
 
 long int modAtoi(std::string nb){
 
 	long int result = 0;
-    int flag = 1;
-    unsigned long int i = 0;
+	int flag = 1;
+	unsigned long int i = 0;
 
-    if (nb[0] == '-') {
-        flag = -1;
-        i++;
-    } else if (nb[0] == '+') {
-        i++;
-    }
+	if (nb[0] == '-') {
+		flag = -1;
+		i++;
+	} else if (nb[0] == '+') {
+		i++;
+	}
 
-    for (; i < nb.size(); i++) {
-        if (nb[i] >= '0' && nb[i] <= '9') {
-            result = result * 10 + (nb[i] - '0');
-        } else {
-            return -1;
-        }
-    }
+	for (; i < nb.size(); i++) {
+		if (nb[i] >= '0' && nb[i] <= '9') {
+			result = result * 10 + (nb[i] - '0');
+		} else {
+			return -1;
+		}
+	}
 
-    return result * flag;
+	return result * flag;
 }
 
 
@@ -634,8 +667,8 @@ void Utils::cleanupMutex() {
  * @brief Helper function to register mutex cleanup
  */
 static int registerMutexCleanup() {
-    std::atexit(Utils::cleanupMutex);
-    return 0;
+	std::atexit(Utils::cleanupMutex);
+	return 0;
 }
 
 /**
@@ -644,6 +677,8 @@ static int registerMutexCleanup() {
 static int registerCleanup = registerMutexCleanup();
 
 void Utils::safePrint(const std::string& message) {
+	if (!DEBUG)
+		return ;
 	pthread_mutex_lock(&coutMutex);
 	std::cout << message << std::endl;
 	pthread_mutex_unlock(&coutMutex);

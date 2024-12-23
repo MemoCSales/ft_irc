@@ -35,7 +35,6 @@ class Server
 		std::map<int, Client*> clients;
 		std::map<std::string, Channel*> channels;
 		std::string const password;
-		std::string const lockFilePath;
 		static Server* instance;
 		pthread_t pingThread;
 		pthread_mutex_t clientsMutex;
@@ -46,20 +45,18 @@ class Server
 
 		void setNonBlocking(int fd);
 		void setupSignalHandlers();
-		void createLockFile();
-		void removeLockFile();
 		void removeClient(int clientFD);
 		void cleanData(void);
 		// Disable copy constructor and assignment operator
 		Server(const Server&);
 		Server& operator=(const Server&);
-
+		void handleErrorMessage(bool override, std::string const& func, std::exception const& e);
 	public:
 		Server(int& port, std::string const& password);
-		static void signalHandler(int signum); // does it need to be static ?
+		static void signalHandler(int signum);
 		void handleNewConnection();
 		void handleClient(int clientFD);
-		static Server* getInstance(); // is it the only solution?
+		static Server* getInstance();
 		~Server();
 		void run();
 		std::string welcomeMsg();
@@ -116,7 +113,7 @@ class SockAddressInitializer
 			//tp change
 			inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);
 			// addr.sin_addr.s_addr = INADDR_ANY;
-			addr.sin_port = htons(port);
+			addr.sin_port = htons(static_cast<uint16_t>(port));
 		}
 
 		struct sockaddr_in getAddress() const

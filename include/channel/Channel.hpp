@@ -3,8 +3,6 @@
 
 #include <vector>
 #include <string>
-//#include <mutex>
-#include <memory>
 #include <algorithm>
 
 #include "Client.hpp"
@@ -22,7 +20,11 @@ private:
 	bool _flagTopic;
 	std::vector<Client *> members; // clients in the chanel
 	std::vector<Client *> operators;
-	std::vector<Client *> people; 
+	std::vector<Client *> people;
+
+	// -----------test----------
+	std::string _topicSetter; // Nickname of the user who set the topic
+    std::time_t _topicTimestamp; 
 
 
 public:
@@ -36,6 +38,10 @@ public:
 	void	removeOperator(Client *client);
 	void	removePeople(Client *client);
 	void	broadcastTopic(Client* sender);
+	void    broadcastClientState( Client* client,std::string state);
+	void	broadcastNotice(const std::string& message, Client* sender);
+	void	broadcastUserList();
+	void	sendUsersList(Client *client);
 	bool 	isMember(Client *client);
 	bool	isOperator(Client *client);
 	bool	isInvited(Client *client);
@@ -59,33 +65,18 @@ public:
 	void	setName(std::string chanelName){_name = chanelName ;}
 	void	setFlagTopic(bool status){_flagTopic = status;}
 	void	setPassword(std::string passWord){_passWord = passWord;}
-	void	setTopic(std::string topic){_topic = topic;}
+	// void	setTopic(std::string topic){_topic = topic;}
+	void 	setTopic(const std::string& newTopic, const std::string& setter);
+
 	void	setInviteStatus(bool flag){_inviteOnly = flag;}
 	void	setLimit(int nb){_limit = nb;}
 
-
+	// ------------------------test-----------------
+	std::string getTopicSetter() const;
+    std::time_t getTopicTimestamp() const;
 
 
 };
-
-// class SendMessageFunctor
-// {
-// 	private:
-// 		Client* exclude;
-// 		std::string message;
-
-// 	public:
-// 		SendMessageFunctor(Client* exclude, const std::string& message)
-// 			: exclude(exclude), message(message) {}
-
-// 		void operator()(Client* client) const
-// 		{
-// 			if (client != exclude)
-// 			{
-// 				client->sendMessage(message);
-// 			}
-//     }
-// };
 
 
 #endif

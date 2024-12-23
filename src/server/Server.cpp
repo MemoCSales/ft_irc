@@ -51,7 +51,8 @@ _serverStatus(0)
 			ss << "Server " << ServerIP << ":" << port << " can't listen" << std::endl;
 			throw std::runtime_error(ss.str());
 		}
-		std::cout << "Server listening on " << ServerIP << ":" << port << "\n";
+		std::cout << getColorStr(FPURPLE, "Server listening on ") <<
+		 ServerIP << ":" << port << std::endl << std::endl;
 
 		setNonBlocking(serverFD);
 
@@ -59,10 +60,7 @@ _serverStatus(0)
 		pollFDs.push_back(serverP_FDs);
 
 		pthread_mutex_init(&clientsMutex, NULL);
-		// pthread_mutex_init(&coutMutex, NULL);
-
 		setupSignalHandlers();
-
 		setOperName();
 		setOperPassword();
 
@@ -71,7 +69,7 @@ _serverStatus(0)
 	}
 	catch (const std::exception& e)
 	{
-		std::cerr << "Error initializing server: " << e.what() << std::endl;
+		handleErrorMessage(1, __func__ , e);
 		exit(1);
 	}
 }
@@ -102,8 +100,9 @@ void Server::handleNewConnection()
 		int clientPort = ntohs(clientAddress.sin_port);
 
 		std::ostringstream oss;
-		oss << "New client connected: " << clientIP << ":" + toStr(clientPort) 
-					<< "[" << toStr(clientSocket) << "]";
+		oss << getColorStr(FGREEN, "New client connected: ")
+		<< newClient->color << clientIP << ":" << clientPort
+		<< "[" << clientSocket << "]" << C_END;
 		Utils::safePrint(oss.str());
 
 		// Send welcome message
@@ -111,7 +110,7 @@ void Server::handleNewConnection()
 	}
 	catch (const std::exception& e)
 	{
-		std::cerr << "Error handling new connection: " << e.what() << std::endl;
+		handleErrorMessage(1, __func__, e);
 	}
 }
 
@@ -126,35 +125,36 @@ void Server::handleClient(int clientFD)
 		}
 		catch(const std::exception& e)
 		{
-			std::cerr << "Error handling client: " << e.what() << "\r\n";
-
-				ChannelIte itchannel = channels.begin();
-				for (; itchannel != channels.end(); itchannel++)
-				{
-					Channel* current = itchannel->second;
-					if (current->isMember(client)) {
-						current->removeMember(client);
-					}
-					if (current->isInvited(client)) {
-						current->removePeople(client);
-					}
-					if (current->isOperator(client)) {
-						current->removeOperator(client);
-						current->broadcast("has quitted.", client);
-						if (current->getOperators().size() < 1 && current->getMembers().size() > 0) {
-							Client * newOperator = *(current->getMembers().begin());
-							current->addOperator(newOperator);
-							current->broadcast("Hi! I'm the new operator of this channel.", newOperator);
-							newOperator->sendMessage("You're the new Operator of the channel " + toStr(current->getName()));
-							Utils::safePrint("New Operator in channel: " + newOperator->getClientNick());		
-						} else {
-							Utils::safePrint("Channel removed: " + itchannel->first);
-							removeChannel(itchannel->first);
-						}
+			handleErrorMessage(0, __func__, e);
+			ChannelIte itchannel = channels.begin();
+			for (; itchannel != channels.end(); itchannel++)
+			{
+				Channel* current = itchannel->second;
+				if (current->isMember(client)) {
+					current->removeMember(client);
+				}
+				if (current->isInvited(client)) {
+					current->removePeople(client);
+				}
+				if (current->isOperator(client)) {
+					current->removeOperator(client);
+					current->broadcast("has quitted.", client);
+					if (current->getOperators().size() < 1 && current->getMembers().size() > 0) {
+						Client * newOperator = *(current->getMembers().begin());
+						current->addOperator(newOperator);
+						current->broadcast("Hi! I'm the new operator of this channel.", newOperator);
+						std::string error = ":" + client->nickname + "!user@host MODE " + current->getName() + " +o " + newOperator->getNick() ;
+						newOperator->sendMessage(error);
+						current->broadcastUserList();
+						Utils::safePrint("New Operator in channel: " + newOperator->getClientNick());		
+					} else {
+						Utils::safePrint("Channel removed: " + itchannel->first);
+						removeChannel(itchannel->first);
 					}
 				}
+			}
 			removeClient(clientFD);
-		}		
+		}
 	}
 }
 
@@ -168,7 +168,7 @@ void Server::run()
 		{
 			int pollCount = poll(pollFDs.data(), pollFDs.size(), -1);
 			if (pollCount < 0)
-				throw std::runtime_error("Poll failed: " + std::string(strerror(errno)));
+				throw std::runtime_error(std::string(strerror(errno)));
 
 			for (size_t i = 0; i < pollFDs.size(); ++i)
 			{
@@ -183,7 +183,7 @@ void Server::run()
 		}
 		catch (const std::exception& e)
 		{
-			std::cerr << "Error in server run loop: " << e.what() << std::endl;
+			handleErrorMessage(1, __func__, e);
 		}
 	}
 	cleanData();
@@ -197,8 +197,9 @@ void Server::cleanData()
 	// Send a message to each client
 	for (ClientsIte it = server->clients.begin(); it != server->clients.end(); ++it)
 	{
-		const char* shutDownMessage = "Server is shutting down.\0";
-		send(it->second->getFd(), shutDownMessage, strlen(shutDownMessage), 0);
+		Client* client =  it->second;
+		std::string shutDownMessage= error("Closing Link: Server is shutting down.", 0);
+		client->sendMessage(shutDownMessage);
 	}
 
 	pthread_cancel(server->pingThread);
@@ -238,8 +239,6 @@ void Server::setupSignalHandlers()
 
 void Server::signalHandler(int signum)
 {
-	const char* msg = "Interrupt signal received. Closing server socket.\n";
-	write(STDERR_FILENO, msg, strlen(msg));
 	Server* server = Server::getInstance();
 	server->_serverStatus = signum;
 }
@@ -266,7 +265,16 @@ Server::~Server()
 	channels.clear();
 
 	close(serverFD);
-	removeLockFile();
+}
+
+void Server::handleErrorMessage(bool override, std::string const& func, std::exception const& e)
+{
+	if (DEBUG || override)
+	{
+		std::ostringstream err;
+		err << std::endl << error(func + "(): ", 0);
+		std::cerr << err.str() << e.what() << "\r\n" << std::endl;
+	}
 }
 
 void Server::setNonBlocking(int fd)
@@ -287,42 +295,26 @@ std::string Server::welcomeMsg()
 	std::stringstream msg;
 	
 
-	msg << "\t⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⠀⠀" << std::endl;
-	msg << "\t⣠⣾⣿⡟⠛⢻⠛⠛⠛⠛⠛⢿⣿⣿⠟⠛⠛⠛⣿⣿⣷⣄" << std::endl;
-	msg << "\t⣿⣿⣿⡇⠀⢸⠀⠀⣿⣿⡇⠀⣿⠁⠀⣠⣤⣤⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⡇⠀⢸⠀⠀⠿⠿⠃⣠⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⡇⠀⢸⠀⠀⣀⣀⠀⠙⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⣇⣀⣸⣀⣀⣿⣿⣀⣀⣿⣦⡀⣀⣀⣀⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠿⢿⣿⣿⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⣿⣿⣿⡿⠿⠛⠿⡿⠉⠀⠀⠀⠀⠈⠹⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⣿⡿⠁⠀⠀⠀⠀⢇⠀⠛⠘⠃⠛⠀⢠⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⣿⣧⡀⠛⠘⠃⠛⠀⢑⣤⣄⣀⣤⡀⣿⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⣿⣿⡗⢀⣀⣀⣀⣤⣾⣿⣿⣿⣿⣷⣾⣿⣿⣿⣿" << std::endl;
-	msg << "\t⠙⢿⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋" << std::endl;
-	msg << "\t⠀⠀⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋⠀⠀" << std::endl;
-	msg << "\nWelcome to the FT_IRC server!" << std::endl << std::endl;
+	msg << getColorStr(FLGREEN, "\t⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⠀⠀") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⣠⣾⣿⡟⠛⢻⠛⠛⠛⠛⠛⢿⣿⣿⠟⠛⠛⠛⣿⣿⣷⣄") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⣿⣿⣿⡇⠀⢸⠀⠀⣿⣿⡇⠀⣿⠁⠀⣠⣤⣤⣿⣿⣿⣿") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⣿⣿⣿⡇⠀⢸⠀⠀⠿⠿⠃⣠⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⣿⣿⣿⡇⠀⢸⠀⠀⣀⣀⠀⠙⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⣿⣿⣿⣇⣀⣸⣀⣀⣿⣿⣀⣀⣿⣦⡀⣀⣀⣀⣿⣿⣿⣿") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠿⢿⣿⣿⣿⣿⣿⣿") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⣿⣿⣿⣿⣿⣿⡿⠿⠛⠿⡿⠉⠀⠀⠀⠀⠈⠹⣿⣿⣿⣿") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⣿⣿⣿⣿⡿⠁⠀⠀⠀⠀⢇⠀⠛⠘⠃⠛⠀⢠⣿⣿⣿⣿") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⣿⣿⣿⣿⣧⡀⠛⠘⠃⠛⠀⢑⣤⣄⣀⣤⡀⣿⣿⣿⣿⣿") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⣿⣿⣿⣿⣿⡗⢀⣀⣀⣀⣤⣾⣿⣿⣿⣿⣷⣾⣿⣿⣿⣿") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⠙⢿⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⠀⠀⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋⠀⠀") << std::endl;
+	msg << getColorStr(FLGREEN, "\nWelcome to the FT_IRC server!") << std::endl << std::endl;
 	return msg.str();
-	// return getColorStr(FGREEN, msg.str());
 }
 
 Server* Server::getInstance()
 {
 	return instance;
-}
-
-void Server::createLockFile()
-{
-	std::ofstream lockFile(lockFilePath.c_str());
-	if (!lockFile)
-	{
-		throw std::runtime_error("Unable to create lock file");
-	}
-	lockFile.close();
-}
-
-void Server::removeLockFile()
-{
-	std::remove(lockFilePath.c_str());
 }
 
 void Server::removeClient(int clientFD)
@@ -416,18 +408,10 @@ Channel* Server::getOrCreateChannel(const std::string& name) {
 
 
 Channel *Server::getChannel(const std::string &name) {
-	// pthread_mutex_lock(&channelsMutex);
-	// pthread_mutex_lock(&channelsMutex);
-	// Check if the channel exists
 	std::map<std::string, Channel *>::iterator it = channels.find(name);
 	if (it != channels.end()) {
-		// Unlock the mutex before returning
-		// pthread_mutex_unlock(&channelsMutex);
-		// pthread_mutex_unlock(&channelsMutex);
 		return it->second;// Return the existing channel
 	}
-	// pthread_mutex_unlock(&channelsMutex);
-	// pthread_mutex_unlock(&channelsMutex);
 	return NULL;// Return the new channel
 }
 

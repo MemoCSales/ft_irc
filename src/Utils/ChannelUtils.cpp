@@ -3,52 +3,66 @@
 # include "Utils.hpp"
 # include "InputParser.hpp"
 
+
+void sendCodeMessage(Client& client, const std::string& code, const std::string& target, const std::string& message) {
+    std::string formattedMessage = ":serverhost " + code + " " + target + " :" + message;
+    client.sendMessage(formattedMessage);
+}
+
+
+
 bool	modePass(std::string passWord,Client& client, std::string channelName,Channel* targetChannel){
 	if(passWord.empty()){
-		std::string error = "you need to add a password after the flag.\n";
+		std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ": Password field empty." ;
 		client.sendMessage(error);
 		return false;
 	}
 	if(targetChannel->getPassword() == passWord){
-		std::string error = "The password of the channel: " + channelName +" already set to " + passWord + "\n";
+		std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ": Password already set to:" + passWord ;
 		client.sendMessage(error);
 		return false;
 	}
 	targetChannel->setPassword(passWord);
-	std::string error = "Password for the channel: " + channelName +" set to: " +passWord + "\n";
+	std::string error = ":" + client.username + "!user@host MODE " + channelName + " +k " + client.getNick() + ":Password for the channel: " + channelName +" set to: " +passWord;
 	client.sendMessage(error);
+	targetChannel->broadcastNotice("The operator has set password for this channel.",&client);
 	return true;
 }
 
 bool	modeInvite(std::string mode, Channel *targetChannel, Client &client, std::string channelName){
 	if(mode.empty()){
-		std::string error = "you need to add a mode after the flag.\n";
+		std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ":You need to add a mode after the flag.";
 		client.sendMessage(error);
 		return false;
 	}
 	if(mode == "set"){
 		if(targetChannel->getInviteStatus()){
-			std::string error = "Channel: " + channelName + " already set to invitation only.\n";
+			std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ":Already set to invitation only..";
 			client.sendMessage(error);
 			return false;
 		}
 		targetChannel->setInviteStatus(true);
-		std::string error = "Channel: " + channelName + " set to invitation only.\n";
+		std::string error = ":" + client.username + "!user@host MODE " + channelName + " +i " + client.getNick() + ":Channel mode set to invite only.";
 		client.sendMessage(error);
+		targetChannel->broadcastNotice("The operator has set channel mode for invite only.",&client);
+
 	}
 	else if (mode == "remove")
 	{
 		if(!targetChannel->getInviteStatus()){
-			std::string error = "Channel: " + channelName + " invitation only already removed.\n";
+			std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ":Invitation only already removed.";
 			client.sendMessage(error);
 			return false;
 		}
 		targetChannel->setInviteStatus(false);
-		std::string error = "Invitation only in channel: " + channelName +" removed.\n";
+		std::string error = ":" + client.username + "!user@host MODE " + channelName + " -i " + client.getNick() + ":Invitation only  mode removed.";
 		client.sendMessage(error);
+		targetChannel->broadcastNotice("The operator has removed the invite only mode.",&client);
+
+		
 	}
 	else {
-		std::string error = "You can only use set or remove.\n";
+		std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ":You can only use set or remove.";
 		client.sendMessage(error);
 		return false; // added
 	}
@@ -57,7 +71,7 @@ bool	modeInvite(std::string mode, Channel *targetChannel, Client &client, std::s
 
 bool modeOperator(std::string name, std::map<std::string, Channel*> &channels,Client &client, std::string channelName, Server &_server){
 if(name.empty()){
-		std::string error = "You need to insert the name of the clinet.\n";
+		std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ":No client name given.";
 		client.sendMessage(error);
 		return false ;
 	}
@@ -78,11 +92,11 @@ if(name.empty()){
 	}
 	if(isMember){
 		if(client.getNick() == name){
-			std::string error = "You are already an operator dummy.! :))\n";
+			std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ":You are already an operator dummy.! :))";
 			client.sendMessage(error);
 			return false;
 		}
-		bool isAlreadyOperator;
+		bool isAlreadyOperator = false;
 		std::vector<Client*> operators = targetChannel->getOperators();
 		for (std::vector<Client*>::iterator It = operators.begin(); It != operators.end(); ++It) {
 			if ((*It)->getNick() == name) {
@@ -92,71 +106,77 @@ if(name.empty()){
 		}
 		if(isAlreadyOperator)
 		{
-			std::string error =  name + " is already an operator.!\n";
+			std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ":" + name + " is already an operator.";
 			client.sendMessage(error);
 			return false;
 		}
 		Client *clientTarget = _server.getClientByNick(name);
-		std::string message = "You gave operator priviliges to: " + name +".\n";
-		client.sendMessage(message);
+		std::string error = ":" + client.username + "!user@host MODE " + channelName + " +o " + clientTarget->getNick() ;
+		client.sendMessage(error);
 		targetChannel->addOperator(clientTarget);
-		message = "You recived operator priviliges from: " + client.getNick()+" in "+ channelName +" channel" +".\n";
+		targetChannel->broadcastNotice(client.getNick() + " gave operator priviliges to :" + clientTarget->getNick(),&client);
+
+		// targetChannel->sendUsersList(&client);
+
+		targetChannel->broadcastUserList();
+		std::string message = ":" + client.username + "!user@host MODE " + channelName + " +o " + clientTarget->getNick();
 		clientTarget->sendMessage(message);
-		std::cout << "new operator adde in the chanel : " <<  name << std::endl;
+		std::cout << "new operator added in the chanel : " <<  name << std::endl;
 	}
 	else{
-		std::string message = name + " not found in: " + channelName + ".\n";
-		client.sendMessage(message);
+		std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ": " + name + " not found in the channel.";
+		client.sendMessage(error);
 	}
 	return true;
 }
 
 bool	modeLimit(std::string limit, Client &client,Channel *targetChannel, std::string channelName){
 	if(limit.empty()){
-		std::string error = "No limit given.\n";
+		std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ":No limit given.";
 		client.sendMessage(error);
 		return false;
 	}
 	if(!isNumber(limit)){
-		std::string error = "Limit must be a number.\n";
+		std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ": Limit must be anumber.";
 		client.sendMessage(error);
 		return false;
 	}
 
 	long int nb = modAtoi(limit);
 	
-	if(nb >2147483647 )
+	if(nb >1024 )
 	{
-		std::string error = "you can t insert a number bigger than Max_int\n";
+		std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ":You can t insert a number bigger than max numbers of fd's, 1024.";
 		client.sendMessage(error);
 		return false;
 	}
 	else if(nb <= 0)
 	{
-		std::string error = "you can t insert a negative/null number\n";
+		std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ":You can t insert a negative/null number.";
 		client.sendMessage(error);
 		return false;
 	}
 	if ( static_cast<size_t>(nb) < targetChannel->getMembers().size()) {
-		std::string error = "You can t insert a limit smaller than the number of clients already in the channel.\n";
+		std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ":You can t insert a limit smaller than the number of clients already in the channel.";
 		client.sendMessage(error);
 		return false;
 	}
 	if(targetChannel->getLimit() == nb){
-		std::string error = "Limit already set to: " + limit + ".\n";
+		std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ":Limit already set to: " + limit;
 		client.sendMessage(error);
 		return false;
 	}
 	
-	targetChannel->setLimit(nb);
-	std::string message = "Limit clients in the " + channelName + " set to: " + limit + ".\n";
-	client.sendMessage(message);
+	targetChannel->setLimit(static_cast<int>(nb));
+	std::string error = ":" + client.username + "!user@host MODE " + channelName + " +l " + client.getNick() + ":Limit clients set to: " + limit;
+	client.sendMessage(error);
+	targetChannel->broadcastNotice("The operator has set the limit for the channel members.",&client);
 	return true;
 }
 
 bool modeTopic(std::string mode, Client &client, Channel *targetChannel, std::string channelName){
 	if(mode.empty()){
-		std::string error = "No mode given.\n";
+		std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ":No mode given.";
 		client.sendMessage(error);
 		return false; 
 	}
@@ -164,27 +184,31 @@ bool modeTopic(std::string mode, Client &client, Channel *targetChannel, std::st
 	if(mode == "set")
 	{
 		if(targetChannel->getFlagTopic()){
-			std::string error = "Topic restriction is already set.\n";
+			std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ":Topic restriction is already set.";
 			client.sendMessage(error);
 			return false;
 		}
-		std::string error = "Topic restriction set on " + channelName + ".\n";
+		std::string error = ":" + client.username + "!user@host MODE " + channelName + " +t " + client.getNick() + ":Topic restriction is on.";
 		client.sendMessage(error);
 		targetChannel->setFlagTopic(true);
+		targetChannel->broadcastNotice("The operator has set restriction for the channel topic.",&client);
+
 	}
 
 	else if(mode == "remove") {
 		if(!targetChannel->getFlagTopic()){
-			std::string error = "Topic restriction is already removed.\n";
+			std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ":Topic restriction is already removed.";
 			client.sendMessage(error);
 			return false ;
 		}
-		std::string error = "You removed topic restriction on " + channelName + ".\n";
+		std::string error = ":" + client.username + "!user@host MODE " + channelName + " -t " + client.getNick() + ":You removed topic restriction.";
 		client.sendMessage(error);
 		targetChannel->setFlagTopic(false);
+			targetChannel->broadcastNotice("The operator has removed restriction for the channel topic.",&client);
+
 	}
 	else {
-		std::string error = "You can only use set or remove.\n";
+		std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ":You can only use set or remove.";
 		client.sendMessage(error);
 		return false;
 	}
@@ -226,3 +250,5 @@ void sendInformativeMessage(Client& client, const std::string& baseMessage, cons
     errorMessage += "\n";
     client.sendMessage(errorMessage);
 }
+
+
