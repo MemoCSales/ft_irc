@@ -204,7 +204,17 @@ delUsers:
 		echo $(RED)"...Deleting usersFile"  $(E_NC); \
 		rm -f testScripts/users_created.txt; \
 	fi;
-hexChat: $(NAME) delUsers addon
+delHex:
+	@rm -rf $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons/* ; \
+	ret=$$?; \
+	if [ $$ret -eq 0 ]; then \
+		echo $(GREEN)"HexChat Addons deleted"  $(E_NC); \
+	else \
+		echo $(RED)"...Error removing addons"  $(E_NC); \
+	fi;
+thex:
+	@flatpak run io.github.Hexchat --command="set text_font Ubuntu Mono 0 " --command="server irc" 
+hex: $(NAME) delUsers #addon
 	@trap 'clear; echo ;echo $(RED)"...Process interrupted" $(E_NC); exit 1' INT; \
 	python3 testScripts/openHexchat.py; echo $(GREEN)"Process Ended" $(E_NC);
 addon:

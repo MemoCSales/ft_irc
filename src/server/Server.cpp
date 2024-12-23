@@ -171,7 +171,7 @@ void Server::cleanData()
 	for (ClientsIte it = server->clients.begin(); it != server->clients.end(); ++it)
 	{
 		Client* client =  it->second;
-		std::string shutDownMessage= error("Closing Link: Server is shutting down.", 0);
+		std::string shutDownMessage= "Closing Link: Server is shutting down.";
 		client->sendMessage(shutDownMessage);
 	}
 
@@ -282,8 +282,8 @@ std::string Server::welcomeMsg()
 	msg << "\t⠙⢿⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋" << std::endl;
 	msg << "\t⠀⠀⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋⠀⠀" << std::endl;
 	msg << "\nWelcome to the FT_IRC server!" << std::endl << std::endl;
-	// return msg.str();
-	return getColorStr(FGREEN, msg.str());
+	return msg.str();
+	// return getColorStr(FGREEN, msg.str());
 }
 
 Server* Server::getInstance()
