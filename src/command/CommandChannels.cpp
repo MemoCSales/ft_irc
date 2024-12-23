@@ -306,7 +306,8 @@ void	Command::handleTopic(Client& client, const std::string& args, std::map<std:
 		else{
 			if(targetChannel->getTopic() == topic){
 					std::string error = ":" + client.username + "!user@host NOTICE " + channelName + " " + client.getNick() + ": Topic already set to:" + topic;
-					client.sendMessage(error);					return;
+					client.sendMessage(error);
+					return;
 				}
 			targetChannel->setTopic(topic,client.getNick());
 			std::string topicMsg = RPL_TOPIC(client.getNick(), client.username, targetChannel->getName(), targetChannel->getTopic());
@@ -381,18 +382,13 @@ void	Command::handleInvite(Client& client, const std::string& args, std::map<std
 					std::string response = ":" + client.getNick() + "!" + client.username + "@localhost INVITE " + targetNick + " " + channelName;
 					targetClient->sendMessage(response);
 				} 
-				// else {
-				// 	sendInformativeMessage(client,"User with nickname", targetNick + " not found");
-				// }
 			} else {
-					// sendInformativeMessage(client,"You 're not an operator in", targetChannel->getName());
 					client.sendMessage(ERR_CHANOPRIVSNEEDED(targetChannel->getName()));
 			}
 			break;
 		}
 	}
 	if (!found){
-		// sendInformativeMessage(client,"You are not part of",  targetChannel->getName() + " channel");
 		client.sendMessage(ERR_NOTINCHANNEL(channelName));
 		return;
 	}
@@ -405,14 +401,12 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 	std:: string flag;
 	stream >> flag;
 	if (channelName.empty() || channelName[0] != '#') {
-		std::string error = ":" + client.username + "!user@host PASS " + channelName + " " + client.getNick() + ": Channel name must start with '#' or channel is empty" ;
-		client.sendMessage(error);
+		client.sendMessage(ERR_NOSUCHCHANNEL(channelName));
 		return;
 	}
 	Channel *targetChannel = _server.getChannel(channelName);
 	if (!targetChannel) {
-		std::string error = ":" + client.username + "!user@host PASS " + channelName + " " + client.getNick() + ":" + channelName + " does not exist." ;
-		client.sendMessage(error);
+		client.sendMessage(ERR_NOSUCHCHANNEL(channelName));
 		return;
 	}
 	if(flag.empty()){
