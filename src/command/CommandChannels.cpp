@@ -89,7 +89,7 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
 				}
 			}
 			if (!invited) {
-				sendCodeMessage(client, "473", client.getNick(), "You need an invitation to join this channel.");
+				sendCodeMessage(client, "473", client.getNick(), "");
 				return;
 			}
 		}
@@ -358,8 +358,10 @@ void	Command::handleInvite(Client& client, const std::string& args, std::map<std
 			if(isOperator){
 				bool isMember = isMemberFct(targetChannel,*targetClient,channelName, channels);
 				if(isMember){
-					std::string response = targetNick + " already in the channel.\n";
-					client.sendMessage(response);
+					// std::string response = targetNick + " already in the channel.\n";
+					// client.sendMessage(response);
+					std::string messageWithSender = targetNick + " already in the channel";
+					client.sendMessage(RPL_PRIVMSG(client.getNick(), client.username, targetChannel->getName(), messageWithSender));
 					return ;
 				}
 				if (targetClient) {
@@ -372,7 +374,8 @@ void	Command::handleInvite(Client& client, const std::string& args, std::map<std
 						}
 					}
 					if(invitedAlready){
-						client.sendMessage(ERR_ALREADYINCHANNEL(client.getNick(), targetNick, channelName));
+						std::string messageWithSender = targetNick + " already invited to the channel";
+						client.sendMessage(RPL_PRIVMSG(client.getNick(), client.username, targetChannel->getName(), messageWithSender));
 						return ;
 					}
 					targetChannel->addAllowedPeople(targetClient);
@@ -381,15 +384,15 @@ void	Command::handleInvite(Client& client, const std::string& args, std::map<std
 					client.sendMessage(":serverhost 341 " + client.getNick() + " " + targetNick + " " + channelName);
 					std::string response = ":" + client.getNick() + "!" + client.username + "@localhost INVITE " + targetNick + " " + channelName;
 					targetClient->sendMessage(response);
-				} 
+				}
 			} else {
-					client.sendMessage(ERR_CHANOPRIVSNEEDED(targetChannel->getName()));
+					client.sendMessage(RPL_PRIVMSG(client.getNick(), client.username, targetChannel->getName(), ERR_CHANOPRIVSNEEDED(targetChannel->getName())));
 			}
 			break;
 		}
 	}
 	if (!found){
-		client.sendMessage(ERR_NOTINCHANNEL(channelName));
+		client.sendMessage(RPL_PRIVMSG(client.getNick(), client.username, targetChannel->getName(), ERR_NOTINCHANNEL(channelName)));
 		return;
 	}
 }
