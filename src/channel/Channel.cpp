@@ -106,14 +106,12 @@ void	Channel::sendUsersList(Client *client){
 
 	for (std::vector<Client *>::iterator it = members.begin(); it != members.end(); ++it) {
 		Client *member = *it;
-		if (member != client) {
 			if(this->isOperator(member))
 				message += "@" + member->getNick() + " ";
 			else
 				message += member->getNick() + " ";
-		}
+			member->sendMessage(message);
 	}
-	client->sendMessage(message);
 	client->sendMessage(":serverhost 366 " + client->getNick() + " " + this->getName() + " :End of /NAMES list");
 }
 
@@ -151,7 +149,6 @@ bool Channel::isInvited(Client *client) {
 	return found;
 }
 
-// ----------------------test-----------------
 void Channel::setTopic(const std::string& newTopic, const std::string& setter) {
 	_topic = newTopic;
 	_topicSetter = setter;

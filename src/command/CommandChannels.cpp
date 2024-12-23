@@ -5,20 +5,25 @@
 #include "ChannelUtils.hpp"
 
 void Command::handleJoin(Client& client, const std::string& args, std::map<std::string, Channel*>& channels) {
-	std::string channelName = trim(args);
+	std::istringstream ss(args);
+	std::string channelName;
+	ss >> channelName;
+	channelName = trim(channelName);
+	std::string passCode;
+	ss >> passCode;
+	passCode = trim(passCode);
+
 	// Check if client registration is complete before joining a channel
 	if (!client.isRegistered()) {
-		client.sendMessage("Complete your registration before joining a channel");
+		sendCodeMessage(client, "451", client.getNick(), ":You have not registered");
 		return;
 	}
-	if (channelName.empty()) {
-		sendInformativeMessage(client,"Error: No channel name provided.","");
+	if (channelName.empty() || channelName[0] != '#') {
+        sendCodeMessage(client, "461", client.getNick(), "JOIN :Channel name must start with '#' or is empty");
 		return;
 	}
-	if(channelName[0] != '#'){
-		sendInformativeMessage(client,"Error: Name of the channel must start with '#'.","");
-		return;
-	}
+
+
 
 	// Check for long string. If found truncated
 	channelName = Utils::truncateString(channelName);
@@ -32,6 +37,10 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
 			targetChannel = it->second;
 		}
 	}
+	// if(!targetChannel->getPassword().empty() && passCode.empty()){
+	// 	sendCodeMessage(client, "475", client.getNick(), "Private Channel, need a password.");
+	// 	return;
+	// }
 
 	if (!found) {  //maybe create a function for this
 		targetChannel = _server.getOrCreateChannel(channelName);
@@ -48,24 +57,26 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
 			std::string topicTimestampStr = ss.str();
 			// client.sendMessage(":serverhost 333 " + client.getNick() + " " + channelName + " " + targetChannel->getTopicSetter() + " " + std::to_string(targetChannel->getTopicTimestamp()));
 			client.sendMessage(":serverhost 333 " + client.getNick() + " " + channelName + " " + targetChannel->getTopicSetter() + " " + topicTimestampStr);
-	} else {
-		client.sendMessage(":serverhost 332 " + client.getNick() + " " + channelName + " :\r\n");
-	}
+		} else {
+			client.sendMessage(":serverhost 332 " + client.getNick() + " " + channelName + " :\r\n");
+		}
 		// sendInformativeMessage(client,channelName + " was created","you are the operator of this channel.");
 		Utils::safePrint(toStr(channelName) + " was created!");
 		return;
 	} else {
 		// Check if the client is in channel;
-		if(isMemberFct(targetChannel,client,channelName,channels)){
-			sendInformativeMessage(client,"Already in the channel.","");
+		if(isMemberFct(targetChannel,client,channelName,channels)){  // here different format
+			std::string error = ":" + client.username + "!user@host PASS " + channelName + " " + client.getNick() + ":Already in channel";
+			client.sendMessage(error);
 			return;
 		}
 	
 		// check if chaennel is full
 		if (targetChannel->getMembers().size() >= static_cast<size_t>(targetChannel->getLimit())) {
-			sendInformativeMessage(client,"Channel is full. Unable to join.","");
+			sendCodeMessage(client, "471", client.getNick(), "Channel is full.");
 			return;
 		}
+
 
 		// check if invitation required
 		if (targetChannel->getInviteStatus()) {
@@ -78,39 +89,23 @@ void Command::handleJoin(Client& client, const std::string& args, std::map<std::
 				}
 			}
 			if (!invited) {
-				sendInformativeMessage(client,"This is a private channel, you need an invitation.","");
+				sendCodeMessage(client, "473", client.getNick(), "You need an invitation to join this channel.");
 				return;
 			}
 		}
-		if (!targetChannel->getPassword().empty()) {
-			sendInformativeMessage(client,"Private channel, requires a password.","");
-			// wait for password
-			char passBuff[4096];
-			memset(passBuff, 0, sizeof(passBuff));
-			int passBytesRecv = 0;
-			// Loop to wait for password input
-			while (true) {
-				passBytesRecv = recv(client.getFd(), passBuff, sizeof(passBuff) - 1, 0);
-				if (passBytesRecv > 0) {
-					std::string pass(passBuff, passBytesRecv);
-					pass.erase(pass.find_last_not_of(" \n\r\t") + 1);
-					if (targetChannel->getPassword() == pass) {
-						targetChannel->addMember(&client);
-						sendInformativeMessage(client,"Joined Channel",targetChannel->getName());
-						targetChannel->sendUsersList(&client);
-						targetChannel->broadcastClientState(&client,"join");
-						Utils::safePrint(client.getNick() + " has joined the channel: " + toStr(targetChannel->getName()));
-						if (!targetChannel->getTopic().empty())
-							sendInformativeMessage(client,"The topic of the channel" + channelName + "is",targetChannel->getTopic());
-							// targetChannel->broadcastTopic(&client);
-						return;
-					} else {
-						sendInformativeMessage(client,"Incorrect password","");
-						return;
-					}
-				}
+		if(!targetChannel->getPassword().empty()){
+			// sendCodeMessage(client, "475", client.getNick(), "Private Channel, need a password.");
+			if(passCode.empty())
+			{
+				sendCodeMessage(client, "475", client.getNick(), "Cannot join channel password field empty, Private channel need a password.");
+				return;
+			}
+			else if(passCode != targetChannel->getPassword()){
+				sendCodeMessage(client, "475", client.getNick(), "Cannot join channel (+k) - password wrong.");
+				return;
 			}
 		}
+	
 	}
 	// Join the channel	
 	targetChannel->addMember(&client);
@@ -387,12 +382,14 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 	std:: string flag;
 	stream >> flag;
 	if (channelName.empty() || channelName[0] != '#') {
-		sendInformativeMessage(client,"Channel name must start with '#' or channel is empty", "");
+		std::string error = ":" + client.username + "!user@host PASS " + channelName + " " + client.getNick() + ": Channel name must start with '#' or channel is empty" ;
+		client.sendMessage(error);
 		return;
 	}
 	Channel *targetChannel = _server.getChannel(channelName);
 	if (!targetChannel) {
-		sendInformativeMessage(client,"Channel", channelName + " does not exist.");
+		std::string error = ":" + client.username + "!user@host PASS " + channelName + " " + client.getNick() + ":" + channelName + " does not exist." ;
+		client.sendMessage(error);
 		return;
 	}
 	if(flag.empty()){
@@ -434,8 +431,8 @@ void	Command::handleMode(Client& client, const std::string& args, std::map<std::
 		}
 	}
 	else{
-		sendInformativeMessage(client,"You are not an operator in",channelName +" channel.");
-	}
+		std::string error = ":" + client.username + "!user@host PASS " + channelName + " " + client.getNick() + ": You are anot an operator in this channel." ;
+		client.sendMessage(error);	}
 }
 
 
