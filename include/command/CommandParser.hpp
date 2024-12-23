@@ -12,6 +12,7 @@ class Channel;
 class CommandParser {
 	private:
 		CommandFactory* commandFactory;
+		Server& _server;
 	public:
 		CommandParser(Server& server);
 		~CommandParser();

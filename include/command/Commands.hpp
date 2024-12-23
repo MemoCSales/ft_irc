@@ -21,7 +21,8 @@ enum CommandType {
 	PART,
 	KICK,
 	MODE,
-	INVITE
+	INVITE,
+	WHO
 };
 
 class Command : public ICommand {
@@ -39,6 +40,7 @@ class Command : public ICommand {
 		void handlePong(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
 		void handleOper(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
 		void handlePrivMsg(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
+		void handleWho(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
 		//Channel
 		void handleJoin(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);
 		void handleTopic(Client& client, const std::string& args, std::map<std::string, Channel*>& channels);

@@ -3,17 +3,13 @@
 
 Channel::~Channel()
 {
-	// pthread_mutex_destroy(&channelMutex);
 }
 
 void Channel::addMember(Client *client)
 {
-	// pthread_mutex_lock(&channelMutex);
 	members.push_back(client);
-	// pthread_mutex_unlock(&channelMutex);
 }
 void Channel::addOperator(Client *client) {
-	// std::lock_guard<std::mutex> lock(channelMutex);
 	operators.push_back(client);
 }
 
@@ -22,22 +18,25 @@ void Channel::addAllowedPeople(Client *client) {
 }
 
 void Channel::removeMember(Client *client) {
-	// std::lock_guard<std::mutex> lock(channelMutex);
-	// Use std::remove from <algorithm> to find and "move" the client to the end
+	
 	std::vector<Client *>::iterator it = std::remove(members.begin(), members.end(), client);
-	// Check if we actually found the client
 	if (it != members.end()) {
-		members.erase(it, members.end());// Erase the client from the vector
-//		client->setCurrentChannel(nullptr);
+		members.erase(it, members.end());
 	}
 }
 
 
 void Channel::removeOperator(Client *client) {
-	// std::lock_guard<std::mutex> lock(channelMutex);
 	std::vector<Client *>::iterator it = std::remove(operators.begin(), operators.end(), client);
 	if (it != operators.end()) {
 		operators.erase(it, operators.end());
+	}
+}
+
+void Channel::removePeople(Client *client) {
+	std::vector<Client *>::iterator it = std::remove(people.begin(), people.end(), client);
+	if (it != people.end()) {
+		people.erase(it, people.end());
 	}
 }
 
@@ -48,20 +47,77 @@ void Channel::broadcast(const std::string &message, Client *sender) {
 	for (std::vector<Client *>::iterator it = members.begin(); it != members.end(); ++it) {
 		Client *member = *it;
 		if (member != sender) {
-			send(member->getSocket(), messageWithSender.c_str(), messageWithSender.size() + 1, 0);
+			member->sendMessage(messageWithSender);
 		}
 	}
 }
 
 void	Channel::broadcastTopic( Client* sender){
+	std::string topicMessage = RPL_TOPIC(sender->getNick(), sender->username, this->getName(), this->getTopic());
 	for (std::vector<Client *>::iterator it = members.begin(); it != members.end(); ++it) {
 		Client *member = *it;
 		if (member != sender) {
-			std::string message = "The topic of the channel is: " + this->getTopic() + "\n";
-			send(member->getSocket(), message.c_str(), message.size() + 1, 0);
+			member->sendMessage(topicMessage);
 		}
 	}
 }
+
+void Channel::broadcastClientState(Client* client, std::string state) {
+	std::string message;
+	if(state == "join") {
+		message = ":" + client->getNick() + "!user@host JOIN " + this->getName() + "\r\n";
+	}
+	else if(state == "part") {
+		message = ":" + client->getNick() + "!user@host PART " + this->getName() + "\r\n";
+		// For PART, only send to remaining members since parting user handles their own message
+		for (std::vector<Client*>::iterator it = members.begin(); it != members.end(); ++it) {
+				(*it)->sendMessage(message);
+		}
+		return;
+	}
+	else if(state == "kick") {
+		// For kicks, we need the source (kicker) and it should go to everyone including kicked user
+		std::string kicker = "server";
+		message = ":" + kicker + "!user@host KICK " + this->getName() + " " + client->getNick() + " :Kicked by " + kicker + "\r\n";
+		// Send to all members including kicked user
+		for (std::vector<Client*>::iterator it = members.begin(); it != members.end(); ++it) {
+			(*it)->sendMessage(message);
+		}
+		// Also send to kicked user
+		client->sendMessage(message);
+		return;
+	}
+	
+	// For JOIN, broadcast to all members
+	for (std::vector<Client*>::iterator it = members.begin(); it != members.end(); ++it) {
+		if (*it != client) {
+			(*it)->sendMessage(message);
+		}
+	}
+}
+
+
+void	Channel::sendUsersList(Client *client){
+	std::string message = ":serverhost 353 " + client->getNick() + " = " + this->getName() + " :";
+	if (this->isOperator(client)) {
+		message += "@" + client->getNick() + " ";
+	} else {
+		message += client->getNick() + " ";
+	}
+
+	for (std::vector<Client *>::iterator it = members.begin(); it != members.end(); ++it) {
+		Client *member = *it;
+		if (member != client) {
+			if(this->isOperator(member))
+				message += "@" + member->getNick() + " ";
+			else
+				message += member->getNick() + " ";
+		}
+	}
+	client->sendMessage(message);
+	client->sendMessage(":serverhost 366 " + client->getNick() + " " + this->getName() + " :End of /NAMES list");
+}
+
 
 bool Channel::isMember(Client *client) {
 	bool found = false;
@@ -72,4 +128,42 @@ bool Channel::isMember(Client *client) {
 		}
 	}
 	return found;
+}
+
+bool Channel::isOperator(Client *client) {
+	bool found = false;
+	for (std::vector<Client*>::iterator it = operators.begin(); it != operators.end(); it++) {
+		if ((*it)->nickname == client->nickname) {
+			found = true;
+			return found;
+		}
+	}
+	return found;
+}
+
+bool Channel::isInvited(Client *client) {
+	bool found = false;
+	for (std::vector<Client*>::iterator it = people.begin(); it != people.end(); it++) {
+		if ((*it)->nickname == client->nickname) {
+			found = true;
+			return found;
+		}
+	}
+	return found;
+}
+
+// ----------------------test-----------------
+void Channel::setTopic(const std::string& newTopic, const std::string& setter) {
+	_topic = newTopic;
+	_topicSetter = setter;
+	_topicTimestamp = std::time(NULL); // Get current timestamp
+}
+
+
+std::string Channel::getTopicSetter() const {
+	return _topicSetter;
+}
+
+std::time_t Channel::getTopicTimestamp() const {
+	return _topicTimestamp;
 }

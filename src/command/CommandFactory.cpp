@@ -19,6 +19,7 @@ CommandFactory::CommandFactory(Server& server) {
 	commands["PART"] = new CommandCreatorImpl<Command>(PART, server);
 	commands["KICK"] = new CommandCreatorImpl<Command>(KICK, server);
 	commands["MODE"] = new CommandCreatorImpl<Command>(MODE, server);
+	commands["WHO"] = new CommandCreatorImpl<Command>(WHO, server);
 }
 
 CommandFactory::~CommandFactory() {

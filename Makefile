@@ -205,26 +205,27 @@ delUsers:
 		rm -f testScripts/users_created.txt; \
 	fi;
 delHex:
-	@rm -rf $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons/* ; \
+	@path="$(HOME)/.var/app/io.github.Hexchat/config/hexchat" ;\
+	rm -rf $$path/addons/* $$path/scrollback/irc/#* ; \
 	ret=$$?; \
 	if [ $$ret -eq 0 ]; then \
 		echo $(GREEN)"HexChat Addons deleted"  $(E_NC); \
 	else \
 		echo $(RED)"...Error removing addons"  $(E_NC); \
 	fi;
-thex:
-	@flatpak run io.github.Hexchat --command="set text_font Ubuntu Mono 0 " --command="server irc" 
-hex: $(NAME) delUsers #addon
+thex: delHex addon
+	@flatpak run io.github.Hexchat --command="set text_font Ubuntu Mono 9 " --command="py load ~/.var/app/io.github.Hexchat/config/hexchat/addons/handshake.py" --command="server irc"
+hex: $(NAME) delUsers addon
 	@trap 'clear; echo ;echo $(RED)"...Process interrupted" $(E_NC); exit 1' INT; \
 	python3 testScripts/openHexchat.py; echo $(GREEN)"Process Ended" $(E_NC);
 addon:
 	@chmod +r $(PWD)/testScripts/testHexChat.py
 	@mkdir -p $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons/
-	@cp $(PWD)/testScripts/testHexChat.py $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons
+#	@cp $(PWD)/testScripts/testHexChat.py $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons
 	@chmod +r $(PWD)/testScripts/handshake.py
 	@cp $(PWD)/testScripts/handshake.py $(HOME)/.var/app/io.github.Hexchat/config/hexchat/addons
 	@echo $(GREEN)...Addon added to  HexChat path $(E_NC)
-#	flatpak run io.github.Hexchat --command="py load ~/.var/app/io.github.Hexchat/config/hexchat/addons/testHexChat.py"
+# flatpak run io.github.Hexchat --command="py load ~/.var/app/io.github.Hexchat/config/hexchat/addons/testHexChat.py"
 
 # #-------------------- PROCESS UTILS ----------------------------#
 killPD:

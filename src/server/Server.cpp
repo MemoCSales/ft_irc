@@ -126,6 +126,31 @@ void Server::handleClient(int clientFD)
 		catch(const std::exception& e)
 		{
 			handleErrorMessage(0, __func__, e);
+			ChannelIte itchannel = channels.begin();
+			for (; itchannel != channels.end(); itchannel++)
+			{
+				Channel* current = itchannel->second;
+				if (current->isMember(client)) {
+					current->removeMember(client);
+				}
+				if (current->isInvited(client)) {
+					current->removePeople(client);
+				}
+				if (current->isOperator(client)) {
+					current->removeOperator(client);
+					current->broadcast("has quitted.", client);
+					if (current->getOperators().size() < 1 && current->getMembers().size() > 0) {
+						Client * newOperator = *(current->getMembers().begin());
+						current->addOperator(newOperator);
+						current->broadcast("Hi! I'm the new operator of this channel.", newOperator);
+						newOperator->sendMessage("You're the new Operator of the channel " + toStr(current->getName()));
+						Utils::safePrint("New Operator in channel: " + newOperator->getClientNick());		
+					} else {
+						Utils::safePrint("Channel removed: " + itchannel->first);
+						removeChannel(itchannel->first);
+					}
+				}
+			}
 			removeClient(clientFD);
 		}
 	}
@@ -171,7 +196,7 @@ void Server::cleanData()
 	for (ClientsIte it = server->clients.begin(); it != server->clients.end(); ++it)
 	{
 		Client* client =  it->second;
-		std::string shutDownMessage= "Closing Link: Server is shutting down.";
+		std::string shutDownMessage= error("Closing Link: Server is shutting down.", 0);
 		client->sendMessage(shutDownMessage);
 	}
 
@@ -268,22 +293,21 @@ std::string Server::welcomeMsg()
 	std::stringstream msg;
 	
 
-	msg << "\t⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⠀⠀" << std::endl;
-	msg << "\t⣠⣾⣿⡟⠛⢻⠛⠛⠛⠛⠛⢿⣿⣿⠟⠛⠛⠛⣿⣿⣷⣄" << std::endl;
-	msg << "\t⣿⣿⣿⡇⠀⢸⠀⠀⣿⣿⡇⠀⣿⠁⠀⣠⣤⣤⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⡇⠀⢸⠀⠀⠿⠿⠃⣠⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⡇⠀⢸⠀⠀⣀⣀⠀⠙⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⣇⣀⣸⣀⣀⣿⣿⣀⣀⣿⣦⡀⣀⣀⣀⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠿⢿⣿⣿⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⣿⣿⣿⡿⠿⠛⠿⡿⠉⠀⠀⠀⠀⠈⠹⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⣿⡿⠁⠀⠀⠀⠀⢇⠀⠛⠘⠃⠛⠀⢠⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⣿⣧⡀⠛⠘⠃⠛⠀⢑⣤⣄⣀⣤⡀⣿⣿⣿⣿⣿" << std::endl;
-	msg << "\t⣿⣿⣿⣿⣿⡗⢀⣀⣀⣀⣤⣾⣿⣿⣿⣿⣷⣾⣿⣿⣿⣿" << std::endl;
-	msg << "\t⠙⢿⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋" << std::endl;
-	msg << "\t⠀⠀⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋⠀⠀" << std::endl;
-	msg << "\nWelcome to the FT_IRC server!" << std::endl << std::endl;
+	msg << getColorStr(FLGREEN, "\t⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⠀⠀") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⣠⣾⣿⡟⠛⢻⠛⠛⠛⠛⠛⢿⣿⣿⠟⠛⠛⠛⣿⣿⣷⣄") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⣿⣿⣿⡇⠀⢸⠀⠀⣿⣿⡇⠀⣿⠁⠀⣠⣤⣤⣿⣿⣿⣿") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⣿⣿⣿⡇⠀⢸⠀⠀⠿⠿⠃⣠⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⣿⣿⣿⡇⠀⢸⠀⠀⣀⣀⠀⠙⣿⠀⠀⣿⣿⣿⣿⣿⣿⣿") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⣿⣿⣿⣇⣀⣸⣀⣀⣿⣿⣀⣀⣿⣦⡀⣀⣀⣀⣿⣿⣿⣿") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠿⢿⣿⣿⣿⣿⣿⣿") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⣿⣿⣿⣿⣿⣿⡿⠿⠛⠿⡿⠉⠀⠀⠀⠀⠈⠹⣿⣿⣿⣿") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⣿⣿⣿⣿⡿⠁⠀⠀⠀⠀⢇⠀⠛⠘⠃⠛⠀⢠⣿⣿⣿⣿") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⣿⣿⣿⣿⣧⡀⠛⠘⠃⠛⠀⢑⣤⣄⣀⣤⡀⣿⣿⣿⣿⣿") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⣿⣿⣿⣿⣿⡗⢀⣀⣀⣀⣤⣾⣿⣿⣿⣿⣷⣾⣿⣿⣿⣿") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⠙⢿⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋") << std::endl;
+	msg << getColorStr(FLGREEN, "\t⠀⠀⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋⠀⠀") << std::endl;
+	msg << getColorStr(FLGREEN, "\nWelcome to the FT_IRC server!") << std::endl << std::endl;
 	return msg.str();
-	// return getColorStr(FGREEN, msg.str());
 }
 
 Server* Server::getInstance()
@@ -382,18 +406,10 @@ Channel* Server::getOrCreateChannel(const std::string& name) {
 
 
 Channel *Server::getChannel(const std::string &name) {
-	// pthread_mutex_lock(&channelsMutex);
-	// pthread_mutex_lock(&channelsMutex);
-	// Check if the channel exists
 	std::map<std::string, Channel *>::iterator it = channels.find(name);
 	if (it != channels.end()) {
-		// Unlock the mutex before returning
-		// pthread_mutex_unlock(&channelsMutex);
-		// pthread_mutex_unlock(&channelsMutex);
 		return it->second;// Return the existing channel
 	}
-	// pthread_mutex_unlock(&channelsMutex);
-	// pthread_mutex_unlock(&channelsMutex);
 	return NULL;// Return the new channel
 }
 

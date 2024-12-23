@@ -2,34 +2,44 @@ import hexchat
 import re
 
 HEXCHAT_COLORS = {
-	'30': '\00301',  # Black
-	'31': '\00304',  # Red
-	'32': '\00303',  # Green
-	'33': '\00308',  # Yellow
-	'34': '\00302',  # Blue
-	'35': '\00306',  # Magenta
-	'36': '\00311',  # Cyan
-	'37': '\00300',  # White
-	'90': '\00314',  # Light Grey
-	'91': '\00313',  # Light Red
-	'92': '\00309',  # Light Green
-	'93': '\00308',  # Light Yellow
-	'94': '\00312',  # Light Blue
-	'95': '\00313',  # Light Magenta
-	'96': '\00311',  # Light Cyan
-	'97': '\00300',  # Light White
+    '0': '\00301',  # Black
+    '1': '\00304',  # Red
+    '2': '\00303',  # Green
+    '3': '\00308',  # Yellow
+    '4': '\00302',  # Blue
+    '5': '\00305',  # Brown
+    '6': '\00306',  # Purple
+    '7': '\00307',  # Orange
+    '8': '\00314',  # Grey
+    '9': '\00304',  # Bright Red
+    '10': '\00309', # Bright Green
+    '11': '\00308', # Bright Yellow
+    '12': '\00312', # Bright Blue
+    '13': '\00313', # Bright Magenta
+    '14': '\00311', # Bright Cyan
 }
 
 LIGHT_GREY = "\00315"
 ENDC = "\003"
+ANSI_TO_HEXCHAT = {
+    **{str(i): HEXCHAT_COLORS[str(i % 15)] for i in range(256)}
+}
 
+# Formatting codes
+HEXCHAT_FORMATTING = {
+    '1': '\002',  # Bold
+    '4': '\037',  # Underline
+    '7': '\026',  # Reverse
+    '0': '\017',  # Reset
+}
 __module_name__ = "On Handshake"
 __module_version__ = "1.0"
 __module_description__ = "Prints a message when the handshake is established"
 
 # Regular expression to match ANSI color codes
-ansi_escape = re.compile(r'\x1B\[(\d+)(;\d+)*m|\x1B\[(\d+);(\d+);(\d+);(\d+);(\d+)m|\x1B\[(\d+);(\d+);(\d+);(\d+);(\d+);(\d+)m')
-
+# ansi_escape = re.compile(r'\x1B\[(\d+)(;\d+)*m|\x1B\[(\d+);(\d+);(\d+);(\d+);(\d+)m|\x1B\[(\d+);(\d+);(\d+);(\d+);(\d+);(\d+)m')
+ansi_escape = re.compile(r'\x1B\[[0-9;]*[mK]')
+# ansi_escape = re.compile(r'\x1B\[(\d+)(;\d+)*m')
 connection_established = False
 message = []
 #--------------------------------------------------------------------------------
@@ -65,7 +75,16 @@ def replace_ansi(match):
 	return hexchat_color
 
 def translate_ansi_to_hexchat(message):
-	return ansi_escape.sub(replace_ansi, message) + '\003'
+    def replace_ansi0(match):
+        codes = match.group(0).strip('\x1B[').strip('m').split(';')
+        hexchat_color = ''
+        for code in codes:
+            if code in ANSI_TO_HEXCHAT:
+                hexchat_color = ANSI_TO_HEXCHAT[code]
+            elif code in HEXCHAT_FORMATTING:
+                hexchat_color += HEXCHAT_FORMATTING[code]
+        return hexchat_color
+    return ansi_escape.sub(replace_ansi0, message) + '\003'
 
 def toStr(lst):
 	return '\n'.join(lst) + '\n'
@@ -89,10 +108,10 @@ def on_handshake(word, word_eol, userdata):
 				color = replace_ansi(match)
 				for msg in message:
 					newMsg = ansi_escape.sub('', msg)
-					hexchat.emit_print("Server Text", f"{color}{newMsg}\003")
+					hexchat.prnt(f"{color}{msg}\003")
 			# hexChatMsg()
 		elif connection_established:
-			hexchat.emit_print("Server Text", f"{line}")
+			hexchat.prnt(f"{line}")
 			# try:
 			# 	message = message.encode('ascii', 'ignore').decode('ascii')
 			# except UnicodeEncodeError:
@@ -101,22 +120,23 @@ def on_handshake(word, word_eol, userdata):
 			# print("{} (len:{})".format(message, char_count))
 			# hexchat.prnt(f"{message} ({char_count} |eol: {len(word_eol)} | word: {len(word)} )")
 
-	return hexchat.EAT_ALL
+	return hexchat.EAT_HEXCHAT
 
 def process_ansi_color(word, word_eol, userdata):
 	# Translate ANSI color codes to HexChat color codes
+	# if not word_eol:
+	# 	message.append("\n")
 	if word:
-		if word[1]:
-			message = translate_ansi_to_hexchat(word[1])
-			# Print the message with HexChat color codes
-			hexchat.emit_print("Channel Message", message)
+		message = translate_ansi_to_hexchat(word[0])
+		# Print the message with HexChat color codes
+		hexchat.prnt(f"{message}")
 	return hexchat.EAT_HEXCHAT
 
 # Hook the print event for server messages
 # hexchat.hook_print("Server Text", process_ansi_color)
-hexchat.hook_print("Channel Message", process_ansi_color)
+# hexchat.hook_print("Channel Message", process_ansi_color)
 # hexchat.hook_print("Notice", process_ansi_color)
-hexchat.hook_print("Private Message", process_ansi_color)
+# hexchat.hook_print("Private Message", process_ansi_color)
 
 
 # Hook the print event for channel messages
@@ -124,10 +144,11 @@ hexchat.hook_print("Private Message", process_ansi_color)
 
 #--------------------------------------------------------------------------------
 # Hook into server messages
+# hexchat.hook_server("Server Text", on_handshake)
+hexchat.hook_print("Server Text", process_ansi_color)
+# hexchat.hook_print("Server Text", on_handshake)
 # hexchat.hook_server("Server Text", process_ansi_color)
-hexchat.hook_server("RAW LINE", on_handshake)
 # hexchat.hook_server("RAW LINE", process_ansi_color)
-# hexchat.hook_print("Server Text", process_ansi_color)
 # hexchat.hook_print("Channel Message", process_ansi_color)
 # hexchat.hook_print("Notice", process_ansi_color)
 # hexchat.hook_print("Private Message", process_ansi_color)

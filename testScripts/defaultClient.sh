@@ -14,7 +14,7 @@ index=$((RANDOM % ${#NICKS[@]}))
 NICK=${NICKS[$index]}
 USER=${USERS[$index]}
 REALNAME=${REALNAMES[$index]}
-CHANNEL="#YourChannel"
+CHANNEL="#test"
 MESSAGE="Hello, IRC!"
 
 is_server_running()
@@ -47,7 +47,7 @@ cleanup()
 	echo "USER $USER 0 * :$REALNAME"
 	sleep 0.5
 	# echo "PRIVMSG $CHANNEL :$MESSAGE"
-	# echo "JOIN $CHANNEL"
+	echo "JOIN $CHANNEL"
 	# sleep 1
 	# sleep 1
 	# echo "QUIT"

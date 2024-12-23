@@ -79,6 +79,24 @@ std::string	getColorFmt(int eColor)
 	return (strColor.str());
 }
 
+t_color getRandomAnsiiColor()
+{
+	// Array of all possible colors in the eColor enum
+	t_color colors[] = {
+		FLBLACK, FLRED, FLGREEN, FLYELLOW, FLBLUE, FLMAGENTA, FLCYAN, FGRAY, FRED, FGREEN, FYELLOW, FBLUE, FMAGENTA, FCYAN
+	};
+
+	// Get the number of colors in the array
+	int num_colors = sizeof(colors) / sizeof(colors[0]);
+
+	// Seed the random number generator
+	initSeed();
+	// Select a random index
+	int random_index = rand() % num_colors;
+
+	// Return the random color
+	return colors[random_index];
+}
 /**
  * Generates an error message with optional formatting.
  *
@@ -95,6 +113,8 @@ std::string error(std::string str, bool bold)
 	fmt = C_FMT;
 	if (bold)
 		fmt += "1;";
+	else 
+		fmt += "0;";
 	strColor << fmt << FRED << "m"
 	<< "ERROR: " << str << C_END;
 	return (strColor.str());
@@ -183,14 +203,19 @@ int ft_rand(int min, int max)
  * strColor << fmt
 	<< rColorRGB(ft_rand(80, 200), ft_rand(80, 200), ft_rand(80, 200));
  */
-std::string getRandomColorFmt(bool bold)
+std::string getRandomColorFmt(bool bold, bool standard)
 {
 	std::ostringstream strColor;
 
 	strColor << C_FMT;
 	if (bold)
 		strColor << + "1;";
-	strColor << rColorRGB(ft_rand(60, 255), ft_rand(60, 255), ft_rand(60, 255));
+	else
+		strColor << + "0;";
+	if (standard)
+		strColor << getRandomAnsiiColor() << "m";
+	else
+		strColor << rColorRGB(ft_rand(60, 255), ft_rand(60, 255), ft_rand(60, 255));
 	return (strColor.str());
 }
 
@@ -249,11 +274,11 @@ std::string setObjColor(int const& color)
 	if (DEBUG == 0)
 	{
 		if ((color > FWHITE && color < BGRAY ) || color > 107)
-			return(getRandomColorFmt(1));
+			return(getRandomColorFmt(1, 0));
 		return (getColorFmt(color));
 	}
 	else
-		return (getRandomColorFmt(1));
+		return (getRandomColorFmt(1, 0));
 }
 
 /**

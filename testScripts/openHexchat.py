@@ -101,9 +101,10 @@ nick, username, realname = modify_hexchat_config()
 # command = f'flatpak run io.github.Hexchat --existing--command="server {network}"'
 command = (
 	'flatpak run io.github.Hexchat '
-	'--command="set text_font Ubuntu Mono 0 " '
-	'--command="server irc" '
-	#'--command="py load ~/.var/app/io.github.Hexchat/config/hexchat/addons/testHexChat.py" '
+	'--command="set text_font Ubuntu Mono 9 " '
+	# '--command="server irc" '
+	'--command="py load ~/.var/app/io.github.Hexchat/config/hexchat/addons/testHexChat.py" '
+	'--command="py load ~/.var/app/io.github.Hexchat/config/hexchat/addons/handshake.py" '
 )
 #	'--command="server irc"'
 print("\n", MAG, f"command = {command}", ENDC)
