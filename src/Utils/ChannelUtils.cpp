@@ -160,7 +160,7 @@ bool	modeLimit(std::string limit, Client &client,Channel *targetChannel, std::st
 		return false;
 	}
 	
-	targetChannel->setLimit(static_cast<int>(nb);
+	targetChannel->setLimit(static_cast<int>(nb));
 	std::string error = ":" + client.username + "!user@host MODE " + channelName + " +l " + client.getNick() + ":Limit clients set to: " + limit;
 	client.sendMessage(error);
 	return true;
