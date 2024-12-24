@@ -41,8 +41,7 @@ void Channel::removePeople(Client *client) {
 }
 
 void Channel::broadcast(const std::string &message, Client *sender) {
-	// std::lock_guard<std::mutex> lock(channelMutex);
-	std::string messageWithSender = sender->color + "[" + _name + "][" + sender->getNick() + "] " + message + "\n" + toStr(C_END);
+	std::string messageWithSender = ":" + sender->getNick() + "!" + sender->username + "@localhost PRIVMSG " + this->getName() + " :" + message;
 
 	for (std::vector<Client *>::iterator it = members.begin(); it != members.end(); ++it) {
 		Client *member = *it;
