@@ -204,7 +204,7 @@ void Command::handleQuit(Client& client, const std::string& args, std::map<std::
 	// todo: Check if this is the right approach for deletion
 	for (ChannelIte it = channels.begin(); it != channels.end(); it++) {
 		it->second->broadcast(client.nickname + " has quit: " + reason, &client);
-		if((it)->second->isMember(&client))
+		if((it)->second->isMember(&client)) // check this with valgrind or sanitizer
 			this->handlePart(client,(it)->second->getName(),channels);
 		it->second->removeMember(&client);
 	}
